@@ -42,3 +42,7 @@ client/coverage/
 *.h2.db
 *.mv.db
 *.trace.db
+client/*.tsbuildinfo
+client/**/*.tsbuildinfo
+client/vite.config.js
+client/vite.config.d.ts
