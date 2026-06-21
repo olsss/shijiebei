@@ -25,3 +25,20 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Java / Maven
+server/target/
+*.class
+*.jar
+*.war
+
+# Node / Vite
+client/node_modules/
+client/dist/
+client/.vite/
+client/coverage/
+
+# Local runtime data
+*.h2.db
+*.mv.db
+*.trace.db

@@ -1,0 +1,23 @@
+server:
+  port: ${SERVER_PORT:8080}
+spring:
+  application:
+    name: worldcup-management-server
+  datasource:
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/worldcup_management?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+app:
+  archive-path: ${WORLDCUP_ARCHIVE_PATH:../skill/archive}
+  admin:
+    username: ${WORLDCUP_ADMIN_USERNAME:admin}
+    password: ${WORLDCUP_ADMIN_PASSWORD:admin123456}
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
