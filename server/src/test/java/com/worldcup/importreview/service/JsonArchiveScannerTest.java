@@ -26,21 +26,27 @@ class JsonArchiveScannerTest {
         Files.writeString(archiveDir.resolve("odds/match.json"), "{\"event_id\":\"o1\"}");
         Files.writeString(archiveDir.resolve("sources/source.json"), "{\"id\":\"s1\"}");
         Files.writeString(archiveDir.resolve("analysis/bad.json"), "{bad-json");
+        Files.writeString(archiveDir.resolve("analysis/missing-basic-field.json"), "{\"note\":\"missing\"}");
         Files.writeString(archiveDir.resolve("analysis/_模板.json"), "{\"id\":\"template\"}");
 
         var scanner = new JsonArchiveScanner(new ObjectMapper());
 
         ArchiveScanResult result = scanner.scan(archiveDir);
 
-        assertThat(result.totalItems()).isEqualTo(5);
+        assertThat(result.totalItems()).isEqualTo(6);
         assertThat(result.validItems()).isEqualTo(4);
-        assertThat(result.invalidItems()).isEqualTo(1);
+        assertThat(result.invalidItems()).isEqualTo(2);
         assertThat(result.candidates().stream().map(ArchiveScanCandidate::type).collect(Collectors.toSet()))
                 .containsExactlyInAnyOrder(ImportItemType.BETS, ImportItemType.ANALYSIS, ImportItemType.ODDS, ImportItemType.SOURCE);
         assertThat(result.candidates()).anySatisfy(candidate -> {
             assertThat(candidate.relativePath()).isEqualTo("analysis/bad.json");
             assertThat(candidate.validJson()).isFalse();
             assertThat(candidate.validationMessage()).contains("JSON");
+        });
+        assertThat(result.candidates()).anySatisfy(candidate -> {
+            assertThat(candidate.relativePath()).isEqualTo("analysis/missing-basic-field.json");
+            assertThat(candidate.validJson()).isFalse();
+            assertThat(candidate.validationMessage()).contains("缺少基础字段");
         });
         assertThat(result.candidates()).allSatisfy(candidate -> assertThat(candidate.sha256()).hasSize(64));
     }

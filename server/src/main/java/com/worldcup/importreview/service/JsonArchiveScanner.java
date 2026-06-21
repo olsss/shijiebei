@@ -66,6 +66,11 @@ public class JsonArchiveScanner {
         try {
             JsonNode json = objectMapper.readTree(raw);
             String summary = extractSummary(type, file, json);
+            String validationFailure = validateBasicFields(type, json);
+            if (validationFailure != null) {
+                candidates.add(new ArchiveScanCandidate(type, relativePath, raw, sha256(raw), summary, false, validationFailure));
+                return;
+            }
             candidates.add(new ArchiveScanCandidate(type, relativePath, raw, sha256(raw), summary, true, "ok"));
         } catch (Exception e) {
             candidates.add(new ArchiveScanCandidate(type, relativePath, raw, sha256(raw), file.getFileName().toString(), false, "JSON 解析失败: " + e.getMessage()));
@@ -89,6 +94,27 @@ public class JsonArchiveScanner {
             return json.get(secondField).asText();
         }
         return fallback;
+    }
+
+    private String validateBasicFields(ImportItemType type, JsonNode json) {
+        return switch (type) {
+            case BETS -> json.has("bets") && json.get("bets").isArray()
+                    ? null
+                    : "缺少基础字段: bets 数组";
+            case ANALYSIS -> hasText(json, "id") || hasText(json, "match")
+                    ? null
+                    : "缺少基础字段: id 或 match";
+            case ODDS -> hasText(json, "event_id") || hasText(json, "match")
+                    ? null
+                    : "缺少基础字段: event_id 或 match";
+            case SOURCE -> hasText(json, "id") || hasText(json, "match")
+                    ? null
+                    : "缺少基础字段: id 或 match";
+        };
+    }
+
+    private boolean hasText(JsonNode json, String field) {
+        return json.hasNonNull(field) && !json.get(field).asText().isBlank();
     }
 
     private String toRelative(Path root, Path file) {
