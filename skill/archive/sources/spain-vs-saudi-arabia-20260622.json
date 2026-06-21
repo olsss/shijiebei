@@ -1,0 +1,199 @@
+{
+  "match": "西班牙 vs 沙特",
+  "date": "2026-06-22",
+  "jc_code": "周日037",
+  "fifa_match_id": "400021483",
+  "snapshots": [
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021483?language=en",
+      "tier": "官方赛事API",
+      "hash": "FIFA M38 西班牙 vs 沙特; Kick Off 2026-06-21T16:00:00Z UTC / 北京 2026-06-22 00:00; Atlanta Stadium Atlanta; referee Raphael Claus; coaches Luis de la Fuente Castillo / Georgios DONIS.",
+      "用途": "赛程/场地/裁判/主帅",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/calendar/matches?language=en&count=200&idCompetition=17&idSeason=285023&idStage=289273",
+      "tier": "官方赛事API",
+      "hash": "FIFA calendar API：M38 / Match ID 400021483 / 西班牙 vs 沙特; Kick Off 2026-06-21T16:00:00Z UTC / 北京 2026-06-22 00:00; 与 live API 互相复核赛程与编号。",
+      "用途": "赛程/开球时间/FIFA编号复核",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://trade.500.com/jczq/",
+      "tier": "竞彩第三方镜像",
+      "hash": "周日037 西班牙 vs 沙特; HAD 未开售 未开售; HHAD -2 1.61 / 4.55 / 3.46; buyend 23:00镜像。",
+      "用途": "竞彩编号/玩法/SP/让球",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://cp.zgzcw.com/lottery/jchtplayvsForJsp.action?lotteryId=47&type=jcmini",
+      "tier": "竞彩第三方镜像",
+      "hash": "周日037 西班牙 vs 沙特; 足彩网SPArr镜像；截期22:40；与500截止时间冲突需官方终核。",
+      "用途": "竞彩编号/SP复核/冲突识别",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021482?language=en",
+      "tier": "官方赛事API",
+      "hash": "首轮样本：Spain 0-0 Cabo Verde; goals []; cards [\"90'+3' PEDRI 黄牌\", \"16' SIDNY LOPES CABRAL 黄牌\"]; lineups stored raw.",
+      "用途": "本届逐场表现：赛果/首发/进球/红黄牌/换人",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021486?language=en",
+      "tier": "官方赛事API",
+      "hash": "首轮样本：Saudi Arabia 1-1 Uruguay; goals [\"41' Abdulelah ALAMRI\", \"80' Maxi ARAUJO\"]; cards [\"44' Abdulelah ALAMRI 黄牌\"]; lineups stored raw.",
+      "用途": "本届逐场表现：赛果/首发/进球/红黄牌/换人",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.barcablaugranes.com/world-cup-2026/124141/spain-saudi-arabia-world-cup-2026-team-news-match-preview-lineups-prediction",
+      "tier": "媒体队讯",
+      "hash": "西班牙首轮0-0佛得角、沙特1-1乌拉圭；两队均1分；西班牙进攻缺乏侵略性，Yamal预计首发，双方无伤病；沙特预计低位5-4-1。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.theguardian.com/football/2026/jun/20/lamine-yamal-genius-salvador-dali-michelangelo-spain-luis-de-la-fuente-world-cup",
+      "tier": "主流媒体队讯",
+      "hash": "De la Fuente称Yamal会首发但可能控制分钟，需与SI/其他媒体的体能限制口径合并处理。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.sbnation.com/soccer/1118608/cabo-verde-spain-world-cup",
+      "tier": "媒体战报/数据",
+      "hash": "西班牙对佛得角74%控球、7射正、xG约2.29，Vozinha七次扑救，11角球。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-open-h2h-spreads-totals.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日037 The Odds API open初始快照；42家bookmaker，h2h_books_count=41; Pinnacle h2h 1.12/12.0/23.0; spreads已入档；Marathon Bet异常h2h按源错配剔除。",
+      "用途": "海外胜平负/让球/Pinnacle基准/open初赔",
+      "time": "2026-06-21 18:46-18:58（北京时间）"
+    },
+    {
+      "url": "raw/260621-500-cn-markets.json",
+      "tier": "竞彩第三方镜像玩法页",
+      "hash": "周日037 500 playid=271/270/272：比分31项、总进球8项、半全场9项已抽取入 cn_markets；非中国竞彩官方票面。",
+      "用途": "比分/总进球/半全场赔率镜像",
+      "time": "2026-06-21 18:33-18:58（北京时间页面/抓取）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-event-markets.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日037 The Odds API event markets清单已归档；看板按用户要求只展示胜平负/让球/比分/总进球/半全场。",
+      "用途": "海外可用玩法范围审计",
+      "time": "2026-06-21 18:55（北京时间）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-live-h2h-spreads-totals.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日037 The Odds API live即时快照；用于与open初始快照比较赔率变化；h2h/spreads已入档。",
+      "用途": "海外胜平负/让球/live即时赔率",
+      "time": "2026-06-21 19:xx（北京时间）"
+    },
+    {
+      "url": "https://webapi.sporttery.cn/gateway/uniform/football/getMatchListV1.qry?clientCode=3001",
+      "tier": "中国竞彩官方/赛程玩法API",
+      "hash": "周日037 西班牙 vs 沙特阿拉伯; Sporttery官方: sellStatus=1, matchStatus=Selling; HAD未开售; HHAD -2 1.57/4.55/3.66; CRS/TTG/HAFU=Selling，比分31项/总进球8项/半全场9项；官方接口 poolCloseDate/Time 为空，停售仍需出票端终核。",
+      "用途": "官方竞彩编号/比赛时间/玩法开售/单关状态",
+      "time": "2026-06-21 19:20（北京时间）"
+    },
+    {
+      "url": "raw/260621-sporttery-official-cn-markets.json",
+      "tier": "中国竞彩官方/计算器SP归档",
+      "hash": "周日037 西班牙 vs 沙特阿拉伯; Sporttery官方: sellStatus=1, matchStatus=Selling; HAD未开售; HHAD -2 1.57/4.55/3.66; CRS/TTG/HAFU=Selling，比分31项/总进球8项/半全场9项；官方接口 poolCloseDate/Time 为空，停售仍需出票端终核。",
+      "用途": "胜平负/让球/比分/总进球/半全场官方SP",
+      "time": "2026-06-21 19:20（北京时间）"
+    },
+    {
+      "url": "raw/fifa-live-400021483-refresh-260621-20260621-192035.json",
+      "tier": "官方赛事API",
+      "hash": "FIFA live刷新：MatchStatus=1/Period=0，HomeTeam.Players=0，AwayTeam.Players=0；周日037官方首发尚未发布。",
+      "用途": "临场首发/替补发布状态核查",
+      "time": "2026-06-21 19:20（北京时间）"
+    }
+  ],
+  "tier_priority": [
+    "中国竞彩官方/票面",
+    "官方赛事 API",
+    "竞彩第三方镜像",
+    "权威数据商/比分平台",
+    "主流媒体战报/队讯",
+    "普通预测文章"
+  ],
+  "field_coverage": {
+    "赛程/场地/裁判": [
+      "FIFA calendar API",
+      "FIFA live API"
+    ],
+    "竞彩编号/玩法/SP": [
+      "中国竞彩网官方 Sporttery getMatchListV1",
+      "中国竞彩网官方 Sporttery calculator",
+      "500/足彩网镜像仅比对"
+    ],
+    "首轮表现/首发/进球/红黄牌": [
+      "FIFA live API",
+      "媒体战报/数据摘要"
+    ],
+    "技术统计/xG/机会质量": [
+      "媒体/数据商摘要",
+      "FIFA搜索摘要"
+    ],
+    "伤停/预计首发": [
+      "专业媒体/主流媒体队讯"
+    ],
+    "海外胜平负/让球赔率": [
+      "The Odds API open快照",
+      "Pinnacle基准",
+      "42家bookmaker",
+      "The Odds API live快照"
+    ],
+    "比分/总进球/半全场赔率": [
+      "中国竞彩网官方 Sporttery calculator",
+      "500彩票网玩法页仅比对"
+    ],
+    "临场首发/替补": [
+      "FIFA live API刷新：暂未发布，赛前约60分钟再核"
+    ]
+  },
+  "conflicts": [
+    {
+      "字段": "Yamal首发/分钟",
+      "来源A": "Guardian/BarcaBlaugranes: 预计/确认首发",
+      "来源B": "SI/其他媒体: 不适合踢满90分钟",
+      "采用": "视为可出场但分钟受控",
+      "说明": "破密集能力增强但不能按满血处理。"
+    },
+    {
+      "字段": "官方Sporttery vs 第三方镜像SP",
+      "来源A": "中国竞彩网官方 webapi/calculator 2026-06-21 19:20抓取",
+      "来源B": "500/足彩网镜像早前抓取",
+      "采用": "采用中国竞彩网官方 Sporttery 数据",
+      "说明": "第三方镜像仅作备用比对；实际出票/结算仍以票面SP为准。"
+    },
+    {
+      "字段": "临场首发",
+      "来源A": "FIFA live API 19:20刷新",
+      "来源B": "媒体预计首发",
+      "采用": "官方首发未发布，媒体仅作预测",
+      "说明": "HomeTeam/AwayTeam Players 均为0；赛前约60分钟再次刷新。"
+    }
+  ],
+  "status": "partial",
+  "note": "中国竞彩网官方直连接口与官方计算器SP已补齐；海外 open/live 已补齐；当前仅因FIFA/官方临场首发尚未发布保持 partial，出票前需终核首发/最后伤停与实际票面SP。",
+  "aliases": {
+    "Saudi Arabia": [
+      "沙特",
+      "沙特阿拉伯"
+    ],
+    "Cabo Verde": [
+      "佛得角",
+      "维德角"
+    ]
+  },
+  "last_updated": "2026-06-21 19:20（北京时间）"
+}

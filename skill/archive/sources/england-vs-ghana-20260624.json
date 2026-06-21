@@ -1,0 +1,109 @@
+{
+  "match": "英格兰 vs 加纳",
+  "competition": "2026 FIFA World Cup Group L",
+  "kicketc_jingcai": {
+    "编号": "周二046",
+    "编号日期": "260623",
+    "比赛日_北京时间": "2026-06-24 04:00",
+    "HHAD让球": "英格兰 -2",
+    "HAD单关": "未开售（仅过关）",
+    "HHAD单关": "未开售",
+    "TTG票面SP": {"0": 17.0, "1": 6.0, "2": 4.1, "3": 3.4, "4": 4.6, "5": 7.25, "6": 12.5, "7+": 18.0},
+    "结算口径": "90分钟（含伤停补时），不含加时点球（§11）",
+    "note": "竞彩官方已核对，勿改"
+  },
+  "snapshots": [
+    {
+      "url": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_L",
+      "tier": "官方/百科",
+      "hash": "Group L 标准积分榜与赛果：England 4-2 Croatia (6/17, AT&T Stadium Arlington, att 70,389; Kane 12'pen,42', Bellingham 47', Rashford 85'; Baturina 36', Musa 45+5'; ref Turpin)；Ghana 1-0 Panama (6/17, BMO Field Toronto, att 42,942; Yirenkyi 90+5'; ref Nyberg)。积分：ENG 3(+2)、GHA 3(+1)、PAN 0(-1)、CRO 0(-2)。",
+      "用途": "小组字母/赛果/进球时间/积分（非竞彩编号）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021506",
+      "tier": "官方赛事",
+      "hash": "FIFA 比赛中心 England v Ghana 比赛页（Group L，本场未开赛）；England v Croatia=match 400021507。",
+      "用途": "官方赛程/比赛中心，临场首发以官方为准",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://theanalyst.com/articles/ghana-vs-panama-stats-world-cup-2026",
+      "tier": "权威数据商",
+      "hash": "Opta：Ghana 1-0 Panama 控球 Panama 62%/Ghana 38%，射门 Panama 12/Ghana 7，xG Ghana 1.25/Panama 0.75；加纳上半场0射门（本届首支半场零射门）；Yirenkyi 94:04 队史世界杯最晚进球。",
+      "用途": "本届逐场技术统计（数据事实）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/story/_/id/49099495/england-croatia-world-cup-2026-recap-score-harry-kane-jude-bellingham-marcus-rashford",
+      "tier": "主流媒体战报",
+      "hash": "England 4-2 Croatia recap：首发 Pickford/James/Stones/Konsa/O'Reilly/Rice/Anderson/Bellingham/Madueke/Gordon/Kane；Tuchel；Kane角球头球(Rice助攻)；丢球因 Stones被突破+route-one长传给Perisic；xG 2.8 vs 0.71。",
+      "用途": "英格兰首发/战术/防守隐患（数据事实+部分分析）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.aljazeera.com/sports/2026/6/18/ghana-beat-panama-1-0-in-chaotic-charged-world-cup-group-l",
+      "tier": "主流媒体战报",
+      "hash": "Ghana 1-0 Panama：绝杀后melee；GK Ati-Zigi HT伤退→Asare；Partey因英国未决法律问题被拒入境加拿大缺席首战(本人否认)；Queiroz执教。",
+      "用途": "场外消息/伤停/Partey争议（事实+待核冲突）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.skysports.com/football/news/12309/13552730/world-cup-ghana-1-0-panama-caleb-yirenkyi-scores-95th-minute-winner-for-carlos-queiroz-s-side-in-group-l-opener",
+      "tier": "主流媒体战报",
+      "hash": "确认 Queiroz 执教加纳、Yirenkyi 95'绝杀；加纳首战表现进攻乏力。",
+      "用途": "主帅/赛果交叉验证",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.goal.com/en/lists/ghana-squad-world-cup-2026/blt96bf719b2e716a5e",
+      "tier": "主流媒体",
+      "hash": "加纳关键球员：Semenyo(2026-1转曼城£62.5m,半季英超10球)、Jordan Ayew(队长119场,预选7球7助)、Iñaki Williams；Kudus伤缺落选；Djiku(腿筋)/Salisu(ACL)缺阵；Partey被列为中场引擎（与Al Jazeera缺阵报道冲突）。",
+      "用途": "加纳关键球员/伤停（媒体；存冲突）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/story/_/id/49096580/group-l-2026-world-cup-teams-records-stats-know-england-panama-ghana-croatia",
+      "tier": "主流媒体",
+      "hash": "ENG FIFA第4、17次参赛1966冠军；GHA FIFA第73、5次参赛2010八强最佳；大赛履历。",
+      "用途": "FIFA排名/大赛履历",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.sportsmole.co.uk/football/england/world-cup/feature/england-world-cup-squad-full-list-predicted-lineup-depth-chart-latest-news_597350.html",
+      "tier": "主流媒体",
+      "hash": "England：Saka阿基里斯监控、热身63'替补；Livramento伤退Chalobah补入；Foden/Palmer落选；预测Rice后腰、Bellingham前腰、Saka右路。",
+      "用途": "英格兰伤情/预测首发（媒体观点+预测，非事实）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "local:archive/odds/england-vs-ghana-20260623.json",
+      "tier": "赔率数据商",
+      "hash": "The Odds API open 早盘已采集（40家，含 Pinnacle/William Hill/Betfair；不含 bet365 与中国竞彩官方SP）。文件名按 UTC 开赛日 20260623。",
+      "用途": "赔率信号/庄家视角；live 临场前再采写同文件（§10）",
+      "time": "2026-06-21（北京时间，open 快照）"
+    }
+  ],
+  "tier_priority": [
+    "官方赛事/竞彩",
+    "权威数据商/比分平台",
+    "主流媒体战报",
+    "普通预测文章"
+  ],
+  "conflicts": [
+    {
+      "item": "Thomas Partey 是否随队/可出战",
+      "A": "Al Jazeera：首战因英国未决法律问题被拒入境加拿大、缺席(本人否认)",
+      "B": "Goal：列为加纳中场引擎/在阵",
+      "处理": "按更接近官方/赛况的 Al Jazeera 处理为'首战缺阵、本场存疑'，停售前以官方名单/首发终核（§2C/§14）"
+    },
+    {
+      "item": "Ghana 1-0 Panama 控球与射门归属",
+      "A": "fotmob 早期：Ghana 62%控球/11射门（疑误）",
+      "B": "Opta+Al Jazeera：Panama 62%控球/12射门，Ghana 38%/7射门、上半场0射门",
+      "处理": "采用更权威 Opta 口径（B）"
+    }
+  ],
+  "status": "partial",
+  "note": "小组(L组)、本届首战赛果与技术统计、主帅(Queiroz)、Kudus伤缺已多源核实。待补/待核：The Odds API 赔率、本场官方首发/伤停、Partey 与加纳门将状态、英格兰是否轮换。预测文章不得当事实；区分数据事实/媒体观点/赔率信号/个人推断。结算 90 分钟口径。"
+}

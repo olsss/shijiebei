@@ -1,0 +1,459 @@
+{
+  "IdMatch": "400021480",
+  "IdStage": "289273",
+  "IdGroup": "289281",
+  "IdSeason": "285023",
+  "CoverageLevel": null,
+  "IdCompetition": "17",
+  "CompetitionName": [
+    {
+      "Locale": "en-GB",
+      "Description": "FIFA World Cup™"
+    }
+  ],
+  "SeasonName": [
+    {
+      "Locale": "en-GB",
+      "Description": "FIFA World Cup 2026™"
+    }
+  ],
+  "SeasonShortName": [],
+  "Stadium": {
+    "IdStadium": "400248370",
+    "Name": [
+      {
+        "Locale": "en-GB",
+        "Description": "BC Place Vancouver"
+      }
+    ],
+    "Capacity": null,
+    "WebAddress": null,
+    "Built": null,
+    "Roof": false,
+    "Turf": null,
+    "IdCity": "400248375",
+    "CityName": [
+      {
+        "Locale": "en-GB",
+        "Description": "Vancouver"
+      }
+    ],
+    "IdCountry": "CAN",
+    "PostalCode": null,
+    "Street": null,
+    "Email": null,
+    "Fax": null,
+    "Phone": null,
+    "AffiliationCountry": null,
+    "AffiliationRegion": null,
+    "Latitude": null,
+    "Longitude": null,
+    "Length": null,
+    "Width": null,
+    "Properties": {
+      "IdIFES": "5002134"
+    },
+    "IsUpdateable": null
+  },
+  "ResultType": 0,
+  "MatchDay": null,
+  "MatchNumber": 40,
+  "HomeTeamPenaltyScore": null,
+  "AwayTeamPenaltyScore": null,
+  "AggregateHomeTeamScore": null,
+  "AggregateAwayTeamScore": null,
+  "Weather": {
+    "Humidity": null,
+    "Temperature": null,
+    "WindSpeed": null,
+    "Type": null,
+    "TypeLocalized": []
+  },
+  "Attendance": null,
+  "Date": "2026-06-22T01:00:00Z",
+  "LocalDate": "2026-06-21T18:00:00Z",
+  "MatchTime": "0'",
+  "SecondHalfTime": null,
+  "FirstHalfTime": null,
+  "FirstHalfExtraTime": null,
+  "SecondHalfExtraTime": null,
+  "Winner": null,
+  "Period": 0,
+  "HomeTeam": {
+    "Score": null,
+    "Side": null,
+    "IdTeam": "43978",
+    "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/NZL",
+    "IdCountry": "NZL",
+    "TeamType": 1,
+    "AgeType": 7,
+    "Tactics": null,
+    "TeamName": [
+      {
+        "Locale": "en-GB",
+        "Description": "New Zealand"
+      }
+    ],
+    "Abbreviation": "NZL",
+    "Coaches": [
+      {
+        "IdCoach": "289159",
+        "IdCountry": "NZL",
+        "PictureUrl": "https://digitalhub.fifa.com/transform/04354138-7998-4b3a-b52a-c899cef05d04/BAZELEY-Darren_289159",
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Darren BAZELEY"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Darren BAZELEY"
+          }
+        ],
+        "Role": 0,
+        "SpecialStatus": null
+      }
+    ],
+    "Players": [],
+    "Bookings": [],
+    "Goals": [],
+    "Substitutions": [],
+    "Staffs": [
+      {
+        "IdStaff": "430494",
+        "IdCountry": "NZL",
+        "Role": 12,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Sunz SINGH"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Sunz SINGH"
+          }
+        ]
+      },
+      {
+        "IdStaff": "442357",
+        "IdCountry": "NZL",
+        "Role": 10,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Dominic VETTISE"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Dominic VETTISE"
+          }
+        ]
+      },
+      {
+        "IdStaff": "422247",
+        "IdCountry": "NZL",
+        "Role": 16,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Wade MOLONY"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Wade MOLONY"
+          }
+        ]
+      },
+      {
+        "IdStaff": "403225",
+        "IdCountry": "NZL",
+        "Role": 15,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Simon KIM"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Simon KIM"
+          }
+        ]
+      },
+      {
+        "IdStaff": "318839",
+        "IdCountry": "ENG",
+        "Role": 2,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Paul GOTHARD"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Paul GOTHARD"
+          }
+        ]
+      },
+      {
+        "IdStaff": "484818",
+        "IdCountry": "NZL",
+        "Role": 9999,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Logan HUGHES"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Logan HUGHES"
+          }
+        ]
+      }
+    ],
+    "FootballType": 0,
+    "Gender": 1,
+    "IdAssociation": "NZL",
+    "ShortClubName": "New Zealand"
+  },
+  "AwayTeam": {
+    "Score": null,
+    "Side": null,
+    "IdTeam": "43855",
+    "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/EGY",
+    "IdCountry": "EGY",
+    "TeamType": 1,
+    "AgeType": 7,
+    "Tactics": null,
+    "TeamName": [
+      {
+        "Locale": "en-GB",
+        "Description": "Egypt"
+      }
+    ],
+    "Abbreviation": "EGY",
+    "Coaches": [
+      {
+        "IdCoach": "174595",
+        "IdCountry": "EGY",
+        "PictureUrl": "https://digitalhub.fifa.com/transform/95af748d-2976-473b-938f-055fa4d71916/HOSSAM-HASSAN_174595",
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Hossam Hassan Hussein"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "HOSSAM HASSAN"
+          }
+        ],
+        "Role": 0,
+        "SpecialStatus": null
+      }
+    ],
+    "Players": [],
+    "Bookings": [],
+    "Goals": [],
+    "Substitutions": [],
+    "Staffs": [
+      {
+        "IdStaff": "344679",
+        "IdCountry": "EGY",
+        "Role": 2,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "SAAFAN ELSAGHIR"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "SAAFAN ELSAGHIR"
+          }
+        ]
+      },
+      {
+        "IdStaff": "433462",
+        "IdCountry": "EGY",
+        "Role": 13,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ali Mohamed ALI"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ali Mohamed ALI"
+          }
+        ]
+      },
+      {
+        "IdStaff": "514938",
+        "IdCountry": "EGY",
+        "Role": 13,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Mina SAMEH"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Mina SAMEH"
+          }
+        ]
+      },
+      {
+        "IdStaff": "174596",
+        "IdCountry": "EGY",
+        "Role": 16,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "IBRAHIM HASSAN"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "IBRAHIM HASSAN"
+          }
+        ]
+      },
+      {
+        "IdStaff": "516920",
+        "IdCountry": "EGY",
+        "Role": 3,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Walid BADR"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Walid BADR"
+          }
+        ]
+      },
+      {
+        "IdStaff": "379915",
+        "IdCountry": "ARG",
+        "Role": 12,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Diego GIACCHINO"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Diego GIACCHINO"
+          }
+        ]
+      },
+      {
+        "IdStaff": "409924",
+        "IdCountry": "EGY",
+        "Role": 15,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Mohamed ABOUELELA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Mohamed ABOUELELA"
+          }
+        ]
+      }
+    ],
+    "FootballType": 0,
+    "Gender": 1,
+    "IdAssociation": "EGY",
+    "ShortClubName": "Egypt"
+  },
+  "BallPossession": null,
+  "TerritorialPossesion": null,
+  "TerritorialThirdPossesion": null,
+  "Officials": [
+    {
+      "IdCountry": "UAE",
+      "OfficialId": "383421",
+      "NameShort": [
+        {
+          "Locale": "en-GB",
+          "Description": "Omar ALALI"
+        }
+      ],
+      "Name": [
+        {
+          "Locale": "en-GB",
+          "Description": "Omar Mohamed Al Ali"
+        }
+      ],
+      "OfficialType": 1,
+      "TypeLocalized": [
+        {
+          "Locale": "en-GB",
+          "Description": "Referee"
+        }
+      ]
+    }
+  ],
+  "MatchStatus": 1,
+  "GroupName": [
+    {
+      "Locale": "en-GB",
+      "Description": "Group G"
+    }
+  ],
+  "StageName": [
+    {
+      "Locale": "en-GB",
+      "Description": "First Stage"
+    }
+  ],
+  "OfficialityStatus": 0,
+  "TimeDefined": true,
+  "Properties": {
+    "IdIFES": "151645"
+  },
+  "IsUpdateable": null
+}

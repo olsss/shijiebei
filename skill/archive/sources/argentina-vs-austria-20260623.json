@@ -15,6 +15,62 @@
       "hash": "The Odds API 本地落档；含多家公司 live 赔率；不含中国竞彩官方 SP",
       "用途": "赔率信号/庄家视角，不替代竞彩官方核对",
       "time": "2026-06-21 15:32（北京时间，约）"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_J",
+      "tier": "权威数据商/比分平台",
+      "hash": "Group J: 阿根廷[1] 3分+3、奥地利[2] 3分+2、约旦[3] 0分、阿尔及利亚[4] 0分；阿根廷3-0阿尔及利亚(Messi 17/60/76)；奥地利3-1约旦(Schmid20', OG76', Arnautović 90+12'pen; Olwan50')；含首发/阵型/纪律分",
+      "用途": "小组字母确认、两队本届首轮赛果/首发/阵型/进球时间/纪律分",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/match/_/gameId/760433/algeria-argentina",
+      "tier": "权威数据商/比分平台",
+      "hash": "阿根廷3-0阿尔及利亚 stats：控球48/52、射门10对3、射正6对1、xG 1.26对0.32、无红黄牌、日期06-16",
+      "用途": "阿根廷-阿尔及利亚技术统计交叉验证（与Wikipedia控球44/50存小幅冲突）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://theanalyst.com/articles/argentina-vs-algeria-stats-world-cup-2026",
+      "tier": "权威数据商/比分平台",
+      "hash": "Opta/The Analyst：Messi 6射、创造2机会全场最高；阿尔及利亚世界杯历史首次0射正",
+      "用途": "射门质量/破密集方式交叉验证（数据事实）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021498",
+      "tier": "官方赛事",
+      "hash": "奥地利3-1约旦 match页（控球/射门/xG本次抓取失败，仅赛果/首发/进球定性可用）",
+      "用途": "奥地利-约旦赛果/首发；技术统计待停售前补采",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.skysports.com/football/news/17364/13552724/world-cup-2026-argentina-3-0-algeria-lionel-messi-scores-stunning-hat-trick",
+      "tier": "主流媒体战报",
+      "hash": "Sky：Messi帽子戏法追平Klose 16球；进球细节与小组形势",
+      "用途": "媒体战报交叉验证（数据事实+媒体观点区分）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.rotowire.com/soccer/article/argentina-vs-austria-preview-predicted-lineups-team-news-tactical-analysis-2026-world-cup-group-j-119066",
+      "tier": "普通预测文章",
+      "hash": "041战术预览：阿根廷4-3-3控球+Messi、奥地利4-2-3-1高位逼抢；预测首发；Posch下颌伤、Tagliafico小腿存疑；定性为头名抢位战",
+      "用途": "041预测首发/战术（预测，不作事实，仅风险提示）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.si.com/soccer/argentina-predicted-lineup-vs-austria-world-cup-6-22-26",
+      "tier": "普通预测文章",
+      "hash": "阿根廷预测首发4-3-3；Montiel半场伤退(不严重)→Molina；Messi铁打不轮换",
+      "用途": "041阿根廷预测首发/Montiel伤情（预测，待官方核）",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://worldsoccertalk.com/world-cup/austria-2026-world-cup-preview-squad-breakdown-key-player-and-tactical-analysis/",
+      "tier": "普通预测文章",
+      "hash": "奥地利FIFA约#24(另源#22)、兰尼克续约至2028、Alaba/Arnautović(37岁,132场47球)/Sabitzer(95场)；4-2-3-1高位逼抢",
+      "用途": "奥地利主帅/排名/关键球员背景（排名口径存疑）",
+      "time": "2026-06-21（北京时间）"
     }
   ],
   "tier_priority": [
@@ -23,7 +79,12 @@
     "主流媒体战报",
     "普通预测文章"
   ],
-  "conflicts": [],
+  "conflicts": [
+    "比赛日期：Wikipedia记两场首轮均06-16；ESPN/Sky部分页记06-17（时区换算差异）。以FIFA官方赛程为准，不影响041分析，标存疑。",
+    "阿根廷-阿尔及利亚控球：ESPN 48/52 vs Wikipedia 44/50（差异小，采用数据商ESPN/Opta口径）。",
+    "奥地利FIFA排名：媒体#22 vs #24两种口径，出票前以FIFA官方排名页终核。",
+    "041预测首发为各家预测，前锋/边路人选有出入；以官方临场首发为准。"
+  ],
   "status": "partial",
-  "note": "仅完成赛程与赔率快照；竞彩编号、玩法开售、让球数、票面 SP、首发伤停和本届逐场技术统计仍需出票前多源核验。预测文章不得当事实；区分数据事实/媒体观点/赔率信号/个人推断。"
+  "note": "小组字母J组已三源确认；两队本届均已踢1场（阿根廷3-0阿尔及利亚、奥地利3-1约旦），赛果/首发/进球时间已多源核实。待核：奥地利-约旦官方技术统计(控球/射门/xG/角球)、奥地利FIFA排名口径、041官方首发与伤停(Montiel/Tagliafico/Posch)、竞彩票面SP与玩法开售已由本人核对(HHAD阿根廷-1、HAD未开售、TTG SP见规则)。预测文章不得当事实；区分数据事实/媒体观点/赔率信号/个人推断。"
 }

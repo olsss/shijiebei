@@ -44,5 +44,26 @@
       "eu": {"home": null, "draw": null, "away": null}
     }
   ],
-  "note": "snapshot=open(初赔)/live(即时)。reference=true 的公司作为凯利指数的公允概率基准（建议 Pinnacle）。The Odds API 不含 bet365，公司名用其实际返回值（William Hill/Betfair/Paddy Power 等）。预测文章不得作为赔率来源。"
+  "markets": {
+    "让球(spreads)": {"source": "The Odds API", "companies": [
+      {"name": "Pinnacle", "point": -1.0, "home": null, "away": null}
+    ]},
+    "大小球(totals)": {"source": "The Odds API", "companies": [
+      {"name": "Pinnacle", "point": 2.5, "over": null, "under": null}
+    ]}
+  },
+  "cn_markets": {
+    "source": "中国竞彩官方计算器 / 500.com（§1 官方核对优先）",
+    "snapshot_time": "YYYY-MM-DD HH:MM（北京时间）",
+    "open": {"HAD": true, "HHAD": true, "比分": true, "总进球": true, "半全场": true},
+    "比分": {
+      "主胜": {"1:0": null, "2:0": null, "2:1": null},
+      "平局": {"0:0": null, "1:1": null},
+      "客胜": {"0:1": null, "0:2": null},
+      "其他": {"胜其他": null, "平其他": null, "负其他": null}
+    },
+    "总进球": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7+": null},
+    "半全场": {"胜/胜": null, "胜/平": null, "胜/负": null, "平/胜": null, "平/平": null, "平/负": null, "负/胜": null, "负/平": null, "负/负": null}
+  },
+  "note": "snapshot=open(初赔)/live(即时)。reference=true 的公司作为凯利指数的公允概率基准（建议 Pinnacle）。The Odds API 不含 bet365，且不提供比分/半全场玩法；markets=The Odds API 的让球/大小球；cn_markets=比分/总进球/半全场，来自500/中国竞彩，用 set_cn_markets.py 灌入。预测文章不得作为赔率来源。"
 }

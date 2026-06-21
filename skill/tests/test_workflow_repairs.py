@@ -163,6 +163,54 @@ class WorkflowRepairTests(unittest.TestCase):
         self.assertIn("结算口径", html)
         self.assertIn("+11.11%", html)
 
+    def test_dashboard_bets_table_distinguishes_decision_sources(self):
+        dashboard = fresh_module("build_dashboard")
+        html = dashboard.bets_table(
+            [
+                {
+                    "比赛日": "2026-06-22",
+                    "比赛": "乌拉圭 vs 佛得角",
+                    "类型": "HHAD",
+                    "下注内容": "乌拉圭-1 让负",
+                    "投入": 64,
+                    "赔率": 2.89,
+                    "收盘赔率": None,
+                    "CLV": None,
+                    "结算口径": "90分钟含伤停补时，不含加时点球",
+                    "赛果": "待赛果",
+                    "命中": None,
+                    "返还": None,
+                    "盈亏": None,
+                    "决策方": "Claude (Opus 4.8)",
+                },
+                {
+                    "比赛日": "2026-06-22",
+                    "比赛": "西班牙 vs 沙特",
+                    "类型": "HHAD",
+                    "下注内容": "西班牙-2 让平",
+                    "投入": 40,
+                    "赔率": 4.55,
+                    "收盘赔率": None,
+                    "CLV": None,
+                    "结算口径": "90分钟含伤停补时，不含加时点球",
+                    "赛果": "待赛果",
+                    "命中": None,
+                    "返还": None,
+                    "盈亏": None,
+                    "决策方": "gpt",
+                },
+            ]
+        )
+        self.assertIn("决策方对比", html)
+        self.assertIn("Claude", html)
+        self.assertIn("GPT", html)
+        self.assertIn("source-badge source-claude", html)
+        self.assertIn("source-badge source-gpt", html)
+        self.assertIn('class="bet-row bet-source-claude"', html)
+        self.assertIn('class="bet-row bet-source-gpt"', html)
+        self.assertIn("¥64", html)
+        self.assertIn("¥40", html)
+
     def test_dashboard_supports_matchday_date_filter(self):
         dashboard = fresh_module("build_dashboard")
         card = dashboard.analysis_card(
@@ -223,6 +271,46 @@ class WorkflowRepairTests(unittest.TestCase):
         self.assertIn("__TEAM_INTEL__", dashboard.HTML)
         self.assertIn("__DATA_QUALITY__", dashboard.HTML)
         self.assertNotIn("全部 Skill 数据", dashboard.HTML)
+
+    def test_dashboard_only_displays_requested_market_groups(self):
+        dashboard = fresh_module("build_dashboard")
+        odds = {
+            "source": "The Odds API",
+            "books_count": 2,
+            "companies": [],
+            "markets": {
+                "让球(spreads)": {
+                    "source": "The Odds API",
+                    "companies": [{"name": "Pinnacle", "point": -1.5, "home": 1.91, "away": 1.99}],
+                },
+                "大小球(totals)": {
+                    "source": "The Odds API",
+                    "companies": [{"name": "Pinnacle", "point": 2.5, "over": 1.90, "under": 2.00}],
+                },
+            },
+            "cn_markets": {
+                "比分": {"1-0": 6.5},
+                "总进球": {"0": 8.0, "1": 4.0},
+                "半全场": {"胜/胜": 2.2},
+            },
+        }
+
+        html = dashboard.extra_markets_html(odds)
+        self.assertIn("让球 / 比分 / 总进球 / 半全场", html)
+        self.assertIn("让球/亚盘", html)
+        self.assertIn("比分/总进球/半全场来源", html)
+        self.assertIn("比分（90分钟）", html)
+        self.assertIn("总进球（90分钟）", html)
+        self.assertIn("半全场（90分钟）", html)
+        self.assertNotIn("大小球", html)
+        self.assertNotIn("totals", html)
+
+    def test_dashboard_cn_market_fallback_mentions_sporttery_not_500(self):
+        dashboard = fresh_module("build_dashboard")
+        html = dashboard.extra_markets_html({"markets": {}, "cn_markets": {}})
+
+        self.assertIn("Sporttery", html)
+        self.assertNotIn("500/中国竞彩官方", html)
 
     def test_dashboard_defaults_to_nearest_unfinished_matchday_option(self):
         dashboard = fresh_module("build_dashboard")
@@ -393,6 +481,87 @@ class WorkflowRepairTests(unittest.TestCase):
         self.assertEqual(fields["date_beijing"], "2026-06-23")
         self.assertEqual(fields["commence_beijing"], "2026-06-23 01:00")
         self.assertEqual(fields["timezone"], "Asia/Shanghai")
+
+    def test_fetch_odds_api_excludes_obvious_h2h_source_outlier(self):
+        fetch = fresh_module("fetch_odds_api")
+        books = [
+            {
+                "title": "Pinnacle",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "outcomes": [
+                            {"name": "Spain", "price": 1.12},
+                            {"name": "Draw", "price": 12.0},
+                            {"name": "Saudi Arabia", "price": 23.0},
+                        ],
+                    }
+                ],
+            },
+            {
+                "title": "Betfair",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "outcomes": [
+                            {"name": "Spain", "price": 1.12},
+                            {"name": "Draw", "price": 13.0},
+                            {"name": "Saudi Arabia", "price": 27.0},
+                        ],
+                    }
+                ],
+            },
+            {
+                "title": "William Hill",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "outcomes": [
+                            {"name": "Spain", "price": 1.10},
+                            {"name": "Draw", "price": 10.0},
+                            {"name": "Saudi Arabia", "price": 26.0},
+                        ],
+                    }
+                ],
+            },
+            {
+                "title": "Marathon Bet",
+                "markets": [
+                    {
+                        "key": "h2h",
+                        "outcomes": [
+                            {"name": "Saudi Arabia", "price": 14.75},
+                            {"name": "Spain", "price": 3.42},
+                            {"name": "Draw", "price": 1.33},
+                        ],
+                    }
+                ],
+            },
+        ]
+
+        kept, excluded = fetch.filter_h2h_books(books, "Spain", "Saudi Arabia")
+        self.assertEqual([b["title"] for b in kept], ["Pinnacle", "Betfair", "William Hill"])
+        self.assertEqual([b["title"] for b in excluded], ["Marathon Bet"])
+
+    def test_fetch_odds_api_preserves_manual_odds_fields_when_merging(self):
+        fetch = fresh_module("fetch_odds_api")
+        prev = {
+            "jc_code": "周日037",
+            "official": {"source": "500镜像", "HAD_open": False, "HHAD": {"handicap": "-2"}},
+            "cn_markets": {"比分": {"主胜": {"1:0": 9.7}}},
+            "snapshot_policy": "首拉为open",
+        }
+        obj = {
+            "jc_code": "待竞彩官方核对",
+            "official": {"source": "体彩(弱化，仅出票/结算取SP)", "HAD_open": None, "HHAD": {"handicap": None}},
+        }
+
+        fetch.preserve_manual_fields(obj, prev)
+
+        self.assertEqual(obj["jc_code"], "周日037")
+        self.assertEqual(obj["official"]["HHAD"]["handicap"], "-2")
+        self.assertEqual(obj["cn_markets"]["比分"]["主胜"]["1:0"], 9.7)
+        self.assertEqual(obj["snapshot_policy"], "首拉为open")
 
     def test_pre_bet_audit_flags_team_profile_placeholders(self):
         with tempfile.TemporaryDirectory() as td:

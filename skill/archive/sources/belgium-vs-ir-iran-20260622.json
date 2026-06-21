@@ -1,0 +1,215 @@
+{
+  "match": "比利时 vs 伊朗",
+  "date": "2026-06-22",
+  "jc_code": "周日038",
+  "fifa_match_id": "400021477",
+  "snapshots": [
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021477?language=en",
+      "tier": "官方赛事API",
+      "hash": "FIFA M39 比利时 vs 伊朗; Kick Off 2026-06-21T19:00:00Z UTC / 北京 2026-06-22 03:00; Los Angeles Stadium Los Angeles; referee Darío Herrera; coaches Rudi Garcia / Amir Ghalenoei.",
+      "用途": "赛程/场地/裁判/主帅",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/calendar/matches?language=en&count=200&idCompetition=17&idSeason=285023&idStage=289273",
+      "tier": "官方赛事API",
+      "hash": "FIFA calendar API：M39 / Match ID 400021477 / 比利时 vs 伊朗; Kick Off 2026-06-21T19:00:00Z UTC / 北京 2026-06-22 03:00; 与 live API 互相复核赛程与编号。",
+      "用途": "赛程/开球时间/FIFA编号复核",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://trade.500.com/jczq/",
+      "tier": "竞彩第三方镜像",
+      "hash": "周日038 比利时 vs 伊朗; HAD 开售 1.28 / 4.61 / 7.60; HHAD -1 1.92 / 3.72 / 2.94; buyend 23:00镜像。",
+      "用途": "竞彩编号/玩法/SP/让球",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://cp.zgzcw.com/lottery/jchtplayvsForJsp.action?lotteryId=47&type=jcmini",
+      "tier": "竞彩第三方镜像",
+      "hash": "周日038 比利时 vs 伊朗; 足彩网SPArr镜像；截期22:40；与500截止时间冲突需官方终核。",
+      "用途": "竞彩编号/SP复核/冲突识别",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021478?language=en",
+      "tier": "官方赛事API",
+      "hash": "首轮样本：Belgium 1-1 Egypt; goals [\"66' MOHAMED HANY（乌龙）\", \"19' EMAM ASHOUR\"]; cards [\"14' Timothy CASTAGNE 黄牌\", \"75' Maxim DE CUYPER 黄牌\", \"13' MARAWAN ATTIA 黄牌\", \"34' AHMED FATOUH 黄牌\"]; lineups stored raw.",
+      "用途": "本届逐场表现：赛果/首发/进球/红黄牌/换人",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://api.fifa.com/api/v3/live/football/17/285023/289273/400021476?language=en",
+      "tier": "官方赛事API",
+      "hash": "首轮样本：IR Iran 2-2 New Zealand; goals [\"32' Ramin REZAEIAN\", \"64' Mohammad MOHEBBI\", \"7' Elijah JUST\", \"54' Elijah JUST\"]; cards [\"89' Ehsan HAJISAFI 黄牌\"]; lineups stored raw.",
+      "用途": "本届逐场表现：赛果/首发/进球/红黄牌/换人",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.cbssports.com/soccer/news/belgium-vs-iran-world-cup-2026-preview-predictions-watch/",
+      "tier": "媒体队讯",
+      "hash": "CBS称Doku因病缺阵，比利时预测首发需调整。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://sports.yahoo.com/articles/belgium-vs-iran-match-preview-053500777.html",
+      "tier": "媒体队讯",
+      "hash": "Yahoo称Ghoddos脚踝、Cheshmi腘绳肌为赛前存疑。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.goal.com/en-gb/news/live-stream-online-tv-where-to-watch-belgium-v-iran/blt7e3d866aaf426a0a",
+      "tier": "媒体队讯",
+      "hash": "Goal称伊朗无伤停/停赛担忧，与Yahoo存在冲突。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://www.spokesman.com/stories/2026/jun/15/first-world-cup-match-in-seattle-ends-with-tie-bet/",
+      "tier": "主流媒体战报/数据",
+      "hash": "比利时1-1埃及：比利时15射、埃及14射；射正3-4；控球约53%；双方各2黄。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "https://apnews.com/article/314655749d94fe577bb2b52ebd6b32c4",
+      "tier": "通讯社",
+      "hash": "AP称伊朗赛后被要求返回Tijuana基地，恢复与后勤受扰。",
+      "用途": "技术统计/队讯/伤停/媒体观点（不替代事实）",
+      "time": "2026-06-21 18:20（北京时间）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-open-h2h-spreads-totals.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日038 The Odds API open初始快照；42家bookmaker，h2h_books_count=41; Pinnacle h2h 1.44/4.85/8.0; spreads已入档；Marathon Bet异常h2h按源错配剔除。",
+      "用途": "海外胜平负/让球/Pinnacle基准/open初赔",
+      "time": "2026-06-21 18:46-18:58（北京时间）"
+    },
+    {
+      "url": "raw/260621-500-cn-markets.json",
+      "tier": "竞彩第三方镜像玩法页",
+      "hash": "周日038 500 playid=271/270/272：比分31项、总进球8项、半全场9项已抽取入 cn_markets；非中国竞彩官方票面。",
+      "用途": "比分/总进球/半全场赔率镜像",
+      "time": "2026-06-21 18:33-18:58（北京时间页面/抓取）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-event-markets.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日038 The Odds API event markets清单已归档；看板按用户要求只展示胜平负/让球/比分/总进球/半全场。",
+      "用途": "海外可用玩法范围审计",
+      "time": "2026-06-21 18:55（北京时间）"
+    },
+    {
+      "url": "raw/260621-the-odds-api-live-h2h-spreads-totals.json",
+      "tier": "海外赔率API归档",
+      "hash": "周日038 The Odds API live即时快照；用于与open初始快照比较赔率变化；h2h/spreads已入档。",
+      "用途": "海外胜平负/让球/live即时赔率",
+      "time": "2026-06-21 19:xx（北京时间）"
+    },
+    {
+      "url": "https://webapi.sporttery.cn/gateway/uniform/football/getMatchListV1.qry?clientCode=3001",
+      "tier": "中国竞彩官方/赛程玩法API",
+      "hash": "周日038 比利时 vs 伊朗; Sporttery官方: sellStatus=1, matchStatus=Selling; HAD 1.26/4.76/7.95; HHAD -1 1.89/3.72/3.02; CRS/TTG/HAFU=Selling，比分31项/总进球8项/半全场9项；官方接口 poolCloseDate/Time 为空，停售仍需出票端终核。",
+      "用途": "官方竞彩编号/比赛时间/玩法开售/单关状态",
+      "time": "2026-06-21 19:20（北京时间）"
+    },
+    {
+      "url": "raw/260621-sporttery-official-cn-markets.json",
+      "tier": "中国竞彩官方/计算器SP归档",
+      "hash": "周日038 比利时 vs 伊朗; Sporttery官方: sellStatus=1, matchStatus=Selling; HAD 1.26/4.76/7.95; HHAD -1 1.89/3.72/3.02; CRS/TTG/HAFU=Selling，比分31项/总进球8项/半全场9项；官方接口 poolCloseDate/Time 为空，停售仍需出票端终核。",
+      "用途": "胜平负/让球/比分/总进球/半全场官方SP",
+      "time": "2026-06-21 19:20（北京时间）"
+    },
+    {
+      "url": "raw/fifa-live-400021477-refresh-260621-20260621-192035.json",
+      "tier": "官方赛事API",
+      "hash": "FIFA live刷新：MatchStatus=1/Period=0，HomeTeam.Players=0，AwayTeam.Players=0；周日038官方首发尚未发布。",
+      "用途": "临场首发/替补发布状态核查",
+      "time": "2026-06-21 19:20（北京时间）"
+    },
+    {
+      "url": "https://www.cbssports.com/soccer/news/belgium-vs-iran-world-cup-2026-preview-predictions-watch/",
+      "tier": "主流媒体队讯",
+      "hash": "CBS赛前队讯：Jeremy Doku因病缺席对伊朗，需以官方名单终核；比利时边路一对一爆点受损。",
+      "用途": "伤停/预计首发媒体核查",
+      "time": "2026-06-21（页面抓取）"
+    }
+  ],
+  "tier_priority": [
+    "中国竞彩官方/票面",
+    "官方赛事 API",
+    "竞彩第三方镜像",
+    "权威数据商/比分平台",
+    "主流媒体战报/队讯",
+    "普通预测文章"
+  ],
+  "field_coverage": {
+    "赛程/场地/裁判": [
+      "FIFA calendar API",
+      "FIFA live API"
+    ],
+    "竞彩编号/玩法/SP": [
+      "中国竞彩网官方 Sporttery getMatchListV1",
+      "中国竞彩网官方 Sporttery calculator",
+      "500/足彩网镜像仅比对"
+    ],
+    "首轮表现/首发/进球/红黄牌": [
+      "FIFA live API",
+      "媒体战报/数据摘要"
+    ],
+    "技术统计/xG/机会质量": [
+      "媒体/数据商摘要",
+      "FIFA搜索摘要"
+    ],
+    "伤停/预计首发": [
+      "专业媒体/主流媒体队讯"
+    ],
+    "海外胜平负/让球赔率": [
+      "The Odds API open快照",
+      "Pinnacle基准",
+      "42家bookmaker",
+      "The Odds API live快照"
+    ],
+    "比分/总进球/半全场赔率": [
+      "中国竞彩网官方 Sporttery calculator",
+      "500彩票网玩法页仅比对"
+    ],
+    "临场首发/替补": [
+      "FIFA live API刷新：暂未发布，赛前约60分钟再核"
+    ]
+  },
+  "conflicts": [
+    {
+      "字段": "伊朗伤停",
+      "来源A": "Yahoo: Ghoddos脚踝、Cheshmi腘绳肌存疑",
+      "来源B": "Goal: 伊朗无伤停/停赛担忧",
+      "采用": "赛前按冲突处理，临场名单终核",
+      "说明": "影响防守屏障与中场轮换，置信度降级。"
+    },
+    {
+      "字段": "官方Sporttery vs 第三方镜像SP",
+      "来源A": "中国竞彩网官方 webapi/calculator 2026-06-21 19:20抓取",
+      "来源B": "500/足彩网镜像早前抓取",
+      "采用": "采用中国竞彩网官方 Sporttery 数据",
+      "说明": "第三方镜像仅作备用比对；实际出票/结算仍以票面SP为准。"
+    },
+    {
+      "字段": "临场首发",
+      "来源A": "FIFA live API 19:20刷新",
+      "来源B": "媒体预计首发",
+      "采用": "官方首发未发布，媒体仅作预测",
+      "说明": "HomeTeam/AwayTeam Players 均为0；赛前约60分钟再次刷新。"
+    }
+  ],
+  "status": "partial",
+  "note": "中国竞彩网官方直连接口与官方计算器SP已补齐；海外 open/live 已补齐；当前仅因FIFA/官方临场首发尚未发布保持 partial，出票前需终核首发/最后伤停与实际票面SP。",
+  "aliases": {
+    "IR Iran": [
+      "伊朗"
+    ]
+  },
+  "last_updated": "2026-06-21 19:20（北京时间）"
+}

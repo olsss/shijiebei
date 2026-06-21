@@ -1,0 +1,495 @@
+{
+  "IdMatch": "400021483",
+  "IdStage": "289273",
+  "IdGroup": "289282",
+  "IdSeason": "285023",
+  "CoverageLevel": null,
+  "IdCompetition": "17",
+  "CompetitionName": [
+    {
+      "Locale": "en-GB",
+      "Description": "FIFA World Cup™"
+    }
+  ],
+  "SeasonName": [
+    {
+      "Locale": "en-GB",
+      "Description": "FIFA World Cup 2026™"
+    }
+  ],
+  "SeasonShortName": [],
+  "Stadium": {
+    "IdStadium": "400098290",
+    "Name": [
+      {
+        "Locale": "en-GB",
+        "Description": "Atlanta Stadium"
+      }
+    ],
+    "Capacity": null,
+    "WebAddress": null,
+    "Built": null,
+    "Roof": false,
+    "Turf": null,
+    "IdCity": "400256355",
+    "CityName": [
+      {
+        "Locale": "en-GB",
+        "Description": "Atlanta"
+      }
+    ],
+    "IdCountry": "USA",
+    "PostalCode": null,
+    "Street": null,
+    "Email": null,
+    "Fax": null,
+    "Phone": null,
+    "AffiliationCountry": null,
+    "AffiliationRegion": null,
+    "Latitude": null,
+    "Longitude": null,
+    "Length": null,
+    "Width": null,
+    "Properties": {
+      "IdIFES": "5044204"
+    },
+    "IsUpdateable": null
+  },
+  "ResultType": 0,
+  "MatchDay": null,
+  "MatchNumber": 38,
+  "HomeTeamPenaltyScore": null,
+  "AwayTeamPenaltyScore": null,
+  "AggregateHomeTeamScore": null,
+  "AggregateAwayTeamScore": null,
+  "Weather": {
+    "Humidity": null,
+    "Temperature": null,
+    "WindSpeed": null,
+    "Type": null,
+    "TypeLocalized": []
+  },
+  "Attendance": null,
+  "Date": "2026-06-21T16:00:00Z",
+  "LocalDate": "2026-06-21T12:00:00Z",
+  "MatchTime": "0'",
+  "SecondHalfTime": null,
+  "FirstHalfTime": null,
+  "FirstHalfExtraTime": null,
+  "SecondHalfExtraTime": null,
+  "Winner": null,
+  "Period": 0,
+  "HomeTeam": {
+    "Score": null,
+    "Side": null,
+    "IdTeam": "43969",
+    "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/ESP",
+    "IdCountry": "ESP",
+    "TeamType": 1,
+    "AgeType": 7,
+    "Tactics": null,
+    "TeamName": [
+      {
+        "Locale": "en-GB",
+        "Description": "Spain"
+      }
+    ],
+    "Abbreviation": "ESP",
+    "Coaches": [
+      {
+        "IdCoach": "430724",
+        "IdCountry": "ESP",
+        "PictureUrl": "https://digitalhub.fifa.com/transform/d91efb8f-281e-466c-beb0-a543a3a8c9ec/DE-LA-FUENTE-Luis_430724",
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Luis de la Fuente Castillo"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Luis DE LA FUENTE"
+          }
+        ],
+        "Role": 0,
+        "SpecialStatus": null
+      }
+    ],
+    "Players": [],
+    "Bookings": [],
+    "Goals": [],
+    "Substitutions": [],
+    "Staffs": [
+      {
+        "IdStaff": "227533",
+        "IdCountry": "ESP",
+        "Role": 15,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Oscar CELADA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Oscar CELADA"
+          }
+        ]
+      },
+      {
+        "IdStaff": "301573",
+        "IdCountry": "ESP",
+        "Role": 1,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Toni GUERRA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Toni GUERRA"
+          }
+        ]
+      },
+      {
+        "IdStaff": "388213",
+        "IdCountry": "ESP",
+        "Role": 15,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Claudio VAZQUEZ"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Claudio VAZQUEZ"
+          }
+        ]
+      },
+      {
+        "IdStaff": "440301",
+        "IdCountry": "ESP",
+        "Role": 16,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Nuria MARTINEZ"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Nuria MARTINEZ"
+          }
+        ]
+      },
+      {
+        "IdStaff": "447844",
+        "IdCountry": "ESP",
+        "Role": 12,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Carlos CRUZ"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Carlos CRUZ"
+          }
+        ]
+      },
+      {
+        "IdStaff": "168402",
+        "IdCountry": "ESP",
+        "Role": 10,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Javier LOPEZ"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Javier LOPEZ"
+          }
+        ]
+      },
+      {
+        "IdStaff": "270944",
+        "IdCountry": "ESP",
+        "Role": 2,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Miguel Angel ESPANA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Miguel Angel ESPANA"
+          }
+        ]
+      }
+    ],
+    "FootballType": 0,
+    "Gender": 1,
+    "IdAssociation": "ESP",
+    "ShortClubName": "Spain"
+  },
+  "AwayTeam": {
+    "Score": null,
+    "Side": null,
+    "IdTeam": "43835",
+    "PictureUrl": "https://api.fifa.com/api/v3/picture/flags-{format}-{size}/KSA",
+    "IdCountry": "KSA",
+    "TeamType": 1,
+    "AgeType": 7,
+    "Tactics": null,
+    "TeamName": [
+      {
+        "Locale": "en-GB",
+        "Description": "Saudi Arabia"
+      }
+    ],
+    "Abbreviation": "KSA",
+    "Coaches": [
+      {
+        "IdCoach": "76301",
+        "IdCountry": "GRE",
+        "PictureUrl": "https://digitalhub.fifa.com/transform/98829d26-d026-4d5a-8def-e5c4111840f5/DONIS-Georgios_76301",
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Georgios DONIS"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Georgios DONIS"
+          }
+        ],
+        "Role": 0,
+        "SpecialStatus": null
+      }
+    ],
+    "Players": [],
+    "Bookings": [],
+    "Goals": [],
+    "Substitutions": [],
+    "Staffs": [
+      {
+        "IdStaff": "408010",
+        "IdCountry": "KSA",
+        "Role": 16,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Fahad ALMEFAREJ"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Fahad ALMEFAREJ"
+          }
+        ]
+      },
+      {
+        "IdStaff": "408018",
+        "IdCountry": "KSA",
+        "Role": 5,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ahmed MUSSA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ahmed MUSSA"
+          }
+        ]
+      },
+      {
+        "IdStaff": "523329",
+        "IdCountry": "GRE",
+        "Role": 12,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Grigorios GEORGITSAS"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Grigorios GEORGITSAS"
+          }
+        ]
+      },
+      {
+        "IdStaff": "411631",
+        "IdCountry": "KSA",
+        "Role": 13,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Bader ALJUBAYRI"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Bader ALJUBAYRI"
+          }
+        ]
+      },
+      {
+        "IdStaff": "523324",
+        "IdCountry": "GRE",
+        "Role": 2,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Panagiotis MALIARITSIS"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Panagiotis MALIARITSIS"
+          }
+        ]
+      },
+      {
+        "IdStaff": "425832",
+        "IdCountry": "COL",
+        "Role": 15,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Juan PENA"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Juan PENA"
+          }
+        ]
+      },
+      {
+        "IdStaff": "523321",
+        "IdCountry": "GRE",
+        "Role": 9999,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Georgios GEORGIADIS"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Georgios GEORGIADIS"
+          }
+        ]
+      },
+      {
+        "IdStaff": "523322",
+        "IdCountry": "GRE",
+        "Role": 12,
+        "PictureUrl": null,
+        "Name": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ioannis STAVRINOS"
+          }
+        ],
+        "Alias": [
+          {
+            "Locale": "en-GB",
+            "Description": "Ioannis STAVRINOS"
+          }
+        ]
+      }
+    ],
+    "FootballType": 0,
+    "Gender": 1,
+    "IdAssociation": "KSA",
+    "ShortClubName": "Saudi Arabia"
+  },
+  "BallPossession": null,
+  "TerritorialPossesion": null,
+  "TerritorialThirdPossesion": null,
+  "Officials": [
+    {
+      "IdCountry": "BRA",
+      "OfficialId": "383222",
+      "NameShort": [
+        {
+          "Locale": "en-GB",
+          "Description": "Raphael CLAUS"
+        }
+      ],
+      "Name": [
+        {
+          "Locale": "en-GB",
+          "Description": "Raphael Claus"
+        }
+      ],
+      "OfficialType": 1,
+      "TypeLocalized": [
+        {
+          "Locale": "en-GB",
+          "Description": "Referee"
+        }
+      ]
+    }
+  ],
+  "MatchStatus": 1,
+  "GroupName": [
+    {
+      "Locale": "en-GB",
+      "Description": "Group H"
+    }
+  ],
+  "StageName": [
+    {
+      "Locale": "en-GB",
+      "Description": "First Stage"
+    }
+  ],
+  "OfficialityStatus": 0,
+  "TimeDefined": true,
+  "Properties": {
+    "IdIFES": "151651"
+  },
+  "IsUpdateable": null
+}

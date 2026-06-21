@@ -1,6 +1,7 @@
 {
   "match": "约旦 vs 阿尔及利亚",
   "date": "2026-06-23",
+  "cj_id": "周一044",
   "snapshots": [
     {
       "url": "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021499",
@@ -15,6 +16,67 @@
       "hash": "The Odds API 本地落档；含多家公司 live 赔率；不含中国竞彩官方 SP",
       "用途": "赔率信号/庄家视角，不替代竞彩官方核对",
       "time": "2026-06-21 15:32（北京时间，约）"
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_J",
+      "tier": "权威数据商/比分平台",
+      "hash": "Group J: 阿根廷3-0阿尔及利亚(Messi 17/60/76); 奥地利3-1约旦(Schmid21, Olwan50, Al-Arab乌龙76, Arnautović pen90+12); 积分:阿根廷3/奥地利3/约旦0(GD-2)/阿尔及利亚0(GD-3)",
+      "用途": "小组归属确认J组、双方本届首战赛果与积分/净胜球、剩余赛程",
+      "tier_note": "百科聚合，赛果数据事实，已与FIFA/ESPN交叉",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/match/_/gameId/760431/jordan-austria",
+      "tier": "权威数据商/比分平台",
+      "hash": "奥地利3-1约旦; 日期2026-06-17(与百科June16存在日期口径差,待核); 约旦首发3-4-2-1 Abulaila/Al-Arab/Obaid/Al-Rosan/Al-Rashdan/Al-Mardi/Al-Rawabdeh/Abu Taha/Azaizeh/Olwan/Al-Daoud; 控球37%; 约旦射4射正4 xG0.46; 奥地利xG1.69; duels约旦48-44",
+      "用途": "约旦首战首发/阵型/技术统计(数据事实)",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://theanalyst.com/articles/argentina-vs-algeria-stats-world-cup-2026",
+      "tier": "权威数据商/比分平台",
+      "hash": "Opta: 阿尔及利亚队史世界杯首次0射正; Mahrez首战坐替补; Chaïbi 9'进球被VAR取消; 阿尔及利亚连续第三届世界杯首轮告负(2010/2014/2026)",
+      "用途": "阿尔及利亚首战破密集/终结问题(数据事实+数据商分析)",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021496",
+      "tier": "官方赛事",
+      "hash": "FIFA: 阿根廷3-0阿尔及利亚; 阿根廷10射6正, 阿尔及利亚7射1正(官方口径,与Opta'0有效射正'差异:Chaïbi进球被吹不计有效)",
+      "用途": "阿尔及利亚首战官方射门数据",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/story/_/id/49124571/jordan-vs-algeria-fifa-world-cup-2026-tv-channel-how-watch-kick-live-stream-injury-predicted-line-ups",
+      "tier": "主流媒体战报",
+      "hash": "本场预览: 双方均开局告负; 约旦至少需1分续命, 阿尔及利亚需赢; Mahrez/Amoura预计回阿尔及利亚首发; Olwan续保约旦首发; Nasib首战疑伤待评估",
+      "用途": "本场预测首发/伤情/战意(媒体观点+预测,非事实)",
+      "tier_note": "预测/媒体观点, 不当事实, 官方首发优先",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.sportsmole.co.uk/football/algeria/world-cup-2026/predicted-lineups/amoura-status-zidane-decision-mahrez-to-return-predicted-algeria-xi-vs-jordan_599710.html",
+      "tier": "普通预测文章",
+      "hash": "阿尔及利亚预测4-3-3 Zidane/Belghali/Mandi/Bensebaini/Ait-Nouri/Boudaoui/Zerrouki/Bentaleb/Mahrez/Amoura/Maza; Mahrez+Amoura回首发; 首战无明显伤; Zidane两失误仍续保",
+      "用途": "阿尔及利亚预测首发/轮换(预测)",
+      "tier_note": "预测文章, 仅参考",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://worldsoccertalk.com/world-cup/jordan-2026-world-cup-preview-squad-breakdown-key-player-and-tactical-analysis/",
+      "tier": "普通预测文章",
+      "hash": "约旦主帅Jamal Sellami(2024上任,首带队晋级); 3-4-3有球/5-4-1无球; 核心Al-Tamari(Rennes,29)/Al-Naimat/Olwan; Al-Naimat与Olwan赛前伤情影响备战",
+      "用途": "约旦主帅/风格/核心球员(背景,部分媒体观点)",
+      "tier_note": "预测/背景文章, 仅参考",
+      "time": "2026-06-21（北京时间）"
+    },
+    {
+      "url": "https://www.espn.com/soccer/story/_/id/46664763/fifa-mens-top-50-world-rankings",
+      "tier": "主流媒体战报",
+      "hash": "FIFA排名2026-06镜像: 阿尔及利亚约第27, 约旦约第47(口径待FIFA官方页终核)",
+      "用途": "FIFA排名",
+      "tier_note": "媒体镜像, 出票前以FIFA官方页终核",
+      "time": "2026-06-21（北京时间）"
     }
   ],
   "tier_priority": [
@@ -23,7 +85,23 @@
     "主流媒体战报",
     "普通预测文章"
   ],
-  "conflicts": [],
-  "status": "partial",
-  "note": "仅完成赛程与赔率快照；竞彩编号、玩法开售、让球数、票面 SP、首发伤停和本届逐场技术统计仍需出票前多源核验。预测文章不得当事实；区分数据事实/媒体观点/赔率信号/个人推断。"
+  "conflicts": [
+    {
+      "item": "奥地利vs约旦比赛日期",
+      "detail": "Wikipedia记June 16, ESPN记June 17; 不影响赛果(3-1), 以官方FIFA为准, 待终核",
+      "resolution": "采用FIFA/比赛日历; 仅日期口径差异"
+    },
+    {
+      "item": "阿尔及利亚vs阿根廷射正数",
+      "detail": "FIFA官方记1射正; Opta记'队史首次0有效射正'(Chaïbi 9'进球被VAR取消不计)",
+      "resolution": "两者实为同一事件不同口径; 结论一致:阿尔及利亚进攻几乎零威胁"
+    },
+    {
+      "item": "阿尔及利亚预测阵型",
+      "detail": "Sports Mole/多数预测4-3-3; ESPN预览列4-2-3-1(Aouar入替)",
+      "resolution": "均为预测; 共识是Mahrez+Amoura/Gouiri回首发, 具体阵型待官方"
+    }
+  ],
+  "status": "verified-pending-lineup",
+  "note": "小组(J组)、双方本届首战赛果与技术统计已多源交叉(FIFA/Wikipedia/ESPN/Opta), 为数据事实。主帅/排名/风格多源一致。本场首发/伤停/轮换为媒体预测(Mahrez+Amoura回阿尔及利亚首发、Olwan续保约旦、Nasib疑伤)——非事实, 停售前以官方名单终核(§14, >24h过期)。竞彩编号周一044/HHAD约旦+1/单关未开售/TTG票面SP由本人核对, 不改。区分: 赛果与统计=数据事实; '比分掩盖问题/toothless'=媒体观点; 赔率=信号; 回首发/必须赢应对=个人推断。"
 }

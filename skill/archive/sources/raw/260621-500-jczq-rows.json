@@ -1,0 +1,86 @@
+[
+  {
+    "matchnum": "周日037",
+    "fixtureid": "1359210",
+    "home": "西班牙",
+    "away": "沙特阿拉伯",
+    "date": "2026-06-22",
+    "time": "00:00",
+    "handicap": "-2",
+    "buyend": "2026-06-21 23:00:00",
+    "subactive": "bfdg:1,bfgg:1,bqdg:1,bqgg:1,dxqdg:0,dxqgg:0,hcdg:1,hcgg:1,jqdg:1,jqgg:1,nspfdg:0,nspfgg:0,spfdg:1,spfgg:1",
+    "HAD": null,
+    "HHAD": {
+      "3": "1.61",
+      "1": "4.55",
+      "0": "3.46"
+    },
+    "chunk_hash": "周日037 世界杯 06-22 00:00 [3] 西班牙 VS 沙特阿拉伯 [2] 0 单关 -2 未开售 1.61 4.55 3.46 析 亚 欧 荐 - - -"
+  },
+  {
+    "matchnum": "周日038",
+    "fixtureid": "1359207",
+    "home": "比利时",
+    "away": "伊朗",
+    "date": "2026-06-22",
+    "time": "03:00",
+    "handicap": "-1",
+    "buyend": "2026-06-21 23:00:00",
+    "subactive": "bfdg:1,bfgg:1,bqdg:1,bqgg:1,dxqdg:0,dxqgg:0,hcdg:1,hcgg:1,jqdg:1,jqgg:1,nspfdg:0,nspfgg:1,spfdg:0,spfgg:1",
+    "HAD": {
+      "3": "1.28",
+      "1": "4.61",
+      "0": "7.60"
+    },
+    "HHAD": {
+      "3": "1.92",
+      "1": "3.72",
+      "0": "2.94"
+    },
+    "chunk_hash": "周日038 世界杯 06-22 03:00 [3] 比利时 VS 伊朗 [1] 0 -1 1.28 4.61 7.60 1.92 3.72 2.94 析 亚 欧 荐 - - -"
+  },
+  {
+    "matchnum": "周日039",
+    "fixtureid": "1359246",
+    "home": "乌拉圭",
+    "away": "佛得角",
+    "date": "2026-06-22",
+    "time": "06:00",
+    "handicap": "-1",
+    "buyend": "2026-06-21 23:00:00",
+    "subactive": "bfdg:1,bfgg:1,bqdg:1,bqgg:1,dxqdg:0,dxqgg:0,hcdg:1,hcgg:1,jqdg:1,jqgg:1,nspfdg:1,nspfgg:1,spfdg:0,spfgg:1",
+    "HAD": {
+      "3": "1.30",
+      "1": "4.05",
+      "0": "8.80"
+    },
+    "HHAD": {
+      "3": "2.10",
+      "1": "3.30",
+      "0": "2.86"
+    },
+    "chunk_hash": "周日039 世界杯 06-22 06:00 [1] 乌拉圭 VS 佛得角 [4] 单关 0 -1 1.30 4.05 8.80 2.10 3.30 2.86 析 亚 欧 荐 - - -"
+  },
+  {
+    "matchnum": "周日040",
+    "fixtureid": "1359243",
+    "home": "新西兰",
+    "away": "埃及",
+    "date": "2026-06-22",
+    "time": "09:00",
+    "handicap": "1",
+    "buyend": "2026-06-21 23:00:00",
+    "subactive": "bfdg:1,bfgg:1,bqdg:1,bqgg:1,dxqdg:0,dxqgg:0,hcdg:1,hcgg:1,jqdg:1,jqgg:1,nspfdg:0,nspfgg:1,spfdg:0,spfgg:1",
+    "HAD": {
+      "3": "6.00",
+      "1": "3.87",
+      "0": "1.42"
+    },
+    "HHAD": {
+      "3": "2.46",
+      "1": "3.30",
+      "0": "2.38"
+    },
+    "chunk_hash": "周日040 世界杯 06-22 09:00 [2] 新西兰 VS 埃及 [4] 0 +1 6.00 3.87 1.42 2.46 3.30 2.38 析 亚 欧 荐 - - -"
+  }
+]
