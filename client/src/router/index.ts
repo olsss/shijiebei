@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
+import ImportReviewView from '@/views/ImportReviewView.vue';
 import LoginView from '@/views/LoginView.vue';
 import SystemSettingsView from '@/views/SystemSettingsView.vue';
 
@@ -9,5 +10,6 @@ export const router = createRouter({
     { path: '/login', name: 'login', component: LoginView },
     { path: '/', name: 'dashboard', component: DashboardView },
     { path: '/settings', name: 'settings', component: SystemSettingsView },
+    { path: '/import-review', name: 'import-review', component: ImportReviewView },
   ],
 });
