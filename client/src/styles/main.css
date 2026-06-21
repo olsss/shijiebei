@@ -1,0 +1,20 @@
+:root {
+  color: #1f2937;
+  background: #f5f7fb;
+  font-family: Inter, "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+}
+body {
+  margin: 0;
+  min-width: 1280px;
+  min-height: 100vh;
+}
+#app {
+  min-height: 100vh;
+}
+.page-shell {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+.page-content {
+  padding: 24px;
+}
