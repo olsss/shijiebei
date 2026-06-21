@@ -61,3 +61,4 @@ java -jar server/target/worldcup-management-server-0.1.0-SNAPSHOT.jar import-jso
 ## Safety Boundary
 
 本阶段只读取 JSON 文件，不修改 `skill/archive/`。审批流不会生成比赛结论，也不会自动推荐下注。
+

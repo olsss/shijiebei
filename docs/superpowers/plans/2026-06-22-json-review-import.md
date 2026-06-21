@@ -12,7 +12,7 @@
 
 ## Scope Boundary
 
-本阶段实现 OpenSpec change `json-review-import`。不修改 `CLAUDE.md`、`skill/SKILL.md`、`skill/rules/`、`skill/archive/`，不生成比赛结论，不把 JSON 拆入球队/球员/比赛/下注最终业务表。
+本阶段实现 OpenSpec change `JSON审核入库`。不修改 `CLAUDE.md`、`skill/SKILL.md`、`skill/rules/`、`skill/archive/`，不生成比赛结论，不把 JSON 拆入球队/球员/比赛/下注最终业务表。
 
 ## File Structure
 
@@ -47,8 +47,8 @@
 
 ### Docs / OpenSpec
 
-- Modify: `openspec/changes/json-review-import/tasks.md`
-- Create: `docs/java-system/reviews/json-review-import-review.md`
+- Modify: `openspec/changes/JSON审核入库/tasks.md`
+- Create: `docs/java-system/reviews/JSON审核入库-review.md`
 
 ---
 
@@ -367,15 +367,15 @@ Expected: tests and build pass.
 ### Task 5: Final Verification and Review
 
 **Files:**
-- Modify `openspec/changes/json-review-import/tasks.md`.
-- Create `docs/java-system/reviews/json-review-import-review.md`.
+- Modify `openspec/changes/JSON审核入库/tasks.md`.
+- Create `docs/java-system/reviews/JSON审核入库-review.md`.
 
 - [ ] **Step 1: Run full verification**
 
 Run:
 
 ```powershell
-openspec validate json-review-import --strict
+openspec validate JSON审核入库 --strict
 mvn -f server/pom.xml test
 npm --prefix client run test:run
 npm --prefix client run build
@@ -410,7 +410,7 @@ Codex or a subagent must verify:
 Create review record with command evidence, risks, and conclusion. Then commit:
 
 ```powershell
-git add docs/java-system/reviews/json-review-import-review.md openspec/changes/json-review-import/tasks.md
+git add docs/java-system/reviews/JSON审核入库-review.md openspec/changes/JSON审核入库/tasks.md
 git commit -m "docs: 记录JSON审核入库阶段审查结果"
 ```
 
@@ -420,8 +420,9 @@ Delivery report must include phase, verification, review, risks, commits, and ne
 
 ## Self-Review Checklist
 
-- [ ] Plan scope matches `json-review-import` OpenSpec change.
+- [ ] Plan scope matches `JSON审核入库` OpenSpec change.
 - [ ] No task modifies `CLAUDE.md` or `skill/`.
 - [ ] Scanner is read-only.
 - [ ] Approval means MySQL staging import, not final business mapping.
 - [ ] Review gate is mandatory before delivery.
+

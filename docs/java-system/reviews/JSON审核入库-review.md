@@ -1,7 +1,7 @@
 # JSON 审核批准入库阶段审查记录
 
-- 阶段：第二阶段 / `json-review-import`
-- 分支：`feature/json-review-import`
+- 阶段：第二阶段 / `JSON审核入库`
+- 分支：`feature/json-review-import`（实现分支；OpenSpec change 已重命名为 `JSON审核入库`）
 - 基线：`aaa1d3a`
 - 审查时间：2026-06-22 03:06（Asia/Shanghai）
 - 审查者：Codex
@@ -14,7 +14,7 @@
 
 | 命令 | 结果 |
 | --- | --- |
-| `openspec validate json-review-import --strict` | 通过：`Change 'json-review-import' is valid` |
+| `openspec validate JSON审核入库 --strict` | 通过：`Change 'JSON审核入库' is valid` |
 | `mvn -f server/pom.xml test` | 通过：`Tests run: 12, Failures: 0, Errors: 0, Skipped: 0`，`BUILD SUCCESS` |
 | `npm --prefix client run test:run` | 通过：`Test Files 4 passed`，`Tests 5 passed` |
 | `npm --prefix client run build` | 通过：`✓ built`；存在 Vite/Rollup chunk 与 PURE 注释警告，非阻断 |
@@ -47,3 +47,5 @@
 ## 结论
 
 阶段通过，可合并到 main 后进入下一阶段：核心业务数据模型（球队、球员、比赛、赔率、下注、舆情/外部因素）设计与入库映射。
+
+

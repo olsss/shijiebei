@@ -99,3 +99,4 @@ The frontend SHALL expose a JSON review center for scanning and reviewing import
 
 - **WHEN** the frontend imports the review API module
 - **THEN** it can call scan, list, detail, approve, batch approve, and reject functions
+

@@ -24,9 +24,10 @@
 
 本阶段交付前必须完成：
 
-1. `openspec validate json-review-import --strict` 通过。
+1. `openspec validate JSON审核入库 --strict` 通过。
 2. `mvn -f server/pom.xml test` 通过。
 3. `npm --prefix client run test:run` 通过。
 4. `npm --prefix client run build` 通过。
 5. 审查者确认 `CLAUDE.md` 与 `skill/` 未被误改。
 6. 审查者确认审批流是“JSON 暂存入库”，没有越界替代比赛分析。
+
