@@ -1,0 +1,43 @@
+{
+  "match": "主队 vs 客队",
+  "date": "YYYY-MM-DD",
+  "jc_code": "竞彩编号",
+  "official": {
+    "source": "中国竞彩官方",
+    "HAD_open": true,
+    "HAD": {"home": null, "draw": null, "away": null, "type": "SP或出票前估算"},
+    "HHAD": {"handicap": -1, "home": null, "draw": null, "away": null}
+  },
+  "companies": [
+    {
+      "name": "Pinnacle",
+      "reference": true,
+      "snapshot": "open",
+      "time": "取数时间(北京)",
+      "url": "https://...",
+      "tier": "公司直站",
+      "eu": {"home": null, "draw": null, "away": null},
+      "asian": {"handicap": null, "up": null, "down": null}
+    },
+    {
+      "name": "Pinnacle",
+      "reference": true,
+      "snapshot": "live",
+      "time": "...",
+      "url": "https://...",
+      "tier": "公司直站",
+      "eu": {"home": null, "draw": null, "away": null},
+      "asian": {"handicap": null, "up": null, "down": null}
+    },
+    {
+      "name": "William Hill",
+      "reference": false,
+      "snapshot": "live",
+      "time": "...",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {"home": null, "draw": null, "away": null}
+    }
+  ],
+  "note": "snapshot=open(初赔)/live(即时)。reference=true 的公司作为凯利指数的公允概率基准（建议 Pinnacle）。The Odds API 不含 bet365，公司名用其实际返回值（William Hill/Betfair/Paddy Power 等）。预测文章不得作为赔率来源。"
+}

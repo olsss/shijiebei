@@ -1,0 +1,465 @@
+{
+  "match": "Norway vs France",
+  "date": "2026-06-26",
+  "commence_utc": "2026-06-26T19:00:00Z",
+  "jc_code": "待竞彩官方核对",
+  "source": "The Odds API",
+  "books_count": 37,
+  "official": {
+    "source": "体彩(弱化，仅出票/结算取SP)",
+    "HAD_open": null,
+    "HAD": {
+      "home": null,
+      "draw": null,
+      "away": null
+    },
+    "HHAD": {
+      "handicap": null,
+      "home": null,
+      "draw": null,
+      "away": null
+    }
+  },
+  "companies": [
+    {
+      "name": "Pinnacle",
+      "reference": true,
+      "snapshot": "live",
+      "time": "2026-06-21T07:33:11Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.14,
+        "draw": 3.76,
+        "away": 1.78
+      }
+    },
+    {
+      "name": "William Hill",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:32:16Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.6,
+        "away": 1.75
+      }
+    },
+    {
+      "name": "Betfair",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:33:11Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.6,
+        "draw": 4.0,
+        "away": 1.84
+      }
+    },
+    {
+      "name": "Paddy Power",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:32:49Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.33,
+        "draw": 3.8,
+        "away": 1.75
+      }
+    },
+    {
+      "name": "888sport",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:32:15Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.0,
+        "draw": 3.5,
+        "away": 1.75
+      }
+    },
+    {
+      "name": "Marathon Bet",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:32:40Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 4.5,
+        "draw": 3.84,
+        "away": 1.79
+      }
+    },
+    {
+      "name": "Betway",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-21T07:32:18Z",
+      "url": "the-odds-api",
+      "tier": "公司直站",
+      "eu": {
+        "home": 3.8,
+        "draw": 3.8,
+        "away": 1.77
+      }
+    },
+    {
+      "name": "市场均值",
+      "reference": false,
+      "snapshot": "live",
+      "time": "2026-06-26T19:00:00Z",
+      "url": "the-odds-api(42家均值)",
+      "tier": "聚合",
+      "eu": {
+        "home": 4.269,
+        "draw": 3.75,
+        "away": 1.798
+      }
+    }
+  ],
+  "all_books": [
+    {
+      "name": "Smarkets",
+      "eu": {
+        "home": 4.4,
+        "draw": 3.95,
+        "away": 1.84
+      },
+      "time": "2026-06-21T07:33:13Z"
+    },
+    {
+      "name": "GTbets",
+      "eu": {
+        "home": 4.39,
+        "draw": 3.66,
+        "away": 1.78
+      },
+      "time": "2026-06-21T07:33:13Z"
+    },
+    {
+      "name": "Sky Bet",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.75,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:42Z"
+    },
+    {
+      "name": "Unibet (UK)",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.6,
+        "away": 1.8
+      },
+      "time": "2026-06-21T07:32:16Z"
+    },
+    {
+      "name": "Betfred (UK)",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:32:27Z"
+    },
+    {
+      "name": "Winamax (FR)",
+      "eu": {
+        "home": 3.85,
+        "draw": 3.55,
+        "away": 1.74
+      },
+      "time": "2026-06-21T07:32:21Z"
+    },
+    {
+      "name": "Coolbet",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.93,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:32:17Z"
+    },
+    {
+      "name": "Paddy Power",
+      "eu": {
+        "home": 4.33,
+        "draw": 3.8,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:49Z"
+    },
+    {
+      "name": "Unibet (FR)",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.8,
+        "away": 1.79
+      },
+      "time": "2026-06-21T07:32:38Z"
+    },
+    {
+      "name": "Marathon Bet",
+      "eu": {
+        "home": 4.5,
+        "draw": 3.84,
+        "away": 1.79
+      },
+      "time": "2026-06-21T07:32:40Z"
+    },
+    {
+      "name": "Pinnacle",
+      "eu": {
+        "home": 4.14,
+        "draw": 3.76,
+        "away": 1.78
+      },
+      "time": "2026-06-21T07:33:11Z"
+    },
+    {
+      "name": "BetOnline.ag",
+      "eu": {
+        "home": 4.4,
+        "draw": 3.74,
+        "away": 1.85
+      },
+      "time": "2026-06-21T07:33:11Z"
+    },
+    {
+      "name": "Unibet (SE)",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:33:00Z"
+    },
+    {
+      "name": "LiveScore Bet",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.65,
+        "away": 1.79
+      },
+      "time": "2026-06-21T07:32:29Z"
+    },
+    {
+      "name": "LeoVegas",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:32:59Z"
+    },
+    {
+      "name": "Virgin Bet",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.65,
+        "away": 1.79
+      },
+      "time": "2026-06-21T07:32:29Z"
+    },
+    {
+      "name": "Casumo",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:32:18Z"
+    },
+    {
+      "name": "Unibet (NL)",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:33:13Z"
+    },
+    {
+      "name": "Grosvenor",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.65,
+        "away": 1.8
+      },
+      "time": "2026-06-21T07:32:59Z"
+    },
+    {
+      "name": "LeoVegas (SE)",
+      "eu": {
+        "home": 4.35,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:32:59Z"
+    },
+    {
+      "name": "MyBookie.ag",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.7,
+        "away": 1.81
+      },
+      "time": "2026-06-21T07:33:00Z"
+    },
+    {
+      "name": "Everygame",
+      "eu": {
+        "home": 4.33,
+        "draw": 3.75,
+        "away": 1.8
+      },
+      "time": "2026-06-21T07:32:21Z"
+    },
+    {
+      "name": "888sport",
+      "eu": {
+        "home": 4.0,
+        "draw": 3.5,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:15Z"
+    },
+    {
+      "name": "William Hill",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.6,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:16Z"
+    },
+    {
+      "name": "BoyleSports",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.75,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:38Z"
+    },
+    {
+      "name": "Coral",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.75,
+        "away": 1.83
+      },
+      "time": "2026-06-21T07:33:10Z"
+    },
+    {
+      "name": "Ladbrokes",
+      "eu": {
+        "home": 4.0,
+        "draw": 3.75,
+        "away": 1.8
+      },
+      "time": "2026-06-21T07:33:00Z"
+    },
+    {
+      "name": "Betclic (FR)",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.65,
+        "away": 1.76
+      },
+      "time": "2026-06-21T07:31:47Z"
+    },
+    {
+      "name": "Winamax (DE)",
+      "eu": {
+        "home": 3.75,
+        "draw": 3.45,
+        "away": 1.7
+      },
+      "time": "2026-06-21T07:32:20Z"
+    },
+    {
+      "name": "Tipico",
+      "eu": {
+        "home": 4.4,
+        "draw": 3.9,
+        "away": 1.75
+      },
+      "time": "2026-06-21T07:32:27Z"
+    },
+    {
+      "name": "PMU (FR)",
+      "eu": {
+        "home": 4.2,
+        "draw": 3.65,
+        "away": 1.79
+      },
+      "time": "2026-06-21T07:33:14Z"
+    },
+    {
+      "name": "Betfair",
+      "eu": {
+        "home": 4.6,
+        "draw": 4.0,
+        "away": 1.84
+      },
+      "time": "2026-06-21T07:33:11Z"
+    },
+    {
+      "name": "Betfair",
+      "eu": {
+        "home": 4.6,
+        "draw": 4.0,
+        "away": 1.84
+      },
+      "time": "2026-06-21T07:33:11Z"
+    },
+    {
+      "name": "1xBet",
+      "eu": {
+        "home": 4.62,
+        "draw": 3.94,
+        "away": 1.84
+      },
+      "time": "2026-06-21T07:32:59Z"
+    },
+    {
+      "name": "BetAnything",
+      "eu": {
+        "home": 4.4,
+        "draw": 3.74,
+        "away": 1.85
+      },
+      "time": "2026-06-21T07:32:19Z"
+    },
+    {
+      "name": "Matchbook",
+      "eu": {
+        "home": 4.6,
+        "draw": 4.0,
+        "away": 1.84
+      },
+      "time": "2026-06-21T07:33:00Z"
+    },
+    {
+      "name": "Betway",
+      "eu": {
+        "home": 3.8,
+        "draw": 3.8,
+        "away": 1.77
+      },
+      "time": "2026-06-21T07:32:18Z"
+    }
+  ],
+  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。"
+}

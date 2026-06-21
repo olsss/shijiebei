@@ -1,0 +1,19 @@
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Local IDE/editor files
+.vscode/
+.idea/
+
+# Local Claude/Codex runtime settings
+.claude/settings.local.json
+
+# OS files
+.DS_Store
+Thumbs.db
