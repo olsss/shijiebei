@@ -1,0 +1,29 @@
+{
+  "match": "法国 vs 伊拉克",
+  "date": "2026-06-23",
+  "snapshots": [
+    {
+      "url": "https://www.fifa.com/en/match-centre/match/17/285023/289273/400021492",
+      "tier": "官方赛事",
+      "hash": "FIFA: France vs Iraq; Kick Off 2026-06-22 21:00 UTC; Philadelphia Stadium; Group I",
+      "用途": "赛程/开赛时间/场地/小组（非竞彩编号）",
+      "time": "2026-06-21 17:30（北京时间）"
+    },
+    {
+      "url": "local:archive/odds/france-vs-iraq-20260622.json",
+      "tier": "赔率数据商",
+      "hash": "The Odds API 本地落档；含多家公司 live 赔率；不含中国竞彩官方 SP",
+      "用途": "赔率信号/庄家视角，不替代竞彩官方核对",
+      "time": "2026-06-21 15:32（北京时间，约）"
+    }
+  ],
+  "tier_priority": [
+    "官方赛事/竞彩",
+    "权威数据商/比分平台",
+    "主流媒体战报",
+    "普通预测文章"
+  ],
+  "conflicts": [],
+  "status": "partial",
+  "note": "仅完成赛程与赔率快照；竞彩编号、玩法开售、让球数、票面 SP、首发伤停和本届逐场技术统计仍需出票前多源核验。预测文章不得当事实；区分数据事实/媒体观点/赔率信号/个人推断。"
+}

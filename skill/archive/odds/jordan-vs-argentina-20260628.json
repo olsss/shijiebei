@@ -452,5 +452,9 @@
       "time": "2026-06-21T07:33:00Z"
     }
   ],
-  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。"
+  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。",
+  "date_utc": "2026-06-28",
+  "date_beijing": "2026-06-28",
+  "commence_beijing": "2026-06-28 10:00",
+  "timezone": "Asia/Shanghai"
 }

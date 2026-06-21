@@ -1,6 +1,6 @@
 # 赛后复盘 + ROI（§5，对应阶段 7）
 
-> 借鉴 FIFA-WINNER-SKILL 的 evaluate/dashboard，竞彩化为四层复盘 + ROI + 规则沉淀。
+> 借鉴 FIFA-WINNER-SKILL 的 evaluate/dashboard，竞彩化为五层复盘 + ROI/CLV + 规则沉淀。
 
 ## 结算（先做数学层）
 1. 开奖后用 `settle.py`（带 `--closing-odds` 传该场临场收盘赔率，自动算 `CLV`）把 `bets.json` 每张票的 `赛果`/`命中`/`返还`/`盈亏`/`收盘赔率`/`CLV` 填上；同时把 `archive/analysis/<id>.json` 的 `result`（score/hit/review）补上。

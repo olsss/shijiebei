@@ -1,6 +1,11 @@
 {
   "match": "主队 vs 客队",
-  "date": "YYYY-MM-DD",
+  "date": "YYYY-MM-DD（北京时间比赛日）",
+  "date_utc": "YYYY-MM-DD（赔率/赛程接口原始 UTC 日期）",
+  "date_beijing": "YYYY-MM-DD",
+  "commence_utc": "YYYY-MM-DDTHH:MM:SSZ",
+  "commence_beijing": "YYYY-MM-DD HH:MM",
+  "timezone": "Asia/Shanghai",
   "jc_code": "竞彩编号",
   "official": {
     "source": "中国竞彩官方",

@@ -8,6 +8,7 @@ Key 读取顺序：环境变量 ODDS_API_KEY > --key 参数。
 
 赔率变化（初赔→即时）：先用 --snapshot open 拉一次（出当日早盘），临场前再用 --snapshot live
 拉一次写同一场文件的 live 字段；odds_table.py 即可输出 open→live 变化。
+时间口径：The Odds API 返回 UTC 开赛时间；落档时 date/matchday 用北京时间日期，同时保留 date_utc/commence_utc。
 
 用法（建议在项目根运行）：
   python skill/scripts/fetch_odds_api.py                # 拉全部世界杯场次，写匹配到的
@@ -19,6 +20,7 @@ import argparse
 import json
 import os
 import urllib.request
+from datetime import datetime, timezone, timedelta
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ODDS_DIR = os.path.join(BASE, "archive", "odds")
@@ -27,6 +29,18 @@ SPORT = "soccer_fifa_world_cup"
 # 表格展示用的大公司（Pinnacle 作凯利基准）；其余全部存进 all_books
 BIG_BOOKS = ["Pinnacle", "William Hill", "Betfair", "Paddy Power",
              "888sport", "Bet Victor", "Marathon Bet", "Betway"]
+
+
+def beijing_time_fields(commence_utc):
+    """把 API 的 UTC 开赛时间转成竞彩项目统一使用的北京时间字段。"""
+    dt = datetime.fromisoformat(commence_utc.replace("Z", "+00:00"))
+    bj = dt.astimezone(timezone(timedelta(hours=8)))
+    return {
+        "date_utc": dt.strftime("%Y-%m-%d"),
+        "date_beijing": bj.strftime("%Y-%m-%d"),
+        "commence_beijing": bj.strftime("%Y-%m-%d %H:%M"),
+        "timezone": "Asia/Shanghai",
+    }
 
 
 def slug(s):
@@ -91,6 +105,7 @@ def main():
             continue
         books = g.get("bookmakers", [])
         snap = a.snapshot
+        time_fields = beijing_time_fields(g["commence_time"])
         companies = []
         for name in BIG_BOOKS:
             bk = next((b for b in books if b["title"] == name), None)
@@ -118,7 +133,8 @@ def main():
             except Exception:
                 pass
         obj = {
-            "match": f"{home} vs {away}", "date": g["commence_time"][:10],
+            "match": f"{home} vs {away}", "date": time_fields["date_beijing"],
+            **time_fields,
             "commence_utc": g["commence_time"], "jc_code": "待竞彩官方核对",
             "source": "The Odds API", "books_count": len(books),
             "official": {"source": "体彩(弱化，仅出票/结算取SP)",

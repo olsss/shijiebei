@@ -1,6 +1,6 @@
 ---
-name: 世界杯竞彩分析与下注记录
-description: 当用户要分析某场/某轮世界杯比赛、判断是否下注、出票、记录或赛后复盘时使用。整合扁平球队数据、多源核验、证据加权与下注存档，按官方核对→数据核验→逐场分析→九维+大赛气质→出票决策→子代理审查→记录复盘的 7 阶段流程工作。仅服务本项目（C:\Users\admin\Desktop\世界杯），竞彩下注向。
+name: world-cup-betting-analysis
+description: Use when analyzing, ticketing, recording, auditing, settling, or reviewing World Cup sports-lottery bets in this project; includes match or round analysis, odds/source checks, budget allocation, JSON bet records, ROI and CLV review.
 ---
 
 # 世界杯竞彩分析与下注记录 Skill
@@ -12,14 +12,14 @@ description: 当用户要分析某场/某轮世界杯比赛、判断是否下注
 用户提到：分析某场/某轮、要不要下注、怎么出票、让球/比分怎么买、录入赛果、赛后复盘、算 ROI。
 
 ## 资源索引
-- `rules/betting-rules.md` —— 资金/玩法/记录/复盘/风险边界（CLAUDE.md §1–§9 全量）。
+- `rules/betting-rules.md` —— 核心下注规则镜像（CLAUDE.md §1–§15；§10 工具说明见 CLAUDE.md 与本索引）。
 - `rules/temperament-rules.md` —— 大赛气质硬规则（§2A）+ 本届逐场表现硬规则（§2B）。
-- `data/` —— 32 强、赛程、小组排名（含 §2D 战意/名次提示与 §15 最佳第三名横向红线）；`data/teams/<队名>.md` 为**每队单独档案**（人员配置/球员状态含年龄身高伤病影响/更衣室与负面消息/战意排名/大赛气质）；`data/per-match/` 为本届逐场表现底稿。
+- `data/` —— 48 队基础数据（`48-data.md`）、赛程、小组排名（含 §2D 战意/名次提示与 §15 最佳第三名横向红线）；`data/teams/<队名>.md` 为**每队单独档案**（人员配置/球员状态含年龄身高伤病影响/更衣室与负面消息/战意排名/大赛气质）；`data/per-match/` 为本届逐场表现底稿。
 - `workflow/source-snapshot.md` —— 多源交叉验证流程与快照清单格式（§2C）。
 - `workflow/odds-collection.md` —— 赔率采集（The Odds API 多公司为主、体彩仅取SP）流程与庄家视角解读。
 - `workflow/evidence-weight.md` —— 证据加权评分与置信度降级。
 - `workflow/analysis-pipeline.md` —— 九维分析框架编排（§2）。
-- `workflow/post-match-review.md` —— 三层/四层复盘 + ROI（§5）。
+- `workflow/post-match-review.md` —— 五层复盘 + ROI/CLV（§5）。
 - `archive/bets.json` —— 下注记录权威存档（旧 Excel 表格已弃用）；`archive/analysis/` —— 每场下注分析留档（权威，可视化页面渲染源）；`archive/sources/` —— 各场快照；`archive/odds/` —— 各场赔率存档。
 - `archive/dashboard/index.html` —— 可视化看板（自包含，双击即看）；由 `build_dashboard.py` 生成。
 - `scripts/` —— `fetch_odds_api.py`（The Odds API 拉多公司赔率落档）/`odds_table.py`（赔率对比：返还率/凯利/变化）/`scrape_browser.py`（备用浏览器抓取，Edge）/`new_team.py`（建每队档案）/`new_analysis.py`（建分析留档骨架）/`build_dashboard.py`（生成看板）/`new_bet.py`（写票）/`settle.py`（结算）/`review.py`（ROI+复盘骨架）/`_common.py`（共用模块）。
@@ -48,7 +48,7 @@ description: 当用户要分析某场/某轮世界杯比赛、判断是否下注
 末轮或可能落小组第三的场次，额外检查 §15 最佳第三名横向红线、其它组赛程先后、是否存在“自己也算不清”的战意模糊；未核清时不得重注。
 
 ### 阶段 7 · 记录 + 赛后复盘（§4 / §5 → workflow/post-match-review.md）
-**每次下注分析都要留档**：每场写一份 `archive/analysis/<id>.json`（九维要点/赔率读数/结论类型/置信度/风险/推荐/长文 narrative；用 `new_analysis.py` 起骨架）。出票即写 `bets.json`（权威，旧 Excel 已弃用），含**收盘赔率/CLV**字段；未开奖写"待赛果/待开奖"，返还盈亏留空。票面 SP 优先，与网页赔率不同时备注"官网估算，票面 SP 优先"。每次更新后跑 `build_dashboard.py` 刷新可视化看板。开奖后 `settle.py`（带 `--closing-odds` 自动算 CLV）结算返还/净盈亏/ROI。**五层复盘：数学层/足球层/盘口层/大赛气质层/赔率价值层（CLV，§5）**——短期 ROI 是方差、CLV 才是长期水平标尺。每轮至少沉淀 1 条"下次必须避免/必须增加"，回写 `rules/`。
+**每次下注分析都要留档**：每场写一份 `archive/analysis/<id>.json`（九维要点/赔率读数/结论类型/置信度/风险/推荐/长文 narrative；用 `new_analysis.py` 起骨架，默认 `status=draft`，只有补齐硬门槛后才改 `ready_to_bet`）。出票即写 `bets.json`（权威，旧 Excel 已弃用），含**收盘赔率/CLV**字段；未开奖写"待赛果/待开奖"，返还盈亏留空。票面 SP 优先，与网页赔率不同时备注"官网估算，票面 SP 优先"。每次更新后跑 `build_dashboard.py` 刷新可视化看板。开奖后 `settle.py`（带 `--closing-odds` 自动算 CLV）结算返还/净盈亏/ROI。**五层复盘：数学层/足球层/盘口层/大赛气质层/赔率价值层（CLV，§5）**——短期 ROI 是方差、CLV 才是长期水平标尺。每轮至少沉淀 1 条"下次必须避免/必须增加"，回写 `rules/`。
 
 ## 冲突优先级
 当前赛事真实表现 > 旧世界杯/历史交锋。官方/竞彩数据 > 数据商/比分平台 > 主流媒体 > 预测文章。票面 SP > 网页/接口赔率。规则冲突时以 `CLAUDE.md` 为准。

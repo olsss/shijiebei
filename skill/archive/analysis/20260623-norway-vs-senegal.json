@@ -1,15 +1,25 @@
 {
   "id": "20260623-norway-vs-senegal",
+  "status": "draft",
   "date_analyzed": "2026-06-21",
   "matchday": "2026-06-23",
   "match": "挪威 vs 塞内加尔",
   "jc_code": "待竞彩官方核对",
   "odds_file": "norway-vs-senegal-20260623.json",
   "odds_ref": {
-    "book": "Pinnacle", "home": 2.28, "draw": 3.65, "away": 3.13,
-    "implied": {"home": 0.425, "draw": 0.265, "away": 0.31}
+    "book": "Pinnacle",
+    "home": 2.28,
+    "draw": 3.65,
+    "away": 3.13,
+    "implied": {
+      "home": 0.425,
+      "draw": 0.265,
+      "away": 0.31
+    }
   },
-  "value_flags": ["无明显价值；接近三分盘"],
+  "value_flags": [
+    "无明显价值；接近三分盘"
+  ],
   "dimensions": {
     "交锋近况": "待多源核验",
     "阵容伤停": "待当日刷新",
@@ -32,6 +42,13 @@
   "recommended": [],
   "bet_ids": [],
   "narrative_md": "## 挪威 vs 塞内加尔 综合分析\n\nPinnacle 隐含：挪威 42.5% / 平 26.5% / 塞内加尔 31.0%，是四场里最接近三分盘的一场，庄口分歧大。\n\n挪威小热但远非稳胆，塞内加尔作为非洲强队身体与大赛经验占优。**胜平负价值有限，避免重注**；若下注需把平局纳入考虑。置信度低。\n\n**待补**：官方 SP、双方 §2B 逐场、当日伤停。",
-  "result": {"score": "待赛果", "hit": null, "review": ""},
-  "sources": ["the-odds-api(42家)"]
+  "result": {
+    "score": "待赛果",
+    "hit": null,
+    "review": ""
+  },
+  "sources": [
+    "archive/sources/norway-vs-senegal-20260623.json",
+    "the-odds-api(42家)"
+  ]
 }

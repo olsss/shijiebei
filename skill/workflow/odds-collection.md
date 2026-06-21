@@ -19,6 +19,7 @@
 - **初赔 vs 即时赔**：两个时间点都要（API 不同时间各拉一次，snapshot 标 open/live），用于看赔率变化（庄家视角的关键）。**停售前最后一拉的 live 即作“收盘赔率”，复盘算 CLV 用（post-match-review.md 赔率价值层）**：CLV = 下注入场赔率 ÷ 收盘赔率 − 1。
 - 体彩官方：HHAD 让球数、是否开售、票面 SP（仅出票/结算用）。
 - 取数时间、来源 → 写进 `archive/odds/<比赛>.json`，关键场另补 `archive/sources/`（§2C 快照）。
+- 时间口径：The Odds API / FIFA match centre 常给 UTC 开赛时间；本项目 `date` / 分析 `matchday` / `bets.json` 比赛日统一转换成北京时间日期，同时保留 `date_utc`、`commence_utc`、`commence_beijing`，避免凌晨场被记到前一天。
 
 ## 流程（命令在项目根目录运行）
 1. 早盘拉初赔：`python skill/scripts/fetch_odds_api.py --snapshot open --teams <队名逗号分隔>`。

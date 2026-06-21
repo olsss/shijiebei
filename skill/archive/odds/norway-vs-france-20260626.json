@@ -1,6 +1,6 @@
 {
   "match": "Norway vs France",
-  "date": "2026-06-26",
+  "date": "2026-06-27",
   "commence_utc": "2026-06-26T19:00:00Z",
   "jc_code": "待竞彩官方核对",
   "source": "The Odds API",
@@ -461,5 +461,9 @@
       "time": "2026-06-21T07:32:18Z"
     }
   ],
-  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。"
+  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。",
+  "date_utc": "2026-06-26",
+  "date_beijing": "2026-06-27",
+  "commence_beijing": "2026-06-27 03:00",
+  "timezone": "Asia/Shanghai"
 }

@@ -5,7 +5,7 @@
 - 竞彩官方编号/玩法/让球是否已核对；
 - 赔率是否有 open + live 快照；
 - 是否有多源 sources 快照；
-- 分析是否仍有“待补/待核验”；
+- 分析是否仍有“待补/待核验”；`status=draft/abandoned` 只提示不阻塞；
 - bets.json 是否已迁移到 CLV/90 分钟结算口径字段；
 - 数据文件是否标最后更新时间。
 
@@ -23,6 +23,8 @@ BASE = Path(__file__).resolve().parents[2]
 REQUIRED_BET_FIELDS = ("收盘赔率", "CLV", "结算口径")
 PENDING_MARKERS = ("待补", "待多源核验", "待当日刷新", "待核验", "待竞彩官方核对")
 FRESHNESS_MARKERS = ("最后更新时间", "最后更新")
+TEAM_PLACEHOLDER_MARKERS = ("队名 / 大洲 / 小组：", "FIFA 排名：", "| - | - |", "来源1（等级/URL/取数时间/快照路径）：")
+DRAFT_ANALYSIS_STATUSES = {"draft", "abandoned"}
 
 
 def issue(severity, code, path, message):
@@ -62,6 +64,8 @@ def audit_sources(skill):
             out.append(issue("WARN", "SOURCES_TOO_FEW", p, "少于 2 个独立来源。"))
         if d.get("status") != "complete":
             out.append(issue("WARN", "SOURCES_NOT_COMPLETE", p, f"核验状态不是 complete：{d.get('status')}"))
+        elif not d.get("field_coverage"):
+            out.append(issue("WARN", "SOURCES_NO_FIELD_COVERAGE", p, "complete 快照缺 field_coverage，无法确认关键字段逐项多源覆盖。"))
     return out
 
 
@@ -98,18 +102,29 @@ def audit_analysis(skill):
         except Exception as exc:
             out.append(issue("ERROR", "ANALYSIS_INVALID_JSON", p, f"分析 JSON 无法解析：{exc}"))
             continue
+        is_draft = d.get("status") in DRAFT_ANALYSIS_STATUSES
+        incomplete_severity = "INFO" if is_draft else "ERROR"
+        warn_severity = "INFO" if is_draft else "WARN"
         if d.get("jc_code") in (None, "", "待竞彩官方核对"):
-            out.append(issue("ERROR", "ANALYSIS_NO_JC", p, "分析文件缺竞彩编号。"))
+            out.append(issue(incomplete_severity, "ANALYSIS_NO_JC", p, "分析文件缺竞彩编号。"))
         if not d.get("recommended"):
-            out.append(issue("WARN", "ANALYSIS_NO_RECOMMEND", p, "recommended 为空，尚未形成出票方案。"))
+            out.append(issue(warn_severity, "ANALYSIS_NO_RECOMMEND", p, "recommended 为空，尚未形成出票方案。"))
         if not d.get("bet_ids"):
-            out.append(issue("WARN", "ANALYSIS_NO_BET_LINK", p, "bet_ids 为空，分析未与实际票关联。"))
+            out.append(issue(warn_severity, "ANALYSIS_NO_BET_LINK", p, "bet_ids 为空，分析未与实际票关联。"))
         pending_text = json.dumps(d, ensure_ascii=False)
         if any(marker in pending_text for marker in PENDING_MARKERS):
-            out.append(issue("WARN", "ANALYSIS_PENDING", p, "仍含待补/待核验内容，出票需降额或放弃。"))
+            out.append(issue(warn_severity, "ANALYSIS_PENDING", p, "仍含待补/待核验内容，出票需降额或放弃。"))
         matchday = str(d.get("matchday", "")).replace("-", "")
         if matchday and not str(d.get("id", "")).startswith(matchday):
             out.append(issue("WARN", "ANALYSIS_ID_MATCHDAY_MISMATCH", p, "id/文件日期与 matchday 不一致。"))
+        for src in d.get("sources", []):
+            if not isinstance(src, str):
+                continue
+            norm = src.replace("\\", "/")
+            if norm.startswith("archive/sources/") or norm.startswith("skill/archive/sources/"):
+                rel = norm.removeprefix("skill/")
+                if not (skill / rel).exists():
+                    out.append(issue("WARN", "ANALYSIS_SOURCE_MISSING", p, f"分析引用的 sources 快照不存在：{src}"))
     return out
 
 
@@ -136,7 +151,7 @@ def audit_bets(skill):
 def audit_data_freshness(skill):
     data = skill / "data"
     candidates = [
-        data / "32-data.md",
+        data / "48-data.md",
         data / "group-rank.md",
         data / "group-schedule.md",
         data / "player-status.md",
@@ -146,12 +161,17 @@ def audit_data_freshness(skill):
     if teams.exists():
         candidates.extend(p for p in sorted(teams.glob("*.md")) if not p.name.startswith("_"))
     out = []
+    legacy = data / "32-data.md"
+    if legacy.exists():
+        out.append(issue("WARN", "DATA_LEGACY_32_SCHEMA", legacy, "仍存在旧 32 强基础数据文件；2026 项目应使用 48-data.md，避免与 §15 48 队赛制冲突。"))
     for p in candidates:
         if not p.exists():
             continue
         txt = p.read_text(encoding="utf-8", errors="ignore")
         if not any(marker in txt for marker in FRESHNESS_MARKERS):
             out.append(issue("WARN", "DATA_NO_FRESHNESS", p, "缺最后更新时间标记，§14 时效无法审计。"))
+        if teams.exists() and p.parent == teams and any(marker in txt for marker in TEAM_PLACEHOLDER_MARKERS):
+            out.append(issue("WARN", "DATA_TEAM_PLACEHOLDER", p, "球队档案仍含模板占位内容；阵容/战意/大赛气质不能视为已建档。"))
     return out
 
 

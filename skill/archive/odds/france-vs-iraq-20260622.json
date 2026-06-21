@@ -1,6 +1,6 @@
 {
   "match": "France vs Iraq",
-  "date": "2026-06-22",
+  "date": "2026-06-23",
   "commence_utc": "2026-06-22T21:00:00Z",
   "jc_code": "待竞彩官方核对",
   "source": "The Odds API",
@@ -519,5 +519,9 @@
       "time": "2026-06-21T07:32:16Z"
     }
   ],
-  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。"
+  "note": "Pinnacle 作凯利基准；体彩仅出票/结算取SP。The Odds API 不含 bet365。",
+  "date_utc": "2026-06-22",
+  "date_beijing": "2026-06-23",
+  "commence_beijing": "2026-06-23 05:00",
+  "timezone": "Asia/Shanghai"
 }

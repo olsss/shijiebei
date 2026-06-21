@@ -11,27 +11,41 @@
 import argparse
 import json
 import os
+from datetime import datetime, timezone, timedelta
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ODDS_DIR = os.path.join(BASE, "archive", "odds")
 ANA_DIR = os.path.join(BASE, "archive", "analysis")
 
 
+def beijing_date_from_utc(utc_text):
+    """The Odds API 的 commence_time 是 UTC；竞彩档案 matchday 统一用北京时间日期。"""
+    if not utc_text:
+        return None
+    try:
+        dt = datetime.fromisoformat(utc_text.replace("Z", "+00:00"))
+        bj = dt.astimezone(timezone(timedelta(hours=8)))
+        return bj.strftime("%Y-%m-%d")
+    except Exception:
+        return None
+
+
 def implied_from_ref(odds_path):
     with open(odds_path, "r", encoding="utf-8") as f:
         d = json.load(f)
+    matchday = d.get("date_beijing") or beijing_date_from_utc(d.get("commence_utc")) or d.get("date")
     ref = next((c for c in d.get("companies", [])
                 if c.get("reference") and c.get("snapshot") == "live"), None) \
         or next((c for c in d.get("companies", []) if c.get("reference")), None)
     if not ref:
-        return d.get("match"), d.get("date"), None
+        return d.get("match"), matchday, None
     eu = ref["eu"]
     if any(eu.get(k) in (None, 0) for k in ("home", "draw", "away")):
-        return d.get("match"), d.get("date"), {"book": ref["name"], **eu, "implied": None}
+        return d.get("match"), matchday, {"book": ref["name"], **eu, "implied": None}
     inv = {k: 1.0 / eu[k] for k in ("home", "draw", "away")}
     s = sum(inv.values())
     imp = {k: round(inv[k] / s, 3) for k in inv}
-    return d.get("match"), d.get("date"), {"book": ref["name"], **{k: eu[k] for k in ("home", "draw", "away")}, "implied": imp}
+    return d.get("match"), matchday, {"book": ref["name"], **{k: eu[k] for k in ("home", "draw", "away")}, "implied": imp}
 
 
 def slug(s):
@@ -60,6 +74,7 @@ def main():
     with open(tpl_path, "r", encoding="utf-8") as f:
         obj = json.load(f)
 
+    obj.setdefault("status", "draft")
     obj["match"] = match
     obj["matchday"] = matchday or ""
     obj["date_analyzed"] = a.date_analyzed or ""

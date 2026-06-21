@@ -1,15 +1,25 @@
 {
   "id": "20260623-france-vs-iraq",
+  "status": "draft",
   "date_analyzed": "2026-06-21",
-  "matchday": "2026-06-22",
+  "matchday": "2026-06-23",
   "match": "法国 vs 伊拉克",
   "jc_code": "待竞彩官方核对",
   "odds_file": "france-vs-iraq-20260622.json",
   "odds_ref": {
-    "book": "Pinnacle", "home": 1.07, "draw": 11.89, "away": 30.25,
-    "implied": {"home": 0.889, "draw": 0.08, "away": 0.031}
+    "book": "Pinnacle",
+    "home": 1.07,
+    "draw": 11.89,
+    "away": 30.25,
+    "implied": {
+      "home": 0.889,
+      "draw": 0.08,
+      "away": 0.031
+    }
   },
-  "value_flags": ["极深盘，胜平负无价值"],
+  "value_flags": [
+    "极深盘，胜平负无价值"
+  ],
   "dimensions": {
     "交锋近况": "待多源核验",
     "阵容伤停": "法国可能轮换（待当日刷新）",
@@ -32,6 +42,13 @@
   "recommended": [],
   "bet_ids": [],
   "narrative_md": "## 法国 vs 伊拉克 综合分析\n\nPinnacle 给法国主胜隐含 **88.9%**，伊拉克客胜仅 3.1%——胜平负毫无价值。重点全在**让球深盘与比分**：法国能否打破伊拉克的密集防守、赢够球数。\n\n关键变量是法国是否已确保出线而轮换。若轮换 + 伊拉克死守，让球容易被卡。比分需覆盖 1-0、2-0、2-1，并对 0-0/闷平保持警惕。\n\n**待补**：官方让球数与是否开售、法国出线形势与轮换信号、§2B 逐场。",
-  "result": {"score": "待赛果", "hit": null, "review": ""},
-  "sources": ["the-odds-api(42家)"]
+  "result": {
+    "score": "待赛果",
+    "hit": null,
+    "review": ""
+  },
+  "sources": [
+    "archive/sources/france-vs-iraq-20260623.json",
+    "the-odds-api(42家)"
+  ]
 }

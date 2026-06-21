@@ -1,7 +1,8 @@
 {
   "id": "YYYYMMDD-home-vs-away",
+  "status": "draft",
   "date_analyzed": "YYYY-MM-DD",
-  "matchday": "YYYY-MM-DD",
+  "matchday": "YYYY-MM-DD（北京时间比赛日）",
   "match": "主队 vs 客队",
   "jc_code": "竞彩编号(出票前官方核对)",
   "odds_file": "对应 archive/odds/ 的赔率文件名(如 home-vs-away-YYYYMMDD.json)，看板据此关联赔率对比表",

@@ -8,9 +8,9 @@
 ## 步骤
 1. **定来源**：每个关键字段（赛果/首发/伤停/红黄牌/进球时间/控球/射正/角球/xG/赔率）找 **≥2 个独立来源**。
 2. **分等级**：官方赛事/竞彩 > 权威数据商/比分平台 > 主流媒体战报 > 普通预测文章。
-3. **存快照**：复制 `archive/sources/_模板.json` → `archive/sources/<比赛>-<日期>.json`，填 url/tier/hash/用途/time。
+3. **存快照**：复制 `archive/sources/_模板.json` → `archive/sources/<比赛>-<日期>.json`，填 url/tier/hash/用途/time，并在 `field_coverage` 逐字段标明哪些来源覆盖赛程/编号/首发/伤停/技术统计/xG/赔率。
 4. **判冲突**：来源不一致时写进 `conflicts`，按更权威/更接近官方者采用，禁止选择性引用。
-5. **标状态**：`complete`（关键字段都已≥2源核对）/`partial`（部分缺）/`blocked`（拿不到）。有缺口不许写 complete。
+5. **标状态**：`complete`（关键字段都已≥2源核对且有 `field_coverage`）/`partial`（部分缺）/`blocked`（拿不到）。有缺口不许写 complete。
 6. **回写**：核验结论同步进对应 `data/per-match/` 与 `bets.json` 的 `证据状态`。
 
 ## 输出给分析阶段的事实分类
