@@ -14,5 +14,7 @@ describe('router', () => {
     expect(paths).toContain('/odds');
     expect(paths).toContain('/sentiment');
     expect(paths).toContain('/analysis-review');
+    expect(paths).toContain('/prematch-workbench');
   });
 });
+
