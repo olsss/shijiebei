@@ -40,6 +40,8 @@ class CoreDataImportServiceTest {
         jdbcTemplate.update("DELETE FROM data_dictionaries");
         jdbcTemplate.update("DELETE FROM bets");
         jdbcTemplate.update("DELETE FROM analysis_reports");
+        jdbcTemplate.update("DELETE FROM odds_selection_snapshots");
+        jdbcTemplate.update("DELETE FROM odds_market_snapshots");
         jdbcTemplate.update("DELETE FROM odds_snapshots");
         jdbcTemplate.update("DELETE FROM data_conflicts");
         jdbcTemplate.update("DELETE FROM source_evidence");
@@ -105,6 +107,69 @@ class CoreDataImportServiceTest {
         assertThat(count("odds_snapshots")).isEqualTo(3);
     }
 
+
+    @Test
+    void approvedOddsStoresEveryMarketAndSelectionOdds() {
+        ImportItem item = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"法国 vs 巴西",
+                  "date":"2026-06-23",
+                  "jc_code":"周一001",
+                  "companies":[{
+                    "name":"Pinnacle",
+                    "markets":[
+                      {"market":"HAD","market_name":"胜平负","snapshot_type":"OPEN","captured_at":"2026-06-22T10:00:00","selections":[
+                        {"code":"HOME","name":"主胜","odds":"1.80"},
+                        {"code":"DRAW","name":"平","odds":"3.40"},
+                        {"code":"AWAY","name":"客胜","odds":"4.20"}
+                      ]},
+                      {"market":"TTG","market_name":"总进球","snapshot_type":"LIVE","odds":{"0":"8.00","1":"4.50","7+":"12.00"}}
+                    ]
+                  }]
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(2);
+        assertThat(count("odds_snapshots")).isEqualTo(2);
+        assertThat(count("odds_market_snapshots")).isEqualTo(2);
+        assertThat(count("odds_selection_snapshots")).isEqualTo(6);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='主胜' AND odds_value=1.8000", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='7+' AND selection_name='7+' AND odds_value=12.0000", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void approvedOddsStoresNestedObjectOddsValues() {
+        ImportItem item = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"法国 vs 巴西",
+                  "date":"2026-06-23",
+                  "jc_code":"周一001",
+                  "markets":[{
+                    "bookmaker":"Bet365",
+                    "market":"HAD",
+                    "market_name":"胜平负",
+                    "odds":{
+                      "HOME":{"name":"主胜","odds":"1.80","status":"OPEN"},
+                      "DRAW":{"name":"平","price":"3.40"},
+                      "AWAY":{"name":"客胜","value":"4.20"}
+                    }
+                  }]
+                }
+                """);
+
+        service.importItem(item.getId(), "admin");
+
+        assertThat(count("odds_market_snapshots")).isEqualTo(1);
+        assertThat(count("odds_selection_snapshots")).isEqualTo(3);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='主胜' AND odds_value=1.8000 AND selection_status='OPEN'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='DRAW' AND selection_name='平' AND odds_value=3.4000", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='AWAY' AND selection_name='客胜' AND odds_value=4.2000", Integer.class)).isEqualTo(1);
+    }
+
     @Test
     void approvedSourceImportsEvidenceConflictsAndAliases() {
         ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
@@ -162,3 +227,4 @@ class CoreDataImportServiceTest {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
     }
 }
+
