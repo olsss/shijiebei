@@ -153,7 +153,20 @@ export interface PlayerProfileDetail {
   facts: ProfileFact[];
 }
 
-export type PublicProfileFact = ProfileFact;
+export interface PublicProfileFact {
+  id: number;
+  factType: string;
+  periodKey?: string;
+  title: string;
+  summary: string;
+  sentimentLabel?: string;
+  confidenceScore?: number;
+  reliabilityScore?: number;
+  sourceName: string;
+  sourceUrl?: string;
+  sourceRef?: string;
+  capturedAt?: string;
+}
 export type PublicTeamProfileSummary = TeamProfileSummary;
 export type PublicTeamPlayer = TeamPlayer;
 export type PublicTeamLineup = TeamLineup;

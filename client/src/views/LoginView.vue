@@ -7,8 +7,8 @@ import { useAuthStore } from '@/stores/auth';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const username = ref('admin');
-const password = ref('admin123456');
+const username = ref('');
+const password = ref('');
 const loading = ref(false);
 
 async function submit() {

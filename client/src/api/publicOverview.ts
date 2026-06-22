@@ -1,14 +1,57 @@
 import { publicHttp } from './http';
 import type { ApiResponse } from './system';
 
+export interface PublicOverviewMatch {
+  matchId: number;
+  matchName: string;
+  matchday?: string;
+  jcCode?: string;
+  competition?: string;
+  stage?: string;
+  kickoffTime?: string;
+  status?: string;
+  integrityScore: number;
+  riskCount: number;
+}
+
+export interface PublicRiskCounters {
+  highRiskCount: number;
+  mediumRiskCount: number;
+  staleFactorCount: number;
+  unresolvedConflictCount: number;
+}
+
+export interface PublicIntegrityCounters {
+  completeCount: number;
+  partialCount: number;
+  blockedCount: number;
+}
+
+export interface PublicOddsFreshness {
+  marketCount: number;
+  liveMarketCount: number;
+  staleLiveMarketCount: number;
+}
+
+export interface PublicDecisionSummary {
+  reportCount: number;
+  reviewCount: number;
+  latestDecisionAt?: string;
+}
+
+export interface PublicAdminTodoCounters {
+  pendingImportReviews: number;
+  pendingCollectionReviews: number;
+}
+
 export interface PublicOverviewResponse {
   generatedAt: string;
-  todayMatches: unknown[];
-  riskCounters: Record<string, number>;
-  integrityCounters: Record<string, number>;
-  oddsFreshness: Record<string, number>;
-  decisionSummary: Record<string, unknown>;
-  adminTodoCounters: Record<string, number>;
+  upcomingMatches: PublicOverviewMatch[];
+  riskCounters: PublicRiskCounters;
+  integrityCounters: PublicIntegrityCounters;
+  oddsFreshness: PublicOddsFreshness;
+  decisionSummary: PublicDecisionSummary;
+  adminTodoCounters: PublicAdminTodoCounters;
 }
 
 export async function fetchPublicOverview(): Promise<ApiResponse<PublicOverviewResponse>> {

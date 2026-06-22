@@ -235,16 +235,184 @@ export interface PrematchWorkbenchDetail {
   integrityChecks: IntegrityCheck[];
 }
 
-export type PublicWorkbenchMatchSummary = Omit<WorkbenchMatchSummary, 'betPlanCount' | 'betCount'>;
-export type PublicWorkbenchTeam = WorkbenchTeam;
-export type PublicWorkbenchLineup = WorkbenchLineup;
-export type PublicWorkbenchPlayer = WorkbenchPlayer;
-export type PublicWorkbenchOddsMarket = WorkbenchOddsMarket;
-export type PublicWorkbenchSentimentFactor = WorkbenchSentimentFactor;
-export type PublicWorkbenchEvidence = WorkbenchEvidence;
-export type PublicWorkbenchConflict = Omit<WorkbenchConflict, 'currentValue' | 'incomingValue'>;
-export type PublicWorkbenchAnalysisReport = WorkbenchAnalysisReport;
-export type PublicIntegrityCheck = IntegrityCheck;
+export interface PublicWorkbenchMatchSummary {
+  matchId: number;
+  matchKey: string;
+  matchName: string;
+  matchday?: string;
+  jcCode?: string;
+  competition?: string;
+  stage?: string;
+  venue?: string;
+  kickoffTime?: string;
+  status?: string;
+  resultStatus?: string;
+  homeTeamId?: number;
+  homeTeamName?: string;
+  awayTeamId?: number;
+  awayTeamName?: string;
+  integrityScore: number;
+  missingCount: number;
+  staleCount: number;
+  conflictCount: number;
+  teamProfileCount: number;
+  playerProfileCount: number;
+  lineupCount: number;
+  oddsMarketCount: number;
+  sentimentFactorCount: number;
+  analysisReportCount: number;
+}
+
+export interface PublicPrematchFact {
+  factId: number;
+  factType: string;
+  periodKey?: string;
+  title: string;
+  summary?: string;
+  sentimentLabel?: string;
+  confidenceScore?: number;
+  reliabilityScore?: number;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceRef?: string;
+  capturedAt?: string;
+}
+
+export interface PublicWorkbenchTeam {
+  teamId: number;
+  teamKey: string;
+  teamName: string;
+  fifaCode?: string;
+  countryRegion?: string;
+  styleTags?: string;
+  attackProfile?: string;
+  defenseProfile?: string;
+  publicSentiment?: string;
+  facts: PublicPrematchFact[];
+}
+
+export interface PublicWorkbenchLineup {
+  id: number;
+  matchId: number;
+  teamId?: number;
+  teamName?: string;
+  playerId?: number;
+  playerName?: string;
+  role?: string;
+  position?: string;
+  starter: boolean;
+}
+
+export interface PublicWorkbenchPlayer {
+  playerId: number;
+  playerKey: string;
+  teamId?: number;
+  teamName?: string;
+  playerName: string;
+  shirtNumber?: number;
+  position?: string;
+  status?: string;
+  injuryStatus?: string;
+  cardStatus?: string;
+  lockerRoomStatus?: string;
+  facts: PublicPrematchFact[];
+}
+
+export interface PublicWorkbenchOddsSelection {
+  selectionId: number;
+  selectionCode: string;
+  selectionName: string;
+  oddsValue?: number;
+  impliedProbability?: number;
+  selectionStatus?: string;
+}
+
+export interface PublicWorkbenchOddsMarket {
+  marketId: number;
+  bookmaker: string;
+  marketCode: string;
+  marketName?: string;
+  snapshotType?: string;
+  handicapLine?: number;
+  lineValue?: string;
+  capturedAt?: string;
+  sourceRef?: string;
+  selections: PublicWorkbenchOddsSelection[];
+}
+
+export interface PublicWorkbenchSentimentRisk {
+  riskId: number;
+  riskType: string;
+  riskLevel?: string;
+  riskScore?: number;
+  title: string;
+  rationale?: string;
+  suggestedAction?: string;
+  sourceName?: string;
+  sourceRef?: string;
+}
+
+export interface PublicWorkbenchSentimentFactor {
+  factorId: number;
+  matchId?: number;
+  factorCategory: string;
+  factorType: string;
+  title: string;
+  summary?: string;
+  impactDirection?: string;
+  entityType?: string;
+  entityKey?: string;
+  evidenceLevel?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourceRef?: string;
+  observedAt?: string;
+  expiresAt?: string;
+  confidenceScore?: number;
+  reliabilityScore?: number;
+  risks: PublicWorkbenchSentimentRisk[];
+}
+
+export interface PublicWorkbenchEvidence {
+  evidenceId: number;
+  sourceType: string;
+  sourceName: string;
+  sourceRef?: string;
+  sourceUrl?: string;
+  evidenceTime?: string;
+  summary?: string;
+  reliabilityScore?: number;
+}
+
+export interface PublicWorkbenchConflict {
+  conflictId: number;
+  conflictType: string;
+  entityKey?: string;
+  fieldName?: string;
+  resolutionStatus: string;
+}
+
+export interface PublicWorkbenchAnalysisReport {
+  reportId: number;
+  analysisId: string;
+  conclusionType?: string;
+  confidence?: string;
+  riskSummary?: string;
+  recommendedMarkets?: string;
+  dimensions?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PublicIntegrityCheck {
+  code: string;
+  label: string;
+  status: 'PASS' | 'MISSING' | 'STALE' | 'CONFLICT' | string;
+  severity: string;
+  message: string;
+  evidenceCount: number;
+  lastUpdatedAt?: string;
+}
 
 export interface PublicPrematchWorkbenchDetail {
   summary: PublicWorkbenchMatchSummary;
