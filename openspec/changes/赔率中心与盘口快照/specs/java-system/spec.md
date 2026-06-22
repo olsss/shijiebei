@@ -20,8 +20,9 @@ The system SHALL persist every market and every selection odds value from approv
 
 #### Scenario: Object-shaped odds are expanded
 
-- **WHEN** an ODDS JSON market contains odds as an object such as `{ "HOME": 1.80, "DRAW": 3.40, "AWAY": 4.20 }`
+- **WHEN** an ODDS JSON market contains odds as an object such as `{ "HOME": 1.80, "DRAW": 3.40, "AWAY": 4.20 }` or nested entries such as `{ "HOME": { "name": "主胜", "odds": 1.80 } }`
 - **THEN** each object field is stored as an independent selection odds row
+- **AND** nested entry name, odds value, implied probability, and status are preserved when present
 
 ### Requirement: Odds center API
 

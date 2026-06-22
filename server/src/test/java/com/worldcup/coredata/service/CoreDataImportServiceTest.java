@@ -139,6 +139,37 @@ class CoreDataImportServiceTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='主胜' AND odds_value=1.8000", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='7+' AND selection_name='7+' AND odds_value=12.0000", Integer.class)).isEqualTo(1);
     }
+
+    @Test
+    void approvedOddsStoresNestedObjectOddsValues() {
+        ImportItem item = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"法国 vs 巴西",
+                  "date":"2026-06-23",
+                  "jc_code":"周一001",
+                  "markets":[{
+                    "bookmaker":"Bet365",
+                    "market":"HAD",
+                    "market_name":"胜平负",
+                    "odds":{
+                      "HOME":{"name":"主胜","odds":"1.80","status":"OPEN"},
+                      "DRAW":{"name":"平","price":"3.40"},
+                      "AWAY":{"name":"客胜","value":"4.20"}
+                    }
+                  }]
+                }
+                """);
+
+        service.importItem(item.getId(), "admin");
+
+        assertThat(count("odds_market_snapshots")).isEqualTo(1);
+        assertThat(count("odds_selection_snapshots")).isEqualTo(3);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='主胜' AND odds_value=1.8000 AND selection_status='OPEN'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='DRAW' AND selection_name='平' AND odds_value=3.4000", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='AWAY' AND selection_name='客胜' AND odds_value=4.2000", Integer.class)).isEqualTo(1);
+    }
+
     @Test
     void approvedSourceImportsEvidenceConflictsAndAliases() {
         ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,

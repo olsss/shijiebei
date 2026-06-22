@@ -183,13 +183,27 @@ public class BusinessJsonMapper {
             Iterator<Map.Entry<String, JsonNode>> fields = objectOdds.fields();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> entry = fields.next();
+                JsonNode valueNode = entry.getValue();
+                if (valueNode.isObject()) {
+                    String code = fallback(text(valueNode, "code", "key", "selection", "label", "outcome", "投注项"), entry.getKey());
+                    String name = fallback(text(valueNode, "name", "label", "selection", "outcome", "投注项"), code);
+                    selections.add(new SelectionPayload(
+                            code,
+                            name,
+                            decimal(valueNode, "odds", "price", "value", "赔率"),
+                            decimal(valueNode, "implied_probability", "probability", "prob"),
+                            fallback(text(valueNode, "status", "selection_status"), "UNKNOWN"),
+                            valueNode
+                    ));
+                    continue;
+                }
                 selections.add(new SelectionPayload(
                         entry.getKey(),
                         entry.getKey(),
-                        decimalValue(entry.getValue()),
+                        decimalValue(valueNode),
                         null,
                         "UNKNOWN",
-                        entry.getValue()
+                        valueNode
                 ));
             }
             return selections;
