@@ -110,14 +110,9 @@ class SecurityBoundaryTest {
     MockMvc mockMvc;
 
     @Test
-    void publicGetEndpointsAllowAnonymousReadOnlyAccess() throws Exception {
-        mockMvc.perform(get("/api/public/overview")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/matches")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/odds")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/sentiment")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/profiles/teams")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/prematch-workbench/matches")).andExpect(status().isOk());
-        mockMvc.perform(get("/api/public/decisions/reports")).andExpect(status().isOk());
+    void publicGetNamespaceIsAnonymousButOnlyForReadMethods() throws Exception {
+        mockMvc.perform(get("/api/public/not-yet-created"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -165,7 +160,7 @@ Run:
 mvn -f server/pom.xml -Dtest=SecurityBoundaryTest test
 ```
 
-Expected: FAIL because `/api/public/...` controllers do not exist.
+Expected: FAIL because the current security config does not yet permit anonymous `GET /api/public/**` and does not force public namespace writes through admin auth.
 
 - [ ] **Step 3: Write minimal security implementation**
 
@@ -223,7 +218,7 @@ Run:
 mvn -f server/pom.xml -Dtest=SecurityBoundaryTest test
 ```
 
-Expected: still FAIL for public endpoints until Tasks 3-4 create them; legacy rich assertions should pass.
+Expected: PASS after security matcher order and method security are implemented.
 
 ---
 
@@ -370,7 +365,7 @@ git commit -m "feat: add public api sanitization contracts"
 
 - [ ] **Step 1: Write failing endpoint assertions**
 
-Extend `SecurityBoundaryTest.publicGetEndpointsAllowAnonymousReadOnlyAccess()` with all public paths in the design:
+Extend `SecurityBoundaryTest` with actual public paths introduced in this task:
 
 ```java
 mockMvc.perform(get("/api/public/odds/bookmakers")).andExpect(status().isOk());
@@ -388,7 +383,7 @@ Run:
 mvn -f server/pom.xml -Dtest=SecurityBoundaryTest test
 ```
 
-Expected: FAIL until controllers exist.
+Expected: FAIL until these public controllers exist.
 
 - [ ] **Step 3: Implement controllers by delegating to existing query services**
 
