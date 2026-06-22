@@ -7,6 +7,7 @@ import com.worldcup.importreview.domain.ImportItemType;
 import com.worldcup.importreview.domain.ImportJob;
 import com.worldcup.importreview.repo.ImportItemRepository;
 import com.worldcup.importreview.repo.ImportJobRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ class CoreDataImportServiceTest {
     CoreDataImportService service;
 
     @BeforeEach
+    @AfterEach
     void clean() {
         jdbcTemplate.update("DELETE FROM import_item_mappings");
         jdbcTemplate.update("DELETE FROM bets");
@@ -103,3 +105,5 @@ class CoreDataImportServiceTest {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
     }
 }
+
+
