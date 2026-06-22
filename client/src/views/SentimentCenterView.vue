@@ -38,7 +38,10 @@ const filteredOverview = computed(() => overview.value.filter((item) => {
 const stats = computed(() => ({
   matches: new Set(overview.value.map((item) => item.matchId).filter(Boolean)).size,
   factors: overview.value.length,
-  risks: overview.value.reduce((sum, item) => sum + item.riskCount, 0),
+  risks: Math.max(
+    overview.value.reduce((sum, item) => sum + item.riskCount, 0),
+    selectedMatch.value?.risks.length ?? 0,
+  ),
   stale: overview.value.filter((item) => item.stale).length,
 }));
 
@@ -59,6 +62,13 @@ const currentFactorRisks = computed<SentimentRisk[]>(() => {
     return [];
   }
   return selectedMatch.value.risks.filter((risk) => risk.factorId === currentFactor.value?.id);
+});
+
+const matchLevelRisks = computed<SentimentRisk[]>(() => {
+  if (!selectedMatch.value) {
+    return [];
+  }
+  return selectedMatch.value.risks.filter((risk) => risk.factorId == null);
 });
 
 function requireAuthHeader(): string {
@@ -303,6 +313,21 @@ onMounted(load);
                   </el-table>
                 </div>
               </div>
+
+              <h3>比赛级风险评分</h3>
+              <el-table :data="matchLevelRisks" border empty-text="暂无比赛级风险评分">
+                <el-table-column prop="riskType" label="类型" min-width="130" />
+                <el-table-column label="等级" width="92">
+                  <template #default="{ row }">
+                    <el-tag :type="riskTagType(row.riskLevel)" effect="dark">{{ row.riskLevel }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="分数" width="80">
+                  <template #default="{ row }">{{ scoreText(row.riskScore) }}</template>
+                </el-table-column>
+                <el-table-column prop="title" label="标题" min-width="120" />
+                <el-table-column prop="suggestedAction" label="动作代码" min-width="120" show-overflow-tooltip />
+              </el-table>
 
               <h3>因素原始 JSON</h3>
               <pre class="raw-payload">{{ currentFactor?.rawPayload || '无原始字段' }}</pre>

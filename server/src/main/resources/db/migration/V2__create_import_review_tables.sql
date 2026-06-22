@@ -15,7 +15,7 @@ CREATE TABLE import_items (
     job_id BIGINT NOT NULL,
     item_type VARCHAR(40) NOT NULL,
     status VARCHAR(40) NOT NULL,
-    relative_path VARCHAR(1000) NOT NULL,
+    relative_path VARCHAR(700) NOT NULL,
     sha256 VARCHAR(64) NOT NULL,
     summary_title VARCHAR(500) NOT NULL,
     valid_json BOOLEAN NOT NULL,

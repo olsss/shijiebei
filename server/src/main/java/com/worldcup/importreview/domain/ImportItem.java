@@ -37,7 +37,7 @@ public class ImportItem {
     @Column(nullable = false, length = 40)
     private ImportItemStatus status;
 
-    @Column(nullable = false, length = 1000)
+    @Column(nullable = false, length = 700)
     private String relativePath;
 
     @Column(nullable = false, length = 64)
