@@ -21,9 +21,9 @@
 
 ## 4. 前端
 
-- [ ] 新增 odds API helper 测试并更新 router 测试，先确认失败。
-- [ ] 实现 odds API helper、赔率中心页面、路由和 Dashboard 卡片。
-- [ ] 前端测试与构建通过。
+- [x] 新增 odds API helper 测试并更新 router 测试，先确认失败。
+- [x] 实现 odds API helper、赔率中心页面、路由和 Dashboard 卡片。
+- [x] 前端测试与构建通过。
 
 ## 5. 验证与审查
 

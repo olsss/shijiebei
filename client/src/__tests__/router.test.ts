@@ -11,5 +11,7 @@ describe('router', () => {
     expect(paths).toContain('/profiles/teams');
     expect(paths).toContain('/profiles/players');
     expect(paths).toContain('/matches');
+    expect(paths).toContain('/odds');
   });
 });
+
