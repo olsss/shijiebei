@@ -142,8 +142,9 @@ class PrematchWorkbenchControllerTest {
         long marketId = insertOddsMarket(importItemId, matchId);
         insertSelection(marketId, "HOME", "主胜", "1.85");
         insertSentiment(importItemId, matchId);
-        insertEvidence(matchId, "FIFA", "official-lineup");
-        insertEvidence(matchId, "Opta", "stats-pack");
+        LocalDateTime evidenceBaseTime = LocalDateTime.now().minusHours(1);
+        insertEvidence(matchId, "FIFA", "official-lineup", evidenceBaseTime.plusMinutes(1));
+        insertEvidence(matchId, "Opta", "stats-pack", evidenceBaseTime);
         insertConflict(matchId);
         long reportId = insertAnalysisReport(importItemId, matchId);
         long planId = insertBetPlan(importItemId, matchId, reportId);
@@ -213,9 +214,9 @@ class PrematchWorkbenchControllerTest {
                 importItemId, matchId, factorId, "RAIN", "LOW", "20", "小雨风险", "草皮偏滑", "MONITOR", "Weather", "{}");
     }
 
-    private void insertEvidence(long matchId, String sourceName, String sourceRef) {
+    private void insertEvidence(long matchId, String sourceName, String sourceRef, LocalDateTime evidenceTime) {
         jdbcTemplate.update("INSERT INTO source_evidence(match_id, source_type, source_name, source_ref, source_url, evidence_time, summary, reliability_score, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
-                matchId, "OFFICIAL", sourceName, sourceRef, "https://example.test/" + sourceRef, Timestamp.valueOf(LocalDateTime.now().minusHours(1)), sourceName + " 证据", "9.0", "{}");
+                matchId, "OFFICIAL", sourceName, sourceRef, "https://example.test/" + sourceRef, Timestamp.valueOf(evidenceTime), sourceName + " 证据", "9.0", "{}");
     }
 
     private void insertConflict(long matchId) {
