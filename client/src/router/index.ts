@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import ImportReviewView from '@/views/ImportReviewView.vue';
+import AnalysisReviewCenterView from '@/views/AnalysisReviewCenterView.vue';
 import LoginView from '@/views/LoginView.vue';
 import MatchCenterView from '@/views/MatchCenterView.vue';
 import OddsCenterView from '@/views/OddsCenterView.vue';
@@ -19,6 +20,7 @@ export const router = createRouter({
     { path: '/matches', name: 'match-center', component: MatchCenterView },
     { path: '/odds', name: 'odds-center', component: OddsCenterView },
     { path: '/sentiment', name: 'sentiment-center', component: SentimentCenterView },
+    { path: '/analysis-review', name: 'analysis-review-center', component: AnalysisReviewCenterView },
     { path: '/profiles/teams', name: 'team-profiles', component: TeamProfilesView },
     { path: '/profiles/players', name: 'player-profiles', component: PlayerProfilesView },
   ],
