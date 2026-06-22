@@ -10,6 +10,7 @@ import com.worldcup.importreview.api.dto.ScanArchiveRequest;
 import com.worldcup.importreview.domain.ImportItemStatus;
 import com.worldcup.importreview.domain.ImportItemType;
 import com.worldcup.importreview.service.JsonImportReviewService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@PreAuthorize("hasRole('ADMIN')")
 public class ImportReviewController {
     private final JsonImportReviewService service;
 

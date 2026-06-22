@@ -5,6 +5,7 @@ import com.worldcup.prematchworkbench.api.dto.PrematchWorkbenchDtos.IntegrityChe
 import com.worldcup.prematchworkbench.api.dto.PrematchWorkbenchDtos.PrematchWorkbenchDetailResponse;
 import com.worldcup.prematchworkbench.api.dto.PrematchWorkbenchDtos.WorkbenchMatchSummaryResponse;
 import com.worldcup.prematchworkbench.service.PrematchWorkbenchQueryService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/prematch-workbench")
+@PreAuthorize("hasRole('ADMIN')")
 public class PrematchWorkbenchController {
     private final PrematchWorkbenchQueryService queryService;
 

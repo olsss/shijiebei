@@ -9,6 +9,7 @@ import com.worldcup.analysisreviewcenter.api.dto.AnalysisReviewCenterDtos.Overvi
 import com.worldcup.analysisreviewcenter.api.dto.AnalysisReviewCenterDtos.PostMatchReviewResponse;
 import com.worldcup.analysisreviewcenter.service.AnalysisReviewCenterQueryService;
 import com.worldcup.common.api.ApiResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/analysis-review")
+@PreAuthorize("hasRole('ADMIN')")
 public class AnalysisReviewCenterController {
     private final AnalysisReviewCenterQueryService queryService;
 

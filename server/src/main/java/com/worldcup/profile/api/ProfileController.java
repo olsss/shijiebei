@@ -13,6 +13,7 @@ import com.worldcup.profile.api.dto.ProfileDtos.TeamProfileDetail;
 import com.worldcup.profile.api.dto.ProfileDtos.TeamProfileSummary;
 import com.worldcup.profile.service.ProfileCollectionService;
 import com.worldcup.profile.service.ProfileQueryService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/profiles")
+@PreAuthorize("hasRole('ADMIN')")
 public class ProfileController {
     private final ProfileCollectionService collectionService;
     private final ProfileQueryService queryService;
