@@ -227,7 +227,7 @@ Expected: PASS after security matcher order and method security are implemented.
 - Create: `server/src/main/java/com/worldcup/publicapi/service/PublicApiMapper.java`
 - Create: `server/src/test/java/com/worldcup/publicapi/PublicApiSanitizationTest.java`
 
-- [ ] **Step 1: Write failing forbidden-field and value-level tests**
+- [x] **Step 1: Write failing forbidden-field and value-level tests**
 
 Create `PublicApiSanitizationTest.java`:
 
@@ -274,7 +274,7 @@ class PublicApiSanitizationTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -284,7 +284,7 @@ mvn -f server/pom.xml -Dtest=PublicApiSanitizationTest test
 
 Expected: FAIL because `PublicApiDtos` and `PublicApiMapper` do not exist.
 
-- [ ] **Step 3: Implement public DTO records and sanitizer**
+- [x] **Step 3: Implement public DTO records and sanitizer**
 
 Create `PublicApiDtos.java` with records named in File Map. Minimum first-pass records required by tests:
 
@@ -335,7 +335,7 @@ public class PublicApiMapper {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run:
 
@@ -345,7 +345,7 @@ mvn -f server/pom.xml -Dtest=PublicApiSanitizationTest test
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/main/java/com/worldcup/publicapi server/src/test/java/com/worldcup/publicapi/PublicApiSanitizationTest.java
