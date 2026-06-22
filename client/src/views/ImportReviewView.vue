@@ -2,6 +2,11 @@
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
+  importCoreDataItem,
+  listCoreDataMappings,
+  type CoreDataMapping,
+} from '@/api/coreData';
+import {
   approveImportItem,
   batchApproveImportItems,
   getImportItem,
@@ -24,10 +29,13 @@ const selectedItems = ref<ImportItemResponse[]>([]);
 const statusFilter = ref<ImportItemStatus | ''>('');
 const typeFilter = ref<ImportItemType | ''>('');
 const lastJob = ref('');
+const lastCoreImport = ref('');
 const error = ref('');
 const drawerVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<ImportItemDetailResponse | null>(null);
+const importingItemIds = ref<Set<number>>(new Set());
+const coreDataMappings = ref<Record<number, CoreDataMapping[]>>({});
 
 const statusOptions: Array<{ label: string; value: ImportItemStatus }> = [
   { label: '待审核', value: 'PENDING_REVIEW' },
@@ -73,6 +81,10 @@ function statusTagType(status: ImportItemStatus) {
   if (status === 'APPROVED') return 'success';
   if (status === 'REJECTED') return 'danger';
   return 'warning';
+}
+
+function isImportingCoreData(id: number): boolean {
+  return importingItemIds.value.has(id);
 }
 
 async function loadItems() {
@@ -130,6 +142,31 @@ async function approve(row: ImportItemResponse) {
   await loadItems();
 }
 
+async function importToCoreData(row: ImportItemResponse) {
+  if (!row.validJson || row.status !== 'APPROVED') {
+    ElMessage.warning('只有已批准且有效的 JSON 可以导入正式库。');
+    return;
+  }
+  importingItemIds.value = new Set([...importingItemIds.value, row.id]);
+  lastCoreImport.value = '';
+  try {
+    const response = await importCoreDataItem(requireAuthHeader(), row.id);
+    const mappingResponse = await listCoreDataMappings(requireAuthHeader(), row.id);
+    coreDataMappings.value = {
+      ...coreDataMappings.value,
+      [row.id]: mappingResponse.data,
+    };
+    lastCoreImport.value = `导入项 #${response.data.importItemId}：${response.data.message}，映射 ${response.data.mappings.length} 条`;
+    ElMessage.success(lastCoreImport.value);
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '导入正式库失败。');
+  } finally {
+    const next = new Set(importingItemIds.value);
+    next.delete(row.id);
+    importingItemIds.value = next;
+  }
+}
+
 async function approveBatch() {
   if (approvableSelection.value.length === 0) {
     ElMessage.warning('请选择待审核且 JSON 有效的条目。');
@@ -181,6 +218,7 @@ onMounted(loadItems);
               </template>
             </el-input>
             <el-alert v-if="lastJob" :title="lastJob" type="success" show-icon class="job-alert" />
+            <el-alert v-if="lastCoreImport" :title="lastCoreImport" type="success" show-icon class="job-alert" />
             <el-alert v-if="error" :title="error" type="error" show-icon class="job-alert" />
           </el-card>
         </el-col>
@@ -257,7 +295,7 @@ onMounted(loadItems);
             </template>
           </el-table-column>
           <el-table-column prop="sha256" label="SHA-256" min-width="260" show-overflow-tooltip />
-          <el-table-column label="操作" fixed="right" width="250">
+          <el-table-column label="操作" fixed="right" width="360">
             <template #default="{ row }">
               <el-button size="small" @click="openDetail(row)">查看</el-button>
               <el-button
@@ -271,6 +309,15 @@ onMounted(loadItems);
               <el-button size="small" type="danger" :disabled="row.status === 'REJECTED'" @click="reject(row)">
                 驳回
               </el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :disabled="!row.validJson || row.status !== 'APPROVED'"
+                :loading="isImportingCoreData(row.id)"
+                @click="importToCoreData(row)"
+              >
+                导入正式库
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -283,6 +330,9 @@ onMounted(loadItems);
             <el-descriptions-item label="文件">{{ detail.item.relativePath }}</el-descriptions-item>
             <el-descriptions-item label="状态">{{ statusLabel(detail.item.status) }}</el-descriptions-item>
             <el-descriptions-item label="校验">{{ detail.item.validationMessage }}</el-descriptions-item>
+            <el-descriptions-item v-if="coreDataMappings[detail.item.id]" label="正式库映射">
+              {{ coreDataMappings[detail.item.id].length }} 条
+            </el-descriptions-item>
             <el-descriptions-item v-if="detail.rejectionReason" label="驳回原因">{{ detail.rejectionReason }}</el-descriptions-item>
           </el-descriptions>
           <pre class="raw-json">{{ detail.rawJson }}</pre>
