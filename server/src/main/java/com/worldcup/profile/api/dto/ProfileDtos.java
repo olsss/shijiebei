@@ -1,6 +1,7 @@
 package com.worldcup.profile.api.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -123,10 +124,59 @@ public final class ProfileDtos {
     ) {
     }
 
+    public record TeamLineupResponse(
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            Long playerId,
+            String playerName,
+            String role,
+            String position,
+            boolean starter
+    ) {
+    }
+
+    public record TeamScoringPatternResponse(
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            Integer goalsFor,
+            Integer goalsAgainst,
+            Integer firstGoalMinute,
+            String scoringMinutes
+    ) {
+    }
+
+    public record TeamExternalFactorResponse(
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            String externalFactors
+    ) {
+    }
+
+    public record TeamMatchHistoryResponse(
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            String competition,
+            String stage,
+            String venue,
+            String resultStatus,
+            Integer goalsFor,
+            Integer goalsAgainst,
+            String scoringMinutes
+    ) {
+    }
+
     public record TeamProfileDetail(
             TeamProfileSummary team,
             List<ProfileFactResponse> facts,
             List<TeamPlayerResponse> players,
+            List<TeamLineupResponse> lineups,
+            List<TeamScoringPatternResponse> scoringPatterns,
+            List<TeamExternalFactorResponse> externalFactors,
+            List<TeamMatchHistoryResponse> matchHistory,
             long evidenceCount,
             long conflictCount
     ) {

@@ -77,6 +77,8 @@ async function approve(item: CollectionItem) {
     await approveCollectionItem(requireAuthHeader(), item.id);
     ElMessage.success('球队画像采集项已批准。');
     await load();
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '批准球队画像采集项失败。');
   } finally {
     reviewingId.value = null;
   }
@@ -88,6 +90,8 @@ async function reject(item: CollectionItem) {
     await rejectCollectionItem(requireAuthHeader(), item.id, '页面快速驳回：来源或内容待补充');
     ElMessage.success('球队画像采集项已驳回。');
     await load();
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '驳回球队画像采集项失败。');
   } finally {
     reviewingId.value = null;
   }
@@ -156,6 +160,43 @@ onMounted(load);
                 </el-timeline-item>
               </el-timeline>
               <el-empty v-if="selected.facts.length === 0" description="暂无正式画像事实" />
+
+              <h3>上阵人员 / 首发阵容</h3>
+              <el-table :data="selected.lineups" border empty-text="暂无阵容数据">
+                <el-table-column prop="matchName" label="比赛" min-width="160" />
+                <el-table-column prop="playerName" label="球员" min-width="120" />
+                <el-table-column prop="position" label="位置" width="80" />
+                <el-table-column label="角色" width="110">
+                  <template #default="{ row }">
+                    <el-tag :type="row.starter ? 'success' : 'info'">{{ row.starter ? '首发' : '替补/上阵' }}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <h3>历史进球时间点</h3>
+              <el-table :data="selected.scoringPatterns" border empty-text="暂无进球时间数据">
+                <el-table-column prop="matchName" label="比赛" min-width="160" />
+                <el-table-column prop="goalsFor" label="进球" width="80" />
+                <el-table-column prop="goalsAgainst" label="失球" width="80" />
+                <el-table-column prop="firstGoalMinute" label="首球分钟" width="100" />
+                <el-table-column prop="scoringMinutes" label="进球分钟" min-width="120" />
+              </el-table>
+
+              <h3>外部因素</h3>
+              <el-table :data="selected.externalFactors" border empty-text="暂无外部因素数据">
+                <el-table-column prop="matchName" label="比赛" min-width="160" />
+                <el-table-column prop="externalFactors" label="因素" min-width="260" />
+              </el-table>
+
+              <h3>历史比赛</h3>
+              <el-table :data="selected.matchHistory" border empty-text="暂无历史比赛数据">
+                <el-table-column prop="matchName" label="比赛" min-width="160" />
+                <el-table-column prop="stage" label="阶段" width="110" />
+                <el-table-column label="进失球" width="110">
+                  <template #default="{ row }">{{ row.goalsFor ?? '-' }} / {{ row.goalsAgainst ?? '-' }}</template>
+                </el-table-column>
+                <el-table-column prop="scoringMinutes" label="进球分钟" min-width="120" />
+              </el-table>
 
               <h3>球员名单</h3>
               <el-table :data="selected.players" border>

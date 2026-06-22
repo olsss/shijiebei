@@ -40,9 +40,9 @@ class ProfileCollectionServiceTest {
         jdbcTemplate.update("DELETE FROM match_player_stats");
         jdbcTemplate.update("DELETE FROM match_team_stats");
         jdbcTemplate.update("DELETE FROM match_events");
+        jdbcTemplate.update("DELETE FROM matches");
         jdbcTemplate.update("DELETE FROM players");
         jdbcTemplate.update("DELETE FROM teams");
-        jdbcTemplate.update("DELETE FROM matches");
     }
 
     @Test
@@ -73,6 +73,21 @@ class ProfileCollectionServiceTest {
         assertThat(response.targetType()).isEqualTo("PLAYER_PROFILE_FACT");
         assertThat(count("player_profile_facts")).isEqualTo(1);
         assertThat(count("team_profile_facts")).isZero();
+    }
+
+    @Test
+    void duplicateTeamFactUniqueConflictReturnsExistingMapping() {
+        long teamId = insertTeam("italy", "意大利");
+        long itemId = insertCollectionItem("TEAM", "italy", "HISTORY", "历史数据", "淘汰赛经验丰富", "Archive");
+        long factId = insertExistingTeamFact(teamId, itemId);
+
+        CollectionItemReviewResponse response = service.approveItem(itemId, "admin");
+
+        assertThat(response.status()).isEqualTo("APPROVED");
+        assertThat(response.targetType()).isEqualTo("TEAM_PROFILE_FACT");
+        assertThat(response.targetId()).isEqualTo(factId);
+        assertThat(count("team_profile_facts")).isEqualTo(1);
+        assertThat(statusOf(itemId)).isEqualTo("APPROVED");
     }
 
     @Test
@@ -108,6 +123,12 @@ class ProfileCollectionServiceTest {
     private void insertPlayer(String key, long teamId, String name) {
         jdbcTemplate.update("INSERT INTO players(player_key, team_id, display_name, shirt_number, position, status, injury_status, card_status, locker_room_status) VALUES (?,?,?,?,?,?,?,?,?)",
                 key, teamId, name, 10, "FW", "FIT", "无", "无", "稳定");
+    }
+
+    private long insertExistingTeamFact(long teamId, long itemId) {
+        jdbcTemplate.update("INSERT INTO team_profile_facts(team_id, collection_item_id, fact_type, title, summary, source_name, approved_by) VALUES (?,?,?,?,?,?,?)",
+                teamId, itemId, "HISTORY", "历史数据", "淘汰赛经验丰富", "Archive", "admin");
+        return jdbcTemplate.queryForObject("SELECT id FROM team_profile_facts WHERE collection_item_id = ?", Long.class, itemId);
     }
 
     private long insertCollectionItem(String entityType, String entityKey, String factType, String title, String summary, String sourceName) {

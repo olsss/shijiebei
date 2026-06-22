@@ -79,10 +79,55 @@ export interface TeamPlayer {
   lockerRoomStatus?: string;
 }
 
+export interface TeamLineup {
+  matchId: number;
+  matchName: string;
+  matchday?: string;
+  playerId?: number;
+  playerName: string;
+  role?: string;
+  position?: string;
+  starter: boolean;
+}
+
+export interface TeamScoringPattern {
+  matchId: number;
+  matchName: string;
+  matchday?: string;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  firstGoalMinute?: number;
+  scoringMinutes?: string;
+}
+
+export interface TeamExternalFactor {
+  matchId: number;
+  matchName: string;
+  matchday?: string;
+  externalFactors: string;
+}
+
+export interface TeamMatchHistory {
+  matchId: number;
+  matchName: string;
+  matchday?: string;
+  competition?: string;
+  stage?: string;
+  venue?: string;
+  resultStatus?: string;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  scoringMinutes?: string;
+}
+
 export interface TeamProfileDetail {
   team: TeamProfileSummary;
   facts: ProfileFact[];
   players: TeamPlayer[];
+  lineups: TeamLineup[];
+  scoringPatterns: TeamScoringPattern[];
+  externalFactors: TeamExternalFactor[];
+  matchHistory: TeamMatchHistory[];
   evidenceCount: number;
   conflictCount: number;
 }

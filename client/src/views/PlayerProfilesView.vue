@@ -77,6 +77,8 @@ async function approve(item: CollectionItem) {
     await approveCollectionItem(requireAuthHeader(), item.id);
     ElMessage.success('球员画像采集项已批准。');
     await load();
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '批准球员画像采集项失败。');
   } finally {
     reviewingId.value = null;
   }
@@ -88,6 +90,8 @@ async function reject(item: CollectionItem) {
     await rejectCollectionItem(requireAuthHeader(), item.id, '页面快速驳回：来源或内容待补充');
     ElMessage.success('球员画像采集项已驳回。');
     await load();
+  } catch (cause) {
+    ElMessage.error(cause instanceof Error ? cause.message : '驳回球员画像采集项失败。');
   } finally {
     reviewingId.value = null;
   }

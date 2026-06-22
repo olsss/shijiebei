@@ -3,9 +3,13 @@ package com.worldcup.profile.service;
 import com.worldcup.profile.api.dto.ProfileDtos.PlayerProfileDetail;
 import com.worldcup.profile.api.dto.ProfileDtos.PlayerProfileSummary;
 import com.worldcup.profile.api.dto.ProfileDtos.ProfileFactResponse;
+import com.worldcup.profile.api.dto.ProfileDtos.TeamExternalFactorResponse;
+import com.worldcup.profile.api.dto.ProfileDtos.TeamLineupResponse;
+import com.worldcup.profile.api.dto.ProfileDtos.TeamMatchHistoryResponse;
 import com.worldcup.profile.api.dto.ProfileDtos.TeamPlayerResponse;
 import com.worldcup.profile.api.dto.ProfileDtos.TeamProfileDetail;
 import com.worldcup.profile.api.dto.ProfileDtos.TeamProfileSummary;
+import com.worldcup.profile.api.dto.ProfileDtos.TeamScoringPatternResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,6 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -38,11 +45,16 @@ public class ProfileQueryService {
     @Transactional(readOnly = true)
     public TeamProfileDetail team(long teamId) {
         TeamProfileSummary summary = findTeam(teamId);
+        List<ProfileFactResponse> facts = teamFacts(teamId);
         return new TeamProfileDetail(
                 summary,
-                teamFacts(teamId),
+                facts,
                 teamPlayers(teamId),
-                evidenceCount(summary.teamKey()),
+                teamLineups(teamId),
+                teamScoringPatterns(teamId),
+                teamExternalFactors(teamId),
+                teamMatchHistory(teamId),
+                evidenceCount(summary.teamKey(), teamId),
                 conflictCount(summary.teamKey())
         );
     }
@@ -128,6 +140,82 @@ public class ProfileQueryService {
         );
     }
 
+    private List<TeamLineupResponse> teamLineups(long teamId) {
+        return jdbcTemplate.query(
+                "SELECT l.match_id, m.match_name, m.matchday, l.player_id, COALESCE(p.display_name, '未知球员') AS player_name, l.role, l.position, l.is_starter " +
+                        "FROM match_lineups l JOIN matches m ON m.id=l.match_id LEFT JOIN players p ON p.id=l.player_id " +
+                        "WHERE l.team_id=? ORDER BY m.matchday DESC, l.is_starter DESC, p.shirt_number, p.display_name",
+                (rs, rowNum) -> new TeamLineupResponse(
+                        rs.getLong("match_id"),
+                        rs.getString("match_name"),
+                        localDate(rs, "matchday"),
+                        rs.getObject("player_id") == null ? null : rs.getLong("player_id"),
+                        rs.getString("player_name"),
+                        rs.getString("role"),
+                        rs.getString("position"),
+                        rs.getBoolean("is_starter")
+                ),
+                teamId
+        );
+    }
+
+    private List<TeamScoringPatternResponse> teamScoringPatterns(long teamId) {
+        return jdbcTemplate.query(
+                "SELECT s.match_id, m.match_name, m.matchday, s.goals_for, s.goals_against, s.first_goal_minute, s.scoring_minutes " +
+                        "FROM match_team_stats s JOIN matches m ON m.id=s.match_id WHERE s.team_id=? " +
+                        "ORDER BY m.matchday DESC, s.id DESC",
+                (rs, rowNum) -> new TeamScoringPatternResponse(
+                        rs.getLong("match_id"),
+                        rs.getString("match_name"),
+                        localDate(rs, "matchday"),
+                        nullableInt(rs, "goals_for"),
+                        nullableInt(rs, "goals_against"),
+                        nullableInt(rs, "first_goal_minute"),
+                        rs.getString("scoring_minutes")
+                ),
+                teamId
+        );
+    }
+
+    private List<TeamExternalFactorResponse> teamExternalFactors(long teamId) {
+        return jdbcTemplate.query(
+                "SELECT id AS match_id, match_name, matchday, external_factors FROM matches " +
+                        "WHERE (home_team_id=? OR away_team_id=?) AND external_factors IS NOT NULL AND external_factors <> '' " +
+                        "ORDER BY matchday DESC, id DESC",
+                (rs, rowNum) -> new TeamExternalFactorResponse(
+                        rs.getLong("match_id"),
+                        rs.getString("match_name"),
+                        localDate(rs, "matchday"),
+                        rs.getString("external_factors")
+                ),
+                teamId,
+                teamId
+        );
+    }
+
+    private List<TeamMatchHistoryResponse> teamMatchHistory(long teamId) {
+        return jdbcTemplate.query(
+                "SELECT m.id AS match_id, m.match_name, m.matchday, m.competition, m.stage, m.venue, m.result_status, s.goals_for, s.goals_against, s.scoring_minutes " +
+                        "FROM matches m LEFT JOIN match_team_stats s ON s.match_id=m.id AND s.team_id=? " +
+                        "WHERE m.home_team_id=? OR m.away_team_id=? ORDER BY m.matchday DESC, m.id DESC",
+                (rs, rowNum) -> new TeamMatchHistoryResponse(
+                        rs.getLong("match_id"),
+                        rs.getString("match_name"),
+                        localDate(rs, "matchday"),
+                        rs.getString("competition"),
+                        rs.getString("stage"),
+                        rs.getString("venue"),
+                        rs.getString("result_status"),
+                        nullableInt(rs, "goals_for"),
+                        nullableInt(rs, "goals_against"),
+                        rs.getString("scoring_minutes")
+                ),
+                teamId,
+                teamId,
+                teamId
+        );
+    }
+
     private String factSelect(String table, String idColumn) {
         return "SELECT id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, source_name, source_url, source_ref, captured_at, approved_by FROM " +
                 table + " WHERE " + idColumn + "=?";
@@ -186,9 +274,20 @@ public class ProfileQueryService {
         );
     }
 
-    private long evidenceCount(String entityKey) {
-        Long value = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_ref=?", Long.class, entityKey);
-        return value == null ? 0 : value;
+    private long evidenceCount(String entityKey, long teamId) {
+        Long sourceEvidence = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_ref=?", Long.class, entityKey);
+        Long profileFacts = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM team_profile_facts WHERE team_id=? AND source_name IS NOT NULL", Long.class, teamId);
+        return (sourceEvidence == null ? 0 : sourceEvidence) + (profileFacts == null ? 0 : profileFacts);
+    }
+
+    private LocalDate localDate(ResultSet rs, String column) throws SQLException {
+        var date = rs.getDate(column);
+        return date == null ? null : date.toLocalDate();
+    }
+
+    private Integer nullableInt(ResultSet rs, String column) throws SQLException {
+        int value = rs.getInt(column);
+        return rs.wasNull() ? null : value;
     }
 
     private long conflictCount(String entityKey) {

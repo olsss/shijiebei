@@ -4,6 +4,7 @@ import com.worldcup.profile.api.dto.ProfileDtos.CollectionItemResponse;
 import com.worldcup.profile.api.dto.ProfileDtos.CollectionItemReviewResponse;
 import com.worldcup.profile.api.dto.ProfileDtos.CollectionJobResponse;
 import com.worldcup.profile.api.dto.ProfileDtos.CreateCollectionJobRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -112,50 +113,76 @@ public class ProfileCollectionService {
 
     private CollectionItemReviewResponse approveTeamFact(CollectionItemResponse item, String actor) {
         Long teamId = findEntityId("SELECT id FROM teams WHERE team_key = ?", item.entityKey(), "球队不存在: " + item.entityKey());
-        Long factId = insertAndReturnId(
-                "INSERT INTO team_profile_facts(team_id, collection_item_id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, source_name, source_url, source_ref, captured_at, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,(SELECT raw_payload FROM collection_items WHERE id=?))",
-                teamId,
-                item.id(),
-                item.factType(),
-                item.periodKey(),
-                item.title(),
-                item.summary(),
-                item.sentimentLabel(),
-                item.confidenceScore(),
-                item.reliabilityScore(),
-                item.sourceName(),
-                item.sourceUrl(),
-                item.sourceRef(),
-                item.capturedAt(),
-                actor,
-                item.id()
-        );
-        markApproved(item.id(), "TEAM_PROFILE_FACT", factId, actor);
-        return new CollectionItemReviewResponse(item.id(), "APPROVED", "TEAM_PROFILE_FACT", factId, "球队画像事实已写入正式库");
+        try {
+            Long factId = insertAndReturnId(
+                    "INSERT INTO team_profile_facts(team_id, collection_item_id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, source_name, source_url, source_ref, captured_at, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,(SELECT raw_payload FROM collection_items WHERE id=?))",
+                    teamId,
+                    item.id(),
+                    item.factType(),
+                    item.periodKey(),
+                    item.title(),
+                    item.summary(),
+                    item.sentimentLabel(),
+                    item.confidenceScore(),
+                    item.reliabilityScore(),
+                    item.sourceName(),
+                    item.sourceUrl(),
+                    item.sourceRef(),
+                    item.capturedAt(),
+                    actor,
+                    item.id()
+            );
+            markApproved(item.id(), "TEAM_PROFILE_FACT", factId, actor);
+            return new CollectionItemReviewResponse(item.id(), "APPROVED", "TEAM_PROFILE_FACT", factId, "球队画像事实已写入正式库");
+        } catch (DataIntegrityViolationException duplicate) {
+            return existingFactResponse(item, "team_profile_facts", "TEAM_PROFILE_FACT", actor, duplicate);
+        }
     }
 
     private CollectionItemReviewResponse approvePlayerFact(CollectionItemResponse item, String actor) {
         Long playerId = findEntityId("SELECT id FROM players WHERE player_key = ?", item.entityKey(), "球员不存在: " + item.entityKey());
-        Long factId = insertAndReturnId(
-                "INSERT INTO player_profile_facts(player_id, collection_item_id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, source_name, source_url, source_ref, captured_at, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,(SELECT raw_payload FROM collection_items WHERE id=?))",
-                playerId,
-                item.id(),
-                item.factType(),
-                item.periodKey(),
-                item.title(),
-                item.summary(),
-                item.sentimentLabel(),
-                item.confidenceScore(),
-                item.reliabilityScore(),
-                item.sourceName(),
-                item.sourceUrl(),
-                item.sourceRef(),
-                item.capturedAt(),
-                actor,
+        try {
+            Long factId = insertAndReturnId(
+                    "INSERT INTO player_profile_facts(player_id, collection_item_id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, source_name, source_url, source_ref, captured_at, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,(SELECT raw_payload FROM collection_items WHERE id=?))",
+                    playerId,
+                    item.id(),
+                    item.factType(),
+                    item.periodKey(),
+                    item.title(),
+                    item.summary(),
+                    item.sentimentLabel(),
+                    item.confidenceScore(),
+                    item.reliabilityScore(),
+                    item.sourceName(),
+                    item.sourceUrl(),
+                    item.sourceRef(),
+                    item.capturedAt(),
+                    actor,
+                    item.id()
+            );
+            markApproved(item.id(), "PLAYER_PROFILE_FACT", factId, actor);
+            return new CollectionItemReviewResponse(item.id(), "APPROVED", "PLAYER_PROFILE_FACT", factId, "球员画像事实已写入正式库");
+        } catch (DataIntegrityViolationException duplicate) {
+            return existingFactResponse(item, "player_profile_facts", "PLAYER_PROFILE_FACT", actor, duplicate);
+        }
+    }
+
+    private CollectionItemReviewResponse existingFactResponse(CollectionItemResponse item,
+                                                               String table,
+                                                               String targetType,
+                                                               String actor,
+                                                               DataIntegrityViolationException duplicate) {
+        List<Long> ids = jdbcTemplate.query(
+                "SELECT id FROM " + table + " WHERE collection_item_id = ?",
+                (rs, rowNum) -> rs.getLong("id"),
                 item.id()
         );
-        markApproved(item.id(), "PLAYER_PROFILE_FACT", factId, actor);
-        return new CollectionItemReviewResponse(item.id(), "APPROVED", "PLAYER_PROFILE_FACT", factId, "球员画像事实已写入正式库");
+        if (ids.isEmpty()) {
+            throw duplicate;
+        }
+        Long factId = ids.get(0);
+        markApproved(item.id(), targetType, factId, actor);
+        return new CollectionItemReviewResponse(item.id(), "APPROVED", targetType, factId, "画像事实已存在，返回既有映射");
     }
 
     private CollectionItemResponse findItem(long itemId) {

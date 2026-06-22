@@ -55,6 +55,14 @@ The system SHALL expose authenticated team profile list and detail APIs.
 - **WHEN** an authenticated administrator requests `GET /api/profiles/teams/{teamId}`
 - **THEN** the backend returns the team's base profile, profile facts, players, evidence count, and conflict count
 
+#### Scenario: Team detail returns structured match context
+
+- **WHEN** an authenticated administrator requests `GET /api/profiles/teams/{teamId}` for a team with lineup, team stat, match history, and external factor data
+- **THEN** the backend returns lineup entries with starter flags and player names
+- **AND** returns scoring pattern rows including first goal minute and scoring minutes
+- **AND** returns external factor rows from related matches
+- **AND** returns match history rows with goals for, goals against, and scoring minutes
+
 #### Scenario: Team players endpoint returns squad
 
 - **WHEN** an authenticated administrator requests `GET /api/profiles/teams/{teamId}/players`

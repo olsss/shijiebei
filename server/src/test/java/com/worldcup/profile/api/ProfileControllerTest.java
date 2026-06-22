@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,9 +45,9 @@ class ProfileControllerTest {
         jdbcTemplate.update("DELETE FROM match_player_stats");
         jdbcTemplate.update("DELETE FROM match_team_stats");
         jdbcTemplate.update("DELETE FROM match_events");
+        jdbcTemplate.update("DELETE FROM matches");
         jdbcTemplate.update("DELETE FROM players");
         jdbcTemplate.update("DELETE FROM teams");
-        jdbcTemplate.update("DELETE FROM matches");
     }
 
     @Test
@@ -58,7 +59,10 @@ class ProfileControllerTest {
     @Test
     void teamListAndDetailReturnProfileFactsAndPlayers() throws Exception {
         long teamId = insertTeam("spain", "西班牙");
-        insertPlayer("morata", teamId, "莫拉塔");
+        long playerId = insertPlayer("morata", teamId, "莫拉塔");
+        long matchId = insertMatch("spain-brazil", "西班牙 vs 巴西", teamId, "高温湿度影响压迫强度");
+        insertLineup(matchId, teamId, playerId, "ST", true);
+        insertTeamStats(matchId, teamId, 2, 1, 12, "12,77");
         insertTeamFact(teamId, "SCORING_PATTERN", "进球时间点", "60分钟后进球占比高");
 
         mockMvc.perform(get("/api/profiles/teams").with(httpBasic("admin", "admin123456")))
@@ -71,7 +75,12 @@ class ProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.team.displayName").value("西班牙"))
                 .andExpect(jsonPath("$.data.facts[0].factType").value("SCORING_PATTERN"))
-                .andExpect(jsonPath("$.data.players[0].displayName").value("莫拉塔"));
+                .andExpect(jsonPath("$.data.players[0].displayName").value("莫拉塔"))
+                .andExpect(jsonPath("$.data.lineups[0].playerName").value("莫拉塔"))
+                .andExpect(jsonPath("$.data.lineups[0].starter").value(true))
+                .andExpect(jsonPath("$.data.scoringPatterns[0].scoringMinutes").value("12,77"))
+                .andExpect(jsonPath("$.data.externalFactors[0].externalFactors").value("高温湿度影响压迫强度"))
+                .andExpect(jsonPath("$.data.matchHistory[0].matchName").value("西班牙 vs 巴西"));
     }
 
     @Test
@@ -90,6 +99,39 @@ class ProfileControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.player.displayName").value("贝林厄姆"))
                 .andExpect(jsonPath("$.data.facts[0].factType").value("FORM"));
+    }
+
+    @Test
+    void collectionJobCanBeCreatedThroughApi() throws Exception {
+        mockMvc.perform(post("/api/profiles/collections/jobs")
+                        .with(httpBasic("admin", "admin123456"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sourceType":"MANUAL","sourceName":"Codex","keyword":"spain","entityType":"TEAM","entityKey":"spain","factType":"SENTIMENT","title":"舆情","summary":"训练氛围积极","reliabilityScore":8.0}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalItems").value(1))
+                .andExpect(jsonPath("$.data.pendingItems").value(1));
+
+        mockMvc.perform(get("/api/profiles/collections/items?status=PENDING_REVIEW").with(httpBasic("admin", "admin123456")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].entityKey").value("spain"))
+                .andExpect(jsonPath("$.data[0].factType").value("SENTIMENT"));
+    }
+
+    @Test
+    void collectionItemCanBeRejectedThroughApi() throws Exception {
+        insertTeam("croatia", "克罗地亚");
+        long itemId = insertCollectionItem("TEAM", "croatia", "LOCKER_ROOM", "更衣室", "消息源不足");
+
+        mockMvc.perform(post("/api/profiles/collections/items/" + itemId + "/reject")
+                        .with(httpBasic("admin", "admin123456"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"reason":"来源不足"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("REJECTED"));
     }
 
     @Test
@@ -118,6 +160,22 @@ class ProfileControllerTest {
         jdbcTemplate.update("INSERT INTO players(player_key, team_id, display_name, shirt_number, position, status, injury_status, card_status, locker_room_status) VALUES (?,?,?,?,?,?,?,?,?)",
                 key, teamId, name, 9, "MF", "FIT", "无", "无", "稳定");
         return jdbcTemplate.queryForObject("SELECT id FROM players WHERE player_key = ?", Long.class, key);
+    }
+
+    private long insertMatch(String key, String name, long teamId, String externalFactors) {
+        jdbcTemplate.update("INSERT INTO matches(match_key, match_name, matchday, home_team_id, status, result_status, external_factors) VALUES (?,?,?,?,?,?,?)",
+                key, name, "2026-06-22", teamId, "IMPORTED", "UNKNOWN", externalFactors);
+        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key = ?", Long.class, key);
+    }
+
+    private void insertLineup(long matchId, long teamId, long playerId, String position, boolean starter) {
+        jdbcTemplate.update("INSERT INTO match_lineups(match_id, team_id, player_id, role, position, is_starter) VALUES (?,?,?,?,?,?)",
+                matchId, teamId, playerId, starter ? "STARTER" : "BENCH", position, starter);
+    }
+
+    private void insertTeamStats(long matchId, long teamId, int goalsFor, int goalsAgainst, int firstGoalMinute, String scoringMinutes) {
+        jdbcTemplate.update("INSERT INTO match_team_stats(match_id, team_id, stats_type, goals_for, goals_against, first_goal_minute, scoring_minutes) VALUES (?,?,?,?,?,?,?)",
+                matchId, teamId, "IMPORTED", goalsFor, goalsAgainst, firstGoalMinute, scoringMinutes);
     }
 
     private void insertTeamFact(long teamId, String factType, String title, String summary) {

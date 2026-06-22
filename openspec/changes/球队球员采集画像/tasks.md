@@ -7,6 +7,5 @@
 - [x] 新增前端 profiles API helper 与测试。
 - [x] 新增球队画像中心与球员画像中心页面。
 - [x] 更新 Dashboard 模块路由与 router 测试。
-- [ ] 运行 OpenSpec、后端、前端验证命令。
-- [ ] 完成子代理或 Codex 代码质量审查并记录结果。
-
+- [x] 运行 OpenSpec、后端、前端验证命令。
+- [x] 完成子代理或 Codex 代码质量审查并记录结果。

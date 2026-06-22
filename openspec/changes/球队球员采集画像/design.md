@@ -31,13 +31,14 @@
 - `collection_items.status=PENDING_REVIEW` 才能批准/驳回。
 - 批准 `TEAM` 项时必须能找到 `teams.team_key=entity_key`。
 - 批准 `PLAYER` 项时必须能找到 `players.player_key=entity_key`。
-- 同一 collection item 已生成事实后，再次批准直接返回既有事实映射。
+- 同一 collection item 已生成事实后，再次批准直接返回既有事实映射；若并发批准触发 `collection_item_id` 唯一键冲突，服务查询既有事实并回填映射。
 - 驳回只更新状态、review_note、reviewed_by，不写正式事实。
 
 ## Query Rules
 
 - 球队列表返回基础信息、球员数、事实数、最近更新时间。
 - 球队详情返回基础信息、事实列表、球员列表、冲突数和证据数。
+- 球队详情结构化返回 `match_lineups` 首发/上阵人员、`match_team_stats` 进失球与进球时间点、`matches.external_factors` 外部因素、以及关联比赛历史。
 - 球员列表返回基础信息、所属球队、事实数、最近更新时间。
 - 球员详情返回基础信息、所属球队、事实列表。
 - 事实按 `captured_at DESC, id DESC` 排序。
