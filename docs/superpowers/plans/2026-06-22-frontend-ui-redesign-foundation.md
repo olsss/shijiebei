@@ -361,7 +361,7 @@ git commit -m "feat: add public api sanitization contracts"
 - Extend `PublicApiDtos.java` and `PublicApiMapper.java`.
 - Update `SecurityBoundaryTest.java`.
 
-- [ ] **Step 1: Write failing endpoint assertions**
+- [x] **Step 1: Write failing endpoint assertions**
 
 Extend `SecurityBoundaryTest` with actual public paths introduced in this task:
 
@@ -373,7 +373,7 @@ mockMvc.perform(get("/api/public/sentiment/risk-types")).andExpect(status().isOk
 mockMvc.perform(get("/api/public/profiles/players")).andExpect(status().isOk());
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -383,7 +383,7 @@ mvn -f server/pom.xml -Dtest=SecurityBoundaryTest test
 
 Expected: FAIL until these public controllers exist.
 
-- [ ] **Step 3: Implement controllers by delegating to existing query services**
+- [x] **Step 3: Implement controllers by delegating to existing query services**
 
 Example `PublicMatchesController`:
 
@@ -416,7 +416,7 @@ public class PublicMatchesController {
 
 Then replace `List<?>` with typed public DTOs once `PublicApiMapper` methods are added. Repeat for odds/sentiment/profiles. Do not return rich detail DTO fields named `payload`, `rawPayload`, `approvedBy`, `reviewedBy`, `reviewNote`.
 
-- [ ] **Step 4: Add negative JSONPath tests before mapping rich details**
+- [x] **Step 4: Add negative JSONPath tests before mapping rich details**
 
 For every public detail endpoint added, assert:
 
@@ -427,7 +427,7 @@ For every public detail endpoint added, assert:
 .andExpect(jsonPath("$..reviewNote").doesNotExist())
 ```
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 ```bash
 mvn -f server/pom.xml -Dtest=SecurityBoundaryTest,PublicApiSanitizationTest test
@@ -435,7 +435,7 @@ mvn -f server/pom.xml -Dtest=SecurityBoundaryTest,PublicApiSanitizationTest test
 
 Expected: PASS for public evidence APIs.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/main/java/com/worldcup/publicapi server/src/test/java/com/worldcup/security/SecurityBoundaryTest.java server/src/test/java/com/worldcup/publicapi
