@@ -560,7 +560,7 @@ emits: {
 }
 
 slots:
-  #cell-{key}="{ row, value }"
+  #cell-{key}="{ row, column, value }"  // 动态列 cell slot，key 对应 columns.key
   #mobile-summary="{ row }"
   #row-actions="{ row, actions }"
   #empty
