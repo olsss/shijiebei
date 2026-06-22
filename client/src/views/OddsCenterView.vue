@@ -12,6 +12,7 @@ import {
   type OddsMatchDetail,
 } from '@/api/odds';
 import { useAuthStore } from '@/stores/auth';
+import { formatMarketLine } from '@/utils/odds-format';
 
 const authStore = useAuthStore();
 const loading = ref(false);
@@ -168,7 +169,7 @@ onMounted(load);
                 </template>
               </el-table-column>
               <el-table-column label="盘口" width="92">
-                <template #default="{ row }">{{ row.lineValue || row.handicapLine || '-' }}</template>
+                <template #default="{ row }">{{ formatMarketLine(row.lineValue, row.handicapLine) }}</template>
               </el-table-column>
               <el-table-column prop="snapshotType" label="快照" width="82" />
               <el-table-column label="选项" width="70">
@@ -194,7 +195,7 @@ onMounted(load);
                 <el-table-column prop="marketCode" label="玩法" width="100" />
                 <el-table-column prop="marketName" label="名称" min-width="120" />
                 <el-table-column label="盘口" width="90">
-                  <template #default="{ row }">{{ row.lineValue || row.handicapLine || '-' }}</template>
+                  <template #default="{ row }">{{ formatMarketLine(row.lineValue, row.handicapLine) }}</template>
                 </el-table-column>
                 <el-table-column prop="snapshotType" label="快照" width="88" />
                 <el-table-column label="抓取时间" min-width="130">
