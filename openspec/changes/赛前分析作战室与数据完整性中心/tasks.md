@@ -21,12 +21,12 @@
 
 ## 3. 前端赛前作战室
 
-- [ ] 新增 `prematchWorkbench` API helper 测试并先确认失败。
-- [ ] 更新 router 测试要求 `/prematch-workbench` 并先确认失败。
-- [ ] 实现 `client/src/api/prematchWorkbench.ts`。
-- [ ] 实现 `client/src/views/PrematchWorkbenchView.vue`。
-- [ ] 更新 router 和 Dashboard 入口。
-- [ ] 前端测试与构建通过。
+- [x] 新增 `prematchWorkbench` API helper 测试并先确认失败。
+- [x] 更新 router 测试要求 `/prematch-workbench` 并先确认失败。
+- [x] 实现 `client/src/api/prematchWorkbench.ts`。
+- [x] 实现 `client/src/views/PrematchWorkbenchView.vue`。
+- [x] 更新 router 和 Dashboard 入口。
+- [x] 前端测试与构建通过。
 
 ## 4. 验证与代码审查
 
@@ -37,4 +37,5 @@
 - [ ] `git diff --check` 通过。
 - [ ] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
 - [ ] 生成 `docs/java-system/reviews/赛前分析作战室与数据完整性中心-review.md`。
+
 

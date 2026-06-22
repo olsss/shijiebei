@@ -65,6 +65,7 @@ const modules = [
   { title: '赔率中心', description: '各公司、各玩法、各选项盘口快照', to: '/odds' },
   { title: '舆情与外部因素中心', description: '天气、场地、舆情与风险评分', to: '/sentiment' },
   { title: '分析下注复盘中心', description: 'AI 方案归档、实际出票、ROI 与 CLV', to: '/analysis-review' },
+  { title: '赛前分析作战室', description: '按比赛聚合画像、阵容、赔率、舆情与完整性检查', to: '/prematch-workbench' },
   { title: '球队画像中心', description: '球队特性、进球时间点和证据链', to: '/profiles/teams' },
   { title: '球员画像中心', description: '状态、伤病、红黄牌和更衣室情况', to: '/profiles/players' },
 ];
@@ -147,3 +148,4 @@ onMounted(loadCoreDataOverview);
   color: #6b7280;
 }
 </style>
+
