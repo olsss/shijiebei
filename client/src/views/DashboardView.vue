@@ -61,8 +61,8 @@ const coreDataError = ref('');
 
 const modules = [
   { title: 'JSON 审核中心', description: '扫描、校验、批准 JSON 暂存入库', to: '/import-review' },
-  { title: '球队画像中心', description: '球队特性、进球时间点和证据链', to: '/' },
-  { title: '球员画像中心', description: '状态、伤病、红黄牌和更衣室情况', to: '/' },
+  { title: '球队画像中心', description: '球队特性、进球时间点和证据链', to: '/profiles/teams' },
+  { title: '球员画像中心', description: '状态、伤病、红黄牌和更衣室情况', to: '/profiles/players' },
   { title: '赛后复盘中心', description: 'ROI、CLV 和五层复盘', to: '/' },
 ];
 
@@ -144,3 +144,4 @@ onMounted(loadCoreDataOverview);
   color: #6b7280;
 }
 </style>
+
