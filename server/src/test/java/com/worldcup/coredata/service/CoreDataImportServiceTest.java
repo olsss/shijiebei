@@ -219,6 +219,32 @@ class CoreDataImportServiceTest {
     }
 
     @Test
+    void approvedSourceImportsAllSentimentAliasArraysWhenPresentTogether() {
+        ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"法国 vs 巴西",
+                  "date":"2026-06-25",
+                  "external_factors":[{"category":"WEATHER","type":"RAIN","title":"小雨"}],
+                  "factors":[{"category":"VENUE","type":"PITCH","title":"草皮偏软"}],
+                  "sentiment_records":[{"type":"MEDIA_HEAT","title":"媒体热度升高"}],
+                  "sentiments":[{"type":"LOCKER_ROOM","title":"更衣室稳定"}],
+                  "risk_assessments":[{"type":"SCHEDULE_FATIGUE","level":"MEDIUM","score":"55","title":"赛程疲劳"}],
+                  "risks":[{"type":"NEWS_CONFLICT","level":"LOW","score":"25","title":"消息冲突"}]
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(7);
+        assertThat(count("match_context_factors")).isEqualTo(4);
+        assertThat(count("sentiment_risk_assessments")).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='VENUE' AND factor_type='PITCH'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_SENTIMENT' AND factor_type='LOCKER_ROOM'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE risk_type='NEWS_CONFLICT' AND risk_level='LOW'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
     void approvedSourceImportsEvidenceConflictsAndAliases() {
         ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
                 """

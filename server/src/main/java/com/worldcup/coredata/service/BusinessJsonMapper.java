@@ -342,18 +342,22 @@ public class BusinessJsonMapper {
 
     private List<FactorPayload> collectFactorPayloads(JsonNode json) {
         List<FactorPayload> factors = new ArrayList<>();
-        for (JsonNode node : asNodes(firstPresent(json, "external_factors", "factors"))) {
-            factors.add(new FactorPayload("OTHER", node));
-        }
-        for (JsonNode node : asNodes(firstPresent(json, "sentiment_records", "sentiments"))) {
-            factors.add(new FactorPayload("PUBLIC_SENTIMENT", node));
-        }
+        addFactorArray(factors, json, "external_factors", "OTHER");
+        addFactorArray(factors, json, "factors", "OTHER");
+        addFactorArray(factors, json, "sentiment_records", "PUBLIC_SENTIMENT");
+        addFactorArray(factors, json, "sentiments", "PUBLIC_SENTIMENT");
         addSingleFactor(factors, json, "weather", "WEATHER");
         addSingleFactor(factors, json, "venue", "VENUE");
         addSingleFactor(factors, json, "referee", "REFEREE");
         addSingleFactor(factors, json, "motivation", "MOTIVATION");
         addSingleFactor(factors, json, "public_sentiment", "PUBLIC_SENTIMENT");
         return factors;
+    }
+
+    private void addFactorArray(List<FactorPayload> factors, JsonNode json, String field, String defaultCategory) {
+        for (JsonNode node : asNodes(json.get(field))) {
+            factors.add(new FactorPayload(defaultCategory, node));
+        }
     }
 
     private void addSingleFactor(List<FactorPayload> factors, JsonNode json, String field, String category) {
@@ -365,10 +369,15 @@ public class BusinessJsonMapper {
 
     private List<RiskPayload> collectTopLevelRiskPayloads(JsonNode json) {
         List<RiskPayload> risks = new ArrayList<>();
-        for (JsonNode node : asNodes(firstPresent(json, "risk_assessments", "risks"))) {
+        addTopLevelRiskArray(risks, json, "risk_assessments");
+        addTopLevelRiskArray(risks, json, "risks");
+        return risks;
+    }
+
+    private void addTopLevelRiskArray(List<RiskPayload> risks, JsonNode json, String field) {
+        for (JsonNode node : asNodes(json.get(field))) {
             risks.add(new RiskPayload(null, node));
         }
-        return risks;
     }
 
     private Long insertContextFactor(ImportItem item, Long matchId, FactorPayload factor) {
