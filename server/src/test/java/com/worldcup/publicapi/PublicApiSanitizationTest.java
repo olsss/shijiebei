@@ -66,4 +66,13 @@ class PublicApiSanitizationTest {
         assertThat(sanitized).doesNotContain("ABC123", "12", "99", "180", "-20", "88");
         assertThat(sanitized).contains("[REDACTED]");
     }
+
+    @Test
+    void sanitizerRedactsForbiddenTokenPathSegments() {
+        assertThat(mapper.sanitizeToken("payload.ticketNo")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("bets.stake")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("stake_suggestion.amount")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("raw_payload.field")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("LINEUP.fieldName")).isEqualTo("LINEUP.fieldName");
+    }
 }

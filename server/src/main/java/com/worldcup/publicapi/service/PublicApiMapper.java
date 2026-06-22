@@ -54,10 +54,19 @@ public class PublicApiMapper {
             return value;
         }
         String trimmed = value.trim();
-        if (FORBIDDEN_TOKEN_ALIASES.contains(trimmed.toLowerCase(Locale.ROOT))) {
+        if (hasForbiddenTokenSegment(trimmed)) {
             return "[REDACTED]";
         }
         return sanitizeText(value);
+    }
+
+    private boolean hasForbiddenTokenSegment(String value) {
+        for (String segment : value.split("[^A-Za-z0-9_]+")) {
+            if (FORBIDDEN_TOKEN_ALIASES.contains(segment.toLowerCase(Locale.ROOT))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public PublicMatchSummary toPublicMatchSummary(MatchSummaryResponse value) {

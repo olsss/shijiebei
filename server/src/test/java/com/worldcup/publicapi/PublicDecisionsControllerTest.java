@@ -3,6 +3,7 @@ package com.worldcup.publicapi;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,12 +11,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import com.worldcup.analysisreviewcenter.service.AnalysisReviewCenterQueryService;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,6 +35,9 @@ class PublicDecisionsControllerTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @SpyBean
+    AnalysisReviewCenterQueryService richQueryService;
 
     @BeforeEach
     @AfterEach
@@ -56,6 +64,8 @@ class PublicDecisionsControllerTest {
                 .andExpect(jsonPath("$.data[0].id").value(fixture.reportId()))
                 .andExpect(jsonPath("$.data[0].matchId").value(fixture.matchId()))
                 .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away")));
+
+        verify(richQueryService, never()).reports();
     }
 
     @Test
@@ -67,6 +77,39 @@ class PublicDecisionsControllerTest {
                 .andExpect(jsonPath("$.data[0].id").value(fixture.reviewId()))
                 .andExpect(jsonPath("$.data[0].matchId").value(fixture.matchId()))
                 .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away")));
+
+        verify(richQueryService, never()).reviews();
+    }
+
+    @Test
+    void reportsUseDefaultPublicLimit() throws Exception {
+        long importItemId = insertImportItem();
+        long homeTeamId = insertTeam("report-limit-home", "Report Limit Home");
+        long awayTeamId = insertTeam("report-limit-away", "Report Limit Away");
+        long matchId = insertMatch("report-limit-match", "Report Limit Home vs Report Limit Away", homeTeamId, awayTeamId);
+        for (int i = 0; i < 55; i++) {
+            insertAnalysisReport(importItemId, matchId, "limit-report-" + i);
+        }
+
+        mockMvc.perform(get("/api/public/decisions/reports"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()", lessThanOrEqualTo(50)));
+    }
+
+    @Test
+    void reviewsUseDefaultPublicLimit() throws Exception {
+        long importItemId = insertImportItem();
+        long homeTeamId = insertTeam("review-limit-home", "Review Limit Home");
+        long awayTeamId = insertTeam("review-limit-away", "Review Limit Away");
+        long matchId = insertMatch("review-limit-match", "Review Limit Home vs Review Limit Away", homeTeamId, awayTeamId);
+        long reportId = insertAnalysisReport(importItemId, matchId, "review-limit-report");
+        for (int i = 0; i < 55; i++) {
+            insertReview(importItemId, matchId, reportId, "limit-review-" + i);
+        }
+
+        mockMvc.perform(get("/api/public/decisions/reviews"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()", lessThanOrEqualTo(50)));
     }
 
     private ResultActions expectNoForbiddenFieldsOrTokens(ResultActions result) throws Exception {
@@ -122,24 +165,36 @@ class PublicDecisionsControllerTest {
     }
 
     private long insertMatch(long homeTeamId, long awayTeamId) {
+        return insertMatch("decision-home-away-20260623", "Public Home vs Public Away", homeTeamId, awayTeamId);
+    }
+
+    private long insertMatch(String matchKey, String matchName, long homeTeamId, long awayTeamId) {
         jdbcTemplate.update("INSERT INTO matches(match_key, match_name, matchday, jc_code, competition, stage, venue, kickoff_time, home_team_id, away_team_id, status, result_status, external_factors, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                "decision-home-away-20260623", "Public Home vs Public Away", "2026-06-23", "031", "World Cup", "Group", "Test Stadium",
+                matchKey, matchName, "2026-06-23", "031", "World Cup", "Group", "Test Stadium",
                 Timestamp.valueOf(LocalDateTime.of(2026, 6, 23, 20, 0)), homeTeamId, awayTeamId, "SCHEDULED", "PENDING",
                 "approvedBy=SECRET", "{\"payload\":\"SECRET\"}");
-        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, "decision-home-away-20260623");
+        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, matchKey);
     }
 
     private long insertAnalysisReport(long importItemId, long matchId) {
+        return insertAnalysisReport(importItemId, matchId, "decision-report-1");
+    }
+
+    private long insertAnalysisReport(long importItemId, long matchId, String analysisId) {
         jdbcTemplate.update("INSERT INTO analysis_reports(import_item_id, match_id, analysis_id, conclusion_type, confidence, risk_summary, recommended_markets, dimensions, narrative_md, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                importItemId, matchId, "decision-report-1", "VALUE", "HIGH",
+                importItemId, matchId, analysisId, "VALUE", "HIGH",
                 "risk summary ticketNo=SECRET stake=88 reviewedBy=admin rawPayload=SECRET",
                 "HAD", "dimensions", "long narrative SECRET profitLoss=-20", "{\"rawPayload\":\"SECRET\"}");
         return jdbcTemplate.queryForObject("SELECT MAX(id) FROM analysis_reports", Long.class);
     }
 
     private long insertReview(long importItemId, long matchId, long reportId) {
+        return insertReview(importItemId, matchId, reportId, "decision-review-1");
+    }
+
+    private long insertReview(long importItemId, long matchId, long reportId, String reviewKey) {
         jdbcTemplate.update("INSERT INTO post_match_reviews(import_item_id, match_id, analysis_report_id, review_key, review_title, math_review, football_review, handicap_review, tournament_temperament_review, odds_value_review, overall_summary, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                importItemId, matchId, reportId, "decision-review-1", "Public review",
+                importItemId, matchId, reportId, reviewKey, "Public review",
                 "math ticketNo=SECRET", "football stakeSuggestion=88", "handicap budgetAmount=100",
                 "temperament returnAmount=200", "odds profitLoss=-20", "overall reviewedBy=admin SECRET",
                 "{\"rawPayload\":\"SECRET\"}");

@@ -1,11 +1,10 @@
 package com.worldcup.publicapi.api;
 
 import com.worldcup.common.api.ApiResponse;
-import com.worldcup.prematchworkbench.service.PrematchWorkbenchQueryService;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicPrematchDetail;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicPrematchIntegrityCheck;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicPrematchMatchSummary;
-import com.worldcup.publicapi.service.PublicApiMapper;
+import com.worldcup.publicapi.service.PublicPrematchWorkbenchService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,26 +15,24 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/public/prematch-workbench")
 public class PublicPrematchWorkbenchController {
-    private final PrematchWorkbenchQueryService queryService;
-    private final PublicApiMapper mapper;
+    private final PublicPrematchWorkbenchService workbenchService;
 
-    public PublicPrematchWorkbenchController(PrematchWorkbenchQueryService queryService, PublicApiMapper mapper) {
-        this.queryService = queryService;
-        this.mapper = mapper;
+    public PublicPrematchWorkbenchController(PublicPrematchWorkbenchService workbenchService) {
+        this.workbenchService = workbenchService;
     }
 
     @GetMapping("/matches")
     public ApiResponse<List<PublicPrematchMatchSummary>> matches() {
-        return ApiResponse.ok(queryService.matches().stream().map(mapper::toPublicPrematchMatchSummary).toList());
+        return ApiResponse.ok(workbenchService.matches());
     }
 
     @GetMapping("/matches/{matchId}")
     public ApiResponse<PublicPrematchDetail> match(@PathVariable long matchId) {
-        return ApiResponse.ok(mapper.toPublicPrematchDetail(queryService.match(matchId)));
+        return ApiResponse.ok(workbenchService.match(matchId));
     }
 
     @GetMapping("/matches/{matchId}/integrity")
     public ApiResponse<List<PublicPrematchIntegrityCheck>> integrity(@PathVariable long matchId) {
-        return ApiResponse.ok(queryService.integrity(matchId).stream().map(mapper::toPublicPrematchIntegrityCheck).toList());
+        return ApiResponse.ok(workbenchService.integrity(matchId));
     }
 }

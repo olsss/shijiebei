@@ -4,18 +4,24 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import com.worldcup.prematchworkbench.service.PrematchWorkbenchQueryService;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,6 +36,9 @@ class PublicPrematchWorkbenchControllerTest {
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @SpyBean
+    PrematchWorkbenchQueryService richQueryService;
 
     @BeforeEach
     @AfterEach
@@ -70,6 +79,19 @@ class PublicPrematchWorkbenchControllerTest {
     }
 
     @Test
+    void matchesUseDefaultPublicLimit() throws Exception {
+        long homeTeamId = insertTeam("limit-home", "Limit Home");
+        long awayTeamId = insertTeam("limit-away", "Limit Away");
+        for (int i = 0; i < 55; i++) {
+            insertMatch("limit-match-" + i, "Limit Home vs Limit Away " + i, homeTeamId, awayTeamId);
+        }
+
+        mockMvc.perform(get("/api/public/prematch-workbench/matches"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()", lessThanOrEqualTo(50)));
+    }
+
+    @Test
     void matchDetailIsPublicAndDropsBettingDetailsAndRawNarrative() throws Exception {
         PrematchFixture fixture = createPrematchFixture();
 
@@ -88,6 +110,8 @@ class PublicPrematchWorkbenchControllerTest {
                 .andExpect(jsonPath("$.data.betPlans").doesNotExist())
                 .andExpect(jsonPath("$.data.bets").doesNotExist())
                 .andExpect(jsonPath("$..narrativeMd").doesNotExist()));
+
+        verify(richQueryService, never()).match(anyLong());
     }
 
     @Test
@@ -172,11 +196,15 @@ class PublicPrematchWorkbenchControllerTest {
     }
 
     private long insertMatch(long homeTeamId, long awayTeamId) {
+        return insertMatch("prematch-home-away-20260623", "Public Home vs Public Away", homeTeamId, awayTeamId);
+    }
+
+    private long insertMatch(String matchKey, String matchName, long homeTeamId, long awayTeamId) {
         jdbcTemplate.update("INSERT INTO matches(match_key, match_name, matchday, jc_code, competition, stage, venue, kickoff_time, home_team_id, away_team_id, status, result_status, external_factors, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                "prematch-home-away-20260623", "Public Home vs Public Away", "2026-06-23", "031", "World Cup", "Group", "Test Stadium",
+                matchKey, matchName, "2026-06-23", "031", "World Cup", "Group", "Test Stadium",
                 Timestamp.valueOf(LocalDateTime.of(2026, 6, 23, 20, 0)), homeTeamId, awayTeamId, "SCHEDULED", "PENDING",
                 "weather clear reviewedBy=SECRET", "{\"payload\":\"SECRET\"}");
-        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, "prematch-home-away-20260623");
+        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, matchKey);
     }
 
     private void insertTeamFact(long teamId) {
@@ -202,7 +230,7 @@ class PublicPrematchWorkbenchControllerTest {
 
     private void insertConflict(long matchId) {
         jdbcTemplate.update("INSERT INTO data_conflicts(match_id, conflict_type, entity_key, field_name, current_value, incoming_value, resolution_status, raw_payload) VALUES (?,?,?,?,?,?,?,?)",
-                matchId, "LINEUP", "prematch-home-away-20260623", "rawPayload", "ticketNo=SECRET", "stake=88", "PENDING", "{\"field\":\"SECRET\"}");
+                matchId, "LINEUP", "prematch-home-away-20260623", "payload.ticketNo", "ticketNo=SECRET", "stake=88", "PENDING", "{\"field\":\"SECRET\"}");
     }
 
     private long insertOddsMarket(long importItemId, long matchId) {
