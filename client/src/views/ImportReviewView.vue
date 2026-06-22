@@ -87,6 +87,41 @@ function isImportingCoreData(id: number): boolean {
   return importingItemIds.value.has(id);
 }
 
+function mappingCount(row: ImportItemResponse): number {
+  return coreDataMappings.value[row.id]?.length ?? 0;
+}
+
+function coreDataStatusLabel(row: ImportItemResponse): string {
+  if (row.status !== 'APPROVED') return '未批准';
+  return mappingCount(row) > 0 ? '已导入' : '未导入';
+}
+
+function coreDataStatusType(row: ImportItemResponse) {
+  if (mappingCount(row) > 0) return 'success';
+  if (row.status === 'APPROVED') return 'info';
+  return 'warning';
+}
+
+async function loadCoreDataMappingsForApproved(rows: ImportItemResponse[]) {
+  const approvedRows = rows.filter((item) => item.status === 'APPROVED' && item.validJson);
+  if (approvedRows.length === 0) {
+    return;
+  }
+  const authHeader = requireAuthHeader();
+  const nextMappings: Record<number, CoreDataMapping[]> = { ...coreDataMappings.value };
+  await Promise.all(
+    approvedRows.map(async (item) => {
+      try {
+        const response = await listCoreDataMappings(authHeader, item.id);
+        nextMappings[item.id] = response.data;
+      } catch {
+        nextMappings[item.id] = nextMappings[item.id] ?? [];
+      }
+    }),
+  );
+  coreDataMappings.value = nextMappings;
+}
+
 async function loadItems() {
   loading.value = true;
   error.value = '';
@@ -96,6 +131,7 @@ async function loadItems() {
       type: typeFilter.value || undefined,
     });
     items.value = response.data;
+    await loadCoreDataMappingsForApproved(response.data);
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '无法读取 JSON 审核列表。';
   } finally {
@@ -286,6 +322,12 @@ onMounted(loadItems);
               <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
             </template>
           </el-table-column>
+          <el-table-column label="正式库" width="150">
+            <template #default="{ row }">
+              <el-tag :type="coreDataStatusType(row)">{{ coreDataStatusLabel(row) }}</el-tag>
+              <span v-if="mappingCount(row) > 0" class="mapping-count">{{ mappingCount(row) }} 条</span>
+            </template>
+          </el-table-column>
           <el-table-column label="校验" min-width="220">
             <template #default="{ row }">
               <el-tag :type="row.validJson ? 'success' : 'danger'">
@@ -316,7 +358,7 @@ onMounted(loadItems);
                 :loading="isImportingCoreData(row.id)"
                 @click="importToCoreData(row)"
               >
-                导入正式库
+                {{ mappingCount(row) > 0 ? '查看映射' : '导入正式库' }}
               </el-button>
             </template>
           </el-table-column>
@@ -395,6 +437,10 @@ onMounted(loadItems);
 }
 .stats-grid span,
 .validation-text {
+  color: #6b7280;
+  margin-left: 8px;
+}
+.mapping-count {
   color: #6b7280;
   margin-left: 8px;
 }

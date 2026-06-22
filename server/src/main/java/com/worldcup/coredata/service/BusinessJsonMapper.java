@@ -34,6 +34,9 @@ public class BusinessJsonMapper {
         this.matchKeyNormalizer = matchKeyNormalizer;
     }
 
+    private record OddsPayload(String bookmaker, JsonNode node) {
+    }
+
     public List<CoreDataMappingResponse> map(ImportItem item, JsonNode json, String actor) {
         if (item.getItemType() == ImportItemType.ANALYSIS) {
             return mapAnalysis(item, json);
@@ -97,22 +100,53 @@ public class BusinessJsonMapper {
                 json
         );
 
-        List<JsonNode> companies = asNodes(json.get("companies"));
-        if (companies.isEmpty()) {
-            companies = List.of(json);
+        List<OddsPayload> oddsPayloads = collectOddsPayloads(json);
+        if (oddsPayloads.isEmpty()) {
+            oddsPayloads = List.of(new OddsPayload(fallback(text(json, "source", "bookmaker"), "UNKNOWN"), json));
         }
-        for (JsonNode company : companies) {
+        for (OddsPayload payload : oddsPayloads) {
+            JsonNode oddsNode = payload.node();
             Long snapshotId = insertAndReturnId(
                     "INSERT INTO odds_snapshots(import_item_id, match_id, bookmaker, market_type, odds_value, raw_payload) VALUES (?,?,?,?,?,?)",
                     item.getId(), matchId,
-                    fallback(text(company, "name", "bookmaker", "company"), fallback(text(json, "source", "bookmaker"), "UNKNOWN")),
-                    fallback(text(company, "market", "market_type"), "RAW"),
-                    decimal(company, "odds", "value", "price"),
-                    toJson(company)
+                    fallback(payload.bookmaker(), fallback(text(oddsNode, "name", "bookmaker", "company"), fallback(text(json, "source", "bookmaker"), "UNKNOWN"))),
+                    fallback(text(oddsNode, "market", "market_type", "type"), "RAW"),
+                    decimal(oddsNode, "odds", "value", "price"),
+                    toJson(oddsNode)
             );
             mappings.add(insertMapping(item.getId(), "ODDS_SNAPSHOT", snapshotId, "IMPORTED", "赔率快照已导入正式库"));
         }
         return mappings;
+    }
+
+    private List<OddsPayload> collectOddsPayloads(JsonNode json) {
+        List<OddsPayload> payloads = new ArrayList<>();
+        for (JsonNode company : asNodes(json.get("companies"))) {
+            String bookmaker = text(company, "name", "bookmaker", "company");
+            List<JsonNode> markets = asNodes(company.get("markets"));
+            if (markets.isEmpty()) {
+                payloads.add(new OddsPayload(bookmaker, company));
+            } else {
+                for (JsonNode market : markets) {
+                    payloads.add(new OddsPayload(bookmaker, market));
+                }
+            }
+        }
+        for (JsonNode market : asNodes(json.get("markets"))) {
+            payloads.add(new OddsPayload(text(market, "bookmaker", "company", "name"), market));
+        }
+        for (JsonNode book : asNodes(firstPresent(json, "all_books", "allBooks"))) {
+            List<JsonNode> markets = asNodes(book.get("markets"));
+            String bookmaker = text(book, "bookmaker", "company", "name");
+            if (markets.isEmpty()) {
+                payloads.add(new OddsPayload(bookmaker, book));
+            } else {
+                for (JsonNode market : markets) {
+                    payloads.add(new OddsPayload(bookmaker, market));
+                }
+            }
+        }
+        return payloads;
     }
 
     private List<CoreDataMappingResponse> mapSource(ImportItem item, JsonNode json) {
@@ -293,6 +327,19 @@ public class BusinessJsonMapper {
         return List.of(node);
     }
 
+    private JsonNode firstPresent(JsonNode node, String... fields) {
+        if (node == null || node.isNull() || node.isMissingNode()) {
+            return null;
+        }
+        for (String field : fields) {
+            JsonNode value = node.get(field);
+            if (value != null && !value.isNull() && !value.isMissingNode()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private String text(JsonNode node, String... fields) {
         if (node == null || node.isNull() || node.isMissingNode()) {
             return null;
@@ -376,4 +423,3 @@ public class BusinessJsonMapper {
         return value.substring(0, maxLength);
     }
 }
-

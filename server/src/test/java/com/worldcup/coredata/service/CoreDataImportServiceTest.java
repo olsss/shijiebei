@@ -65,6 +65,17 @@ class CoreDataImportServiceTest {
     }
 
     @Test
+    void approvedButInvalidJsonCannotBeImported() {
+        ImportItem item = saveItem(ImportItemType.ANALYSIS, ImportItemStatus.APPROVED, false,
+                "{\"id\":\"invalid-approved\",\"match\":\"A vs B\"}");
+
+        assertThatThrownBy(() -> service.importItem(item.getId(), "admin"))
+                .hasMessageContaining("只有已批准");
+        assertThat(count("matches")).isZero();
+        assertThat(count("import_item_mappings")).isZero();
+    }
+
+    @Test
     void approvedAnalysisImportsMatchAndReportAndIsIdempotent() {
         ImportItem item = saveItem(ImportItemType.ANALYSIS, ImportItemStatus.APPROVED, true,
                 "{\"id\":\"analysis-1\",\"match\":\"西班牙 vs 沙特\",\"matchday\":\"2026-06-22\",\"jc_code\":\"周日037\",\"conclusion_type\":\"盘口判断\",\"confidence\":\"中\",\"risks\":[\"首发未核\"],\"recommended\":[{\"type\":\"HHAD\"}],\"dimensions\":{\"form\":\"ok\"},\"sources\":[{\"name\":\"FIFA\",\"url\":\"https://example.test\"}],\"narrative_md\":\"正文\"}");
@@ -81,17 +92,17 @@ class CoreDataImportServiceTest {
 
 
     @Test
-    void approvedOddsImportsSnapshots() {
+    void approvedOddsImportsCompanyMarketsAndAllBooks() {
         ImportItem item = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
                 """
-                {"match":"法国 vs 巴西","date":"2026-06-23","jc_code":"周一001","companies":[{"name":"Bet365","market":"HAD","odds":"1.80"},{"name":"Pinnacle","market":"HAD","odds":"1.83"}]}
+                {"match":"法国 vs 巴西","date":"2026-06-23","jc_code":"周一001","companies":[{"name":"Bet365","markets":[{"market":"HAD","odds":"1.80"},{"market":"HHAD","odds":"2.10"}]}],"all_books":[{"bookmaker":"Pinnacle","market":"HAD","odds":"1.83"}]}
                 """);
 
         CoreDataImportResponse response = service.importItem(item.getId(), "admin");
 
-        assertThat(response.mappings()).hasSize(2);
+        assertThat(response.mappings()).hasSize(3);
         assertThat(count("matches")).isEqualTo(1);
-        assertThat(count("odds_snapshots")).isEqualTo(2);
+        assertThat(count("odds_snapshots")).isEqualTo(3);
     }
 
     @Test
@@ -151,5 +162,3 @@ class CoreDataImportServiceTest {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
     }
 }
-
-

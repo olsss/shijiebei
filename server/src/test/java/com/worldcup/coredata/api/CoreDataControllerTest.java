@@ -42,6 +42,7 @@ class CoreDataControllerTest {
     @AfterEach
     void clean() {
         jdbcTemplate.update("DELETE FROM import_item_mappings");
+        jdbcTemplate.update("DELETE FROM data_dictionaries");
         jdbcTemplate.update("DELETE FROM bets");
         jdbcTemplate.update("DELETE FROM analysis_reports");
         jdbcTemplate.update("DELETE FROM odds_snapshots");
@@ -66,8 +67,23 @@ class CoreDataControllerTest {
     }
 
     @Test
+    void coreDataEndpointsRequireAuthentication() throws Exception {
+        mockMvc.perform(get("/api/core-data/overview"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void importInvalidItemReturnsBadRequest() throws Exception {
+        ImportItem item = saveAnalysisItem(ImportItemStatus.APPROVED, false);
+
+        mockMvc.perform(post("/api/core-data/import-items/" + item.getId() + "/import")
+                        .with(httpBasic("admin", "admin123456")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void importApprovedItemAndReadMappings() throws Exception {
-        ImportItem item = saveApprovedAnalysisItem();
+        ImportItem item = saveAnalysisItem(ImportItemStatus.APPROVED, true);
 
         mockMvc.perform(post("/api/core-data/import-items/" + item.getId() + "/import")
                         .with(httpBasic("admin", "admin123456")))
@@ -81,28 +97,26 @@ class CoreDataControllerTest {
                 .andExpect(jsonPath("$.data[0].targetType").exists());
     }
 
-    private ImportItem saveApprovedAnalysisItem() {
+    private ImportItem saveAnalysisItem(ImportItemStatus status, boolean validJson) {
         ImportJob job = new ImportJob();
         job.setArchivePath("test/archive");
         job.setStatus("SCANNED");
         job.setMessage("test");
         job.setTotalItems(1);
-        job.setValidItems(1);
-        job.setInvalidItems(0);
+        job.setValidItems(validJson ? 1 : 0);
+        job.setInvalidItems(validJson ? 0 : 1);
 
         ImportItem item = new ImportItem();
         item.setJob(job);
         item.setItemType(ImportItemType.ANALYSIS);
-        item.setStatus(ImportItemStatus.APPROVED);
+        item.setStatus(status);
         item.setRelativePath("analysis.json");
         item.setSha256("1".repeat(64));
         item.setSummaryTitle("西班牙 vs 沙特");
-        item.setValidJson(true);
-        item.setValidationMessage("ok");
+        item.setValidJson(validJson);
+        item.setValidationMessage(validJson ? "ok" : "invalid");
         item.setRawJson("{\"id\":\"analysis-api-1\",\"match\":\"西班牙 vs 沙特\",\"matchday\":\"2026-06-22\",\"sources\":[{\"name\":\"FIFA\"}]}");
         job.addItem(item);
         return jobRepository.save(job).getItems().get(0);
     }
 }
-
-

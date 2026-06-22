@@ -2,7 +2,7 @@
 
 - [ ] 创建 `核心数据模型` OpenSpec change。
 - [ ] 新增核心业务表 Flyway 迁移。
-- [ ] 新增核心数据 JPA 实体和 Repository。
+- [ ] 新增核心数据 JdbcTemplate 查询/写入模型与服务。
 - [ ] 新增 approved import item 正式入库服务。
 - [ ] 新增 ANALYSIS / ODDS / SOURCE / BETS 映射逻辑。
 - [ ] 新增核心数据 API：overview、import、mappings。

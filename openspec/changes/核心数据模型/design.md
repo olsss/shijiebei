@@ -8,10 +8,10 @@
 
 新增包 `com.worldcup.coredata`：
 
-- `domain`：核心业务 JPA entity，例如 `BusinessMatch`、`AnalysisReport`、`BetRecord`、`ImportItemMapping`。
-- `repo`：JPA repositories。
-- `service`：`CoreDataImportService`、`BusinessJsonMapper`、`MatchKeyNormalizer`、`CoreDataOverviewService`。
+- `service`：`CoreDataImportService`、`BusinessJsonMapper`、`MatchKeyNormalizer`、`CoreDataOverviewService`，使用 `JdbcTemplate + Jackson` 对弱结构 JSON 做正式表写入与查询。
 - `api`：`CoreDataController` 和 DTO。
+
+本阶段不新增核心业务 JPA entity/repository；正式业务表由 Flyway 管理，避免大量长文本 JSON 字段与 Hibernate 类型校验耦合。后续球队/球员画像模块如果需要复杂编辑能力，再按表逐步补充 entity/repository。
 
 `CoreDataImportService` 负责：
 
