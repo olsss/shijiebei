@@ -37,6 +37,7 @@ class CoreDataImportServiceTest {
     @AfterEach
     void clean() {
         jdbcTemplate.update("DELETE FROM import_item_mappings");
+        jdbcTemplate.update("DELETE FROM data_dictionaries");
         jdbcTemplate.update("DELETE FROM bets");
         jdbcTemplate.update("DELETE FROM analysis_reports");
         jdbcTemplate.update("DELETE FROM odds_snapshots");
@@ -76,6 +77,51 @@ class CoreDataImportServiceTest {
         assertThat(count("matches")).isEqualTo(1);
         assertThat(count("analysis_reports")).isEqualTo(1);
         assertThat(count("source_evidence")).isEqualTo(1);
+    }
+
+
+    @Test
+    void approvedOddsImportsSnapshots() {
+        ImportItem item = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
+                """
+                {"match":"法国 vs 巴西","date":"2026-06-23","jc_code":"周一001","companies":[{"name":"Bet365","market":"HAD","odds":"1.80"},{"name":"Pinnacle","market":"HAD","odds":"1.83"}]}
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(2);
+        assertThat(count("matches")).isEqualTo(1);
+        assertThat(count("odds_snapshots")).isEqualTo(2);
+    }
+
+    @Test
+    void approvedSourceImportsEvidenceConflictsAndAliases() {
+        ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {"match":"德国 vs 日本","date":"2026-06-24","snapshots":[{"type":"INJURY","name":"Team News","summary":"主力恢复训练","reliability":"8.5"}],"conflicts":[{"type":"LINEUP","entity":"player-1","field":"status","current":"unknown","incoming":"fit"}],"aliases":{"Germany":"德国"}}
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(2);
+        assertThat(count("matches")).isEqualTo(1);
+        assertThat(count("source_evidence")).isEqualTo(1);
+        assertThat(count("data_conflicts")).isEqualTo(1);
+        assertThat(count("data_dictionaries")).isEqualTo(1);
+    }
+
+    @Test
+    void approvedBetsImportsBetRows() {
+        ImportItem item = saveItem(ImportItemType.BETS, ImportItemStatus.APPROVED, true,
+                """
+                {"bets":[{"bet_id":"b1","比赛":"阿根廷 vs 墨西哥","比赛日":"2026-06-25","玩法":"HAD","投注项":"胜","投注额":"100","赔率":"1.95","命中":"PENDING"},{"bet_id":"b2","比赛":"阿根廷 vs 墨西哥","比赛日":"2026-06-25","玩法":"HHAD","投注项":"让胜","投注额":"50","赔率":"2.30"}]}
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(2);
+        assertThat(count("matches")).isEqualTo(1);
+        assertThat(count("bets")).isEqualTo(2);
     }
 
     private ImportItem saveItem(ImportItemType type, ImportItemStatus status, boolean validJson, String rawJson) {
