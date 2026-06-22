@@ -13,6 +13,7 @@ venv/
 
 # Local Claude/Codex runtime settings
 .claude/settings.local.json
+.worktrees/
 
 # Temporary scrape/download workspace
 .tmp_cn/
