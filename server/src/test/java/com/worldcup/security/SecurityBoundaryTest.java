@@ -25,12 +25,10 @@ class SecurityBoundaryTest {
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(post("/api/public/overview"))
-                .andExpect(result -> {
-                    int status = result.getResponse().getStatus();
-                    if (status != 401 && status != 405) {
-                        throw new AssertionError("expected 401 or 405 for anonymous public write but got " + status);
-                    }
-                });
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/import-jobs/scan"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
