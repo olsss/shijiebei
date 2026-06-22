@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,6 +36,16 @@ public class BusinessJsonMapper {
     }
 
     private record OddsPayload(String bookmaker, JsonNode node) {
+    }
+
+    private record SelectionPayload(
+            String code,
+            String name,
+            BigDecimal oddsValue,
+            BigDecimal impliedProbability,
+            String status,
+            JsonNode node
+    ) {
     }
 
     public List<CoreDataMappingResponse> map(ImportItem item, JsonNode json, String actor) {
@@ -106,17 +117,119 @@ public class BusinessJsonMapper {
         }
         for (OddsPayload payload : oddsPayloads) {
             JsonNode oddsNode = payload.node();
+            String bookmaker = fallback(payload.bookmaker(), fallback(text(oddsNode, "name", "bookmaker", "company"), fallback(text(json, "source", "bookmaker"), "UNKNOWN")));
+            String marketCode = marketCode(oddsNode);
             Long snapshotId = insertAndReturnId(
                     "INSERT INTO odds_snapshots(import_item_id, match_id, bookmaker, market_type, odds_value, raw_payload) VALUES (?,?,?,?,?,?)",
                     item.getId(), matchId,
-                    fallback(payload.bookmaker(), fallback(text(oddsNode, "name", "bookmaker", "company"), fallback(text(json, "source", "bookmaker"), "UNKNOWN"))),
-                    fallback(text(oddsNode, "market", "market_type", "type"), "RAW"),
-                    decimal(oddsNode, "odds", "value", "price"),
+                    bookmaker,
+                    marketCode,
+                    decimal(oddsNode, "odds", "value", "price", "赔率"),
                     toJson(oddsNode)
             );
+            Long marketId = insertAndReturnId(
+                    "INSERT INTO odds_market_snapshots(import_item_id, odds_snapshot_id, match_id, bookmaker, market_code, market_name, snapshot_type, handicap_line, line_value, captured_at, source_ref, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    item.getId(), snapshotId, matchId,
+                    bookmaker,
+                    marketCode,
+                    marketName(oddsNode, marketCode),
+                    snapshotType(oddsNode),
+                    decimal(oddsNode, "handicap", "handicap_line", "line", "盘口", "让球"),
+                    text(oddsNode, "line_value", "line", "handicap", "handicap_line", "盘口", "让球"),
+                    parseDateTime(text(oddsNode, "captured_at", "capturedAt", "time", "timestamp", "抓取时间")),
+                    text(oddsNode, "source_ref", "ref", "id"),
+                    toJson(oddsNode)
+            );
+            for (SelectionPayload selection : collectSelectionPayloads(oddsNode)) {
+                insertAndReturnId(
+                        "INSERT INTO odds_selection_snapshots(market_snapshot_id, selection_code, selection_name, odds_value, implied_probability, selection_status, raw_payload) VALUES (?,?,?,?,?,?,?)",
+                        marketId,
+                        truncate(fallback(selection.code(), "RAW"), 160),
+                        truncate(fallback(selection.name(), fallback(selection.code(), "原始赔率")), 240),
+                        selection.oddsValue(),
+                        selection.impliedProbability(),
+                        truncate(fallback(selection.status(), "UNKNOWN"), 80),
+                        toJson(selection.node())
+                );
+            }
             mappings.add(insertMapping(item.getId(), "ODDS_SNAPSHOT", snapshotId, "IMPORTED", "赔率快照已导入正式库"));
         }
         return mappings;
+    }
+
+    private List<SelectionPayload> collectSelectionPayloads(JsonNode marketNode) {
+        List<SelectionPayload> selections = new ArrayList<>();
+        JsonNode explicitSelections = firstPresent(marketNode, "selections", "outcomes", "options");
+        int index = 0;
+        for (JsonNode node : asNodes(explicitSelections)) {
+            String code = fallback(text(node, "code", "key", "selection", "name", "label", "outcome", "投注项"), "SELECTION_" + index);
+            String name = fallback(text(node, "name", "label", "selection", "outcome", "code", "key", "投注项"), code);
+            selections.add(new SelectionPayload(
+                    code,
+                    name,
+                    decimal(node, "odds", "price", "value", "赔率"),
+                    decimal(node, "implied_probability", "probability", "prob"),
+                    fallback(text(node, "status", "selection_status"), "UNKNOWN"),
+                    node
+            ));
+            index++;
+        }
+        if (!selections.isEmpty()) {
+            return selections;
+        }
+
+        JsonNode objectOdds = firstPresent(marketNode, "odds", "prices");
+        if (objectOdds != null && objectOdds.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = objectOdds.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                selections.add(new SelectionPayload(
+                        entry.getKey(),
+                        entry.getKey(),
+                        decimalValue(entry.getValue()),
+                        null,
+                        "UNKNOWN",
+                        entry.getValue()
+                ));
+            }
+            return selections;
+        }
+        if (objectOdds != null && objectOdds.isArray()) {
+            for (JsonNode node : asNodes(objectOdds)) {
+                String code = fallback(text(node, "code", "key", "selection", "name", "label", "outcome", "投注项"), "SELECTION_" + index);
+                String name = fallback(text(node, "name", "label", "selection", "outcome", "code", "key", "投注项"), code);
+                selections.add(new SelectionPayload(
+                        code,
+                        name,
+                        decimal(node, "odds", "price", "value", "赔率"),
+                        decimal(node, "implied_probability", "probability", "prob"),
+                        fallback(text(node, "status", "selection_status"), "UNKNOWN"),
+                        node
+                ));
+                index++;
+            }
+            return selections;
+        }
+
+        BigDecimal singleOdds = decimal(marketNode, "odds", "value", "price", "赔率");
+        if (singleOdds != null) {
+            selections.add(new SelectionPayload("RAW", "原始赔率", singleOdds, null, "UNKNOWN", marketNode));
+        }
+        return selections;
+    }
+
+    private String marketCode(JsonNode node) {
+        String code = fallback(text(node, "market", "market_type", "type", "key", "code", "玩法"), "RAW");
+        return code.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+    }
+
+    private String marketName(JsonNode node, String marketCode) {
+        return fallback(text(node, "market_name", "name", "display_name", "玩法名称", "玩法"), marketCode);
+    }
+
+    private String snapshotType(JsonNode node) {
+        String type = fallback(text(node, "snapshot_type", "phase", "snapshot", "快照类型"), "RAW");
+        return type.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
     }
 
     private List<OddsPayload> collectOddsPayloads(JsonNode json) {
@@ -396,6 +509,33 @@ public class BusinessJsonMapper {
         try {
             return LocalDate.parse(normalized);
         } catch (DateTimeParseException ignored) {
+            return null;
+        }
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim().replace("Z", "");
+        if (normalized.length() >= 19) {
+            normalized = normalized.substring(0, 19);
+        }
+        try {
+            return LocalDateTime.parse(normalized);
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
+    }
+
+    private BigDecimal decimalValue(JsonNode node) {
+        String value = textValue(node);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException cause) {
             return null;
         }
     }
