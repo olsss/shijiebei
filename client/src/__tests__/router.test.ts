@@ -13,5 +13,6 @@ describe('router', () => {
     expect(paths).toContain('/matches');
     expect(paths).toContain('/odds');
     expect(paths).toContain('/sentiment');
+    expect(paths).toContain('/analysis-review');
   });
 });

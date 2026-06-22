@@ -13,6 +13,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -52,6 +53,9 @@ public class BusinessJsonMapper {
     }
 
     private record RiskPayload(Long factorId, JsonNode node) {
+    }
+
+    private record BetPlanPayload(String defaultKey, JsonNode node) {
     }
 
     public List<CoreDataMappingResponse> map(ImportItem item, JsonNode json, String actor) {
@@ -105,7 +109,153 @@ public class BusinessJsonMapper {
             );
             mappings.add(insertMapping(item.getId(), "SOURCE_EVIDENCE", evidenceId, "IMPORTED", "分析来源证据已导入正式库"));
         }
+        for (BetPlanPayload plan : collectBetPlanPayloads(json, analysisId)) {
+            Long planId = insertBetPlan(item, reportId, matchId, analysisId, json, plan);
+            mappings.add(insertMapping(item.getId(), "BET_PLAN", planId, "IMPORTED", "AI 下注方案已导入正式库"));
+            int order = 0;
+            for (JsonNode planItem : collectBetPlanItems(plan.node())) {
+                Long planItemId = insertBetPlanItem(planId, matchId, plan.node(), planItem, order);
+                mappings.add(insertMapping(item.getId(), "BET_PLAN_ITEM", planItemId, "IMPORTED", "AI 下注方案明细已导入正式库"));
+                order++;
+            }
+        }
+        int reviewIndex = 0;
+        for (JsonNode review : collectPostMatchReviews(json)) {
+            Long reviewId = insertPostMatchReview(item, reportId, matchId, analysisId, review, reviewIndex);
+            mappings.add(insertMapping(item.getId(), "POST_MATCH_REVIEW", reviewId, "IMPORTED", "赛后复盘已导入正式库"));
+            for (JsonNode lesson : collectReviewLessons(review)) {
+                Long lessonId = insertReviewLesson(reviewId, lesson);
+                mappings.add(insertMapping(item.getId(), "REVIEW_LESSON", lessonId, "IMPORTED", "复盘沉淀规则已导入正式库"));
+            }
+            reviewIndex++;
+        }
         return mappings;
+    }
+
+    private List<BetPlanPayload> collectBetPlanPayloads(JsonNode json, String analysisId) {
+        List<BetPlanPayload> plans = new ArrayList<>();
+        addSingleBetPlan(plans, json, "bet_plan", analysisId);
+        int index = 0;
+        for (JsonNode plan : asNodes(json.get("bet_plans"))) {
+            plans.add(new BetPlanPayload(analysisId + "-" + index, plan));
+            index++;
+        }
+        addSingleBetPlan(plans, json, "recommended_plan", analysisId + "-recommended");
+        return plans;
+    }
+
+    private void addSingleBetPlan(List<BetPlanPayload> plans, JsonNode json, String field, String defaultKey) {
+        JsonNode node = json.get(field);
+        if (node != null && !node.isNull() && !node.isMissingNode()) {
+            plans.add(new BetPlanPayload(defaultKey, node));
+        }
+    }
+
+    private Long insertBetPlan(ImportItem item,
+                               Long reportId,
+                               Long matchId,
+                               String analysisId,
+                               JsonNode analysisNode,
+                               BetPlanPayload payload) {
+        JsonNode node = payload.node();
+        String planKey = truncate(fallback(text(node, "plan_key", "id", "key", "方案编号"), payload.defaultKey()), 160);
+        String title = truncate(fallback(text(node, "title", "name", "plan_title", "方案名称"), planKey), 300);
+        String riskSummary = fallback(
+                text(node, "risk_summary", "risk_note", "risk", "资金分配理由", "风险说明"),
+                nullableJson(firstPresent(node, "risks", "risk_points"))
+        );
+        return insertAndReturnId(
+                "INSERT INTO bet_plans(import_item_id, analysis_report_id, match_id, plan_key, plan_title, conclusion_type, confidence, budget_amount, risk_summary, betting_method, strategy_type, status, generated_by, generated_at, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                item.getId(), reportId, matchId,
+                planKey,
+                title,
+                fallback(text(node, "conclusion_type", "结论类型"), text(analysisNode, "conclusion_type", "结论类型")),
+                fallback(text(node, "confidence", "置信度"), text(analysisNode, "confidence", "置信度")),
+                decimal(node, "budget_amount", "budget", "预算"),
+                riskSummary,
+                truncate(text(node, "betting_method", "bettingMethod", "method", "下注方式"), 160),
+                truncate(text(node, "strategy_type", "strategy", "策略类型"), 160),
+                normalizedCode(text(node, "status", "状态"), "IMPORTED"),
+                truncate(text(node, "generated_by", "generator", "生成者"), 160),
+                parseDateTime(text(node, "generated_at", "created_at", "生成时间")),
+                toJson(node)
+        );
+    }
+
+    private List<JsonNode> collectBetPlanItems(JsonNode plan) {
+        List<JsonNode> items = new ArrayList<>();
+        addNodes(items, plan, "items");
+        addNodes(items, plan, "selections");
+        addNodes(items, plan, "tickets");
+        return items;
+    }
+
+    private Long insertBetPlanItem(Long planId, Long matchId, JsonNode planNode, JsonNode itemNode, int order) {
+        String marketType = marketCode(itemNode);
+        String selection = fallback(text(itemNode, "selection", "selection_text", "选择", "投注项", "name", "label"), toJson(itemNode));
+        return insertAndReturnId(
+                "INSERT INTO bet_plan_items(bet_plan_id, match_id, market_type, selection_text, stake_suggestion, odds, line_value, logic_type, risk_level, play_type, pass_type, item_order, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                planId,
+                matchId,
+                marketType,
+                truncate(selection, 500),
+                decimal(itemNode, "stake_suggestion", "stake", "amount", "投注额", "金额建议"),
+                decimal(itemNode, "odds", "price", "赔率"),
+                truncate(text(itemNode, "line_value", "line", "handicap", "盘口", "让球"), 120),
+                truncate(normalizedCode(text(itemNode, "logic_type", "logic", "逻辑类型"), "RAW"), 120),
+                truncate(normalizedCode(text(itemNode, "risk_level", "risk", "风险等级"), "UNKNOWN"), 80),
+                truncate(fallback(text(itemNode, "play_type", "玩法类型", "下注方式"), text(planNode, "betting_method", "下注方式")), 160),
+                truncate(fallback(text(itemNode, "pass_type", "过关方式", "串关"), text(planNode, "pass_type", "过关方式", "串关")), 160),
+                order,
+                toJson(itemNode)
+        );
+    }
+
+    private List<JsonNode> collectPostMatchReviews(JsonNode json) {
+        List<JsonNode> reviews = new ArrayList<>();
+        addNodes(reviews, json, "post_match_review");
+        addNodes(reviews, json, "review");
+        addNodes(reviews, json, "post_match_reviews");
+        return reviews;
+    }
+
+    private Long insertPostMatchReview(ImportItem item, Long reportId, Long matchId, String analysisId, JsonNode review, int index) {
+        String reviewKey = truncate(fallback(text(review, "review_key", "id", "key", "复盘编号"), "review-" + analysisId + "-" + index), 160);
+        String title = truncate(fallback(text(review, "title", "name", "review_title", "复盘标题"), reviewKey), 300);
+        return insertAndReturnId(
+                "INSERT INTO post_match_reviews(import_item_id, match_id, analysis_report_id, review_key, review_title, math_review, football_review, handicap_review, tournament_temperament_review, odds_value_review, overall_summary, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                item.getId(),
+                matchId,
+                reportId,
+                reviewKey,
+                title,
+                text(review, "math_review", "数学层", "math"),
+                text(review, "football_review", "足球层", "football"),
+                text(review, "handicap_review", "盘口层", "handicap"),
+                text(review, "tournament_temperament_review", "大赛气质层", "temperament"),
+                text(review, "odds_value_review", "赔率价值层", "clv_review"),
+                text(review, "overall_summary", "summary", "总评"),
+                toJson(review)
+        );
+    }
+
+    private List<JsonNode> collectReviewLessons(JsonNode review) {
+        List<JsonNode> lessons = new ArrayList<>();
+        addNodes(lessons, review, "lessons");
+        addNodes(lessons, review, "rules");
+        return lessons;
+    }
+
+    private Long insertReviewLesson(Long reviewId, JsonNode lesson) {
+        String lessonText = fallback(text(lesson, "text", "lesson_text", "rule", "content", "summary", "规则"), toJson(lesson));
+        return insertAndReturnId(
+                "INSERT INTO review_lessons(review_id, lesson_type, lesson_text, severity, raw_payload) VALUES (?,?,?,?,?)",
+                reviewId,
+                truncate(normalizedCode(text(lesson, "type", "lesson_type", "规则类型"), "GENERAL"), 120),
+                lessonText,
+                truncate(normalizedCode(text(lesson, "severity", "level", "严重性"), "INFO"), 80),
+                toJson(lesson)
+        );
     }
 
     private List<CoreDataMappingResponse> mapOdds(ImportItem item, JsonNode json) {
@@ -444,15 +594,27 @@ public class BusinessJsonMapper {
             String jcCode = fallback(text(bet, "jc_code", "竞彩编号"), text(json, "jc_code", "竞彩编号"));
             Long matchId = upsertMatch(matchName, matchday, jcCode, bet);
             String betId = fallback(text(bet, "bet_id", "id", "编号"), "bet-" + item.getId() + "-" + index);
+            BigDecimal odds = decimal(bet, "odds", "赔率");
+            BigDecimal closingOdds = decimal(bet, "closing_odds", "closingOdds", "收盘赔率");
+            BigDecimal clv = calculateClv(odds, closingOdds, decimal(bet, "clv", "CLV"));
             Long targetId = insertAndReturnId(
-                    "INSERT INTO bets(import_item_id, match_id, bet_id, match_name, market_type, selection_text, stake, odds, hit_status, profit_loss, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                    item.getId(), matchId, betId, matchName,
+                    "INSERT INTO bets(import_item_id, match_id, bet_id, ticket_no, bet_date, matchday, match_name, market_type, selection_text, stake, odds, closing_odds, clv, return_amount, hit_status, profit_loss, settled_at, review_status, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    item.getId(), matchId, betId,
+                    text(bet, "ticket_no", "ticket", "票号"),
+                    parseDate(fallback(text(bet, "bet_date", "下注日期"), text(json, "bet_date", "下注日期"))),
+                    parseDate(matchday),
+                    matchName,
                     text(bet, "market", "market_type", "玩法"),
                     text(bet, "selection", "selection_text", "选择", "投注项"),
                     decimal(bet, "stake", "投注额", "本金"),
-                    decimal(bet, "odds", "赔率"),
+                    odds,
+                    closingOdds,
+                    clv,
+                    decimal(bet, "return_amount", "return", "返还"),
                     fallback(text(bet, "hit_status", "命中", "status"), "PENDING"),
                     decimal(bet, "profit_loss", "盈亏"),
+                    parseDateTime(text(bet, "settled_at", "settledAt", "结算时间")),
+                    normalizedCode(text(bet, "review_status", "复盘状态"), "UNREVIEWED"),
                     toJson(bet)
             );
             mappings.add(insertMapping(item.getId(), "BET", targetId, "IMPORTED", "下注记录已导入正式库"));
@@ -536,6 +698,18 @@ public class BusinessJsonMapper {
         }
     }
 
+    private BigDecimal calculateClv(BigDecimal entryOdds, BigDecimal closingOdds, BigDecimal explicitClv) {
+        if (explicitClv != null) {
+            return explicitClv.setScale(6, RoundingMode.HALF_UP);
+        }
+        if (entryOdds == null || closingOdds == null || closingOdds.compareTo(BigDecimal.ZERO) == 0) {
+            return null;
+        }
+        return entryOdds.divide(closingOdds, 6, RoundingMode.HALF_UP)
+                .subtract(BigDecimal.ONE)
+                .setScale(6, RoundingMode.HALF_UP);
+    }
+
     private Long insertAndReturnId(String sql, Object... args) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -562,6 +736,10 @@ public class BusinessJsonMapper {
             return values;
         }
         return List.of(node);
+    }
+
+    private void addNodes(List<JsonNode> target, JsonNode parent, String field) {
+        target.addAll(asNodes(parent.get(field)));
     }
 
     private JsonNode firstPresent(JsonNode node, String... fields) {

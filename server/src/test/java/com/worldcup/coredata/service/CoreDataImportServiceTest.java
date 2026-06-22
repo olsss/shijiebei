@@ -40,7 +40,11 @@ class CoreDataImportServiceTest {
         jdbcTemplate.update("DELETE FROM match_context_factors");
         jdbcTemplate.update("DELETE FROM import_item_mappings");
         jdbcTemplate.update("DELETE FROM data_dictionaries");
+        jdbcTemplate.update("DELETE FROM review_lessons");
+        jdbcTemplate.update("DELETE FROM post_match_reviews");
         jdbcTemplate.update("DELETE FROM bets");
+        jdbcTemplate.update("DELETE FROM bet_plan_items");
+        jdbcTemplate.update("DELETE FROM bet_plans");
         jdbcTemplate.update("DELETE FROM analysis_reports");
         jdbcTemplate.update("DELETE FROM odds_selection_snapshots");
         jdbcTemplate.update("DELETE FROM odds_market_snapshots");
@@ -92,6 +96,62 @@ class CoreDataImportServiceTest {
         assertThat(count("matches")).isEqualTo(1);
         assertThat(count("analysis_reports")).isEqualTo(1);
         assertThat(count("source_evidence")).isEqualTo(1);
+    }
+
+    @Test
+    void approvedAnalysisImportsBetPlanAndPostMatchReview() {
+        ImportItem item = saveItem(ImportItemType.ANALYSIS, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "id":"analysis-plan-1",
+                  "match":"法国 vs 巴西",
+                  "matchday":"2026-06-26",
+                  "jc_code":"周五001",
+                  "conclusion_type":"盘口判断",
+                  "confidence":"中高",
+                  "risks":["临场首发未核"],
+                  "recommended":[{"type":"HAD"}],
+                  "bet_plan":{
+                    "plan_key":"analysis-plan-1",
+                    "title":"法国方向组合",
+                    "conclusion_type":"盘口判断",
+                    "confidence":"MEDIUM_HIGH",
+                    "budget_amount":"100",
+                    "risk_summary":"热门方向需控制投入",
+                    "generated_by":"codex",
+                    "generated_at":"2026-06-22T12:00:00",
+                    "betting_method":"AI_VALUE_SPLIT",
+                    "strategy_type":"主线加保险",
+                    "items":[
+                      {"market_type":"HAD","selection":"主胜","stake_suggestion":"60","odds":"1.85","logic_type":"MAIN","risk_level":"MEDIUM","line_value":"0","play_type":"单关"},
+                      {"market_type":"TTG","selection":"2球","stake_suggestion":"20","odds":"3.20","logic_type":"LOW_SCORE","risk_level":"LOW","play_type":"总进球"}
+                    ]
+                  },
+                  "post_match_review":{
+                    "review_key":"review-france-brazil",
+                    "title":"法国 vs 巴西复盘",
+                    "math_review":"命中主线，返还覆盖投入",
+                    "football_review":"法国边路压制有效",
+                    "handicap_review":"盘口未被卡线",
+                    "tournament_temperament_review":"大赛稳定性体现",
+                    "odds_value_review":"入场赔率优于收盘",
+                    "overall_summary":"判断符合赛前逻辑",
+                    "lessons":[{"type":"CLV","text":"继续记录入场与收盘差","severity":"MEDIUM"}]
+                  }
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(6);
+        assertThat(count("analysis_reports")).isEqualTo(1);
+        assertThat(count("bet_plans")).isEqualTo(1);
+        assertThat(count("bet_plan_items")).isEqualTo(2);
+        assertThat(count("post_match_reviews")).isEqualTo(1);
+        assertThat(count("review_lessons")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM bet_plans WHERE plan_key='analysis-plan-1' AND status='IMPORTED' AND betting_method='AI_VALUE_SPLIT'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM bet_plan_items WHERE market_type='HAD' AND selection_text='主胜' AND stake_suggestion=60.0000 AND play_type='单关'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM review_lessons WHERE lesson_type='CLV' AND severity='MEDIUM'", Integer.class)).isEqualTo(1);
     }
 
 
@@ -272,6 +332,38 @@ class CoreDataImportServiceTest {
         assertThat(response.mappings()).hasSize(2);
         assertThat(count("matches")).isEqualTo(1);
         assertThat(count("bets")).isEqualTo(2);
+    }
+
+    @Test
+    void approvedBetsImportsSettlementAndClvFields() {
+        ImportItem item = saveItem(ImportItemType.BETS, ImportItemStatus.APPROVED, true,
+                """
+                {"bets":[{
+                  "bet_id":"b-clv-1",
+                  "ticket_no":"T-001",
+                  "match":"法国 vs 巴西",
+                  "matchday":"2026-06-26",
+                  "bet_date":"2026-06-22",
+                  "market_type":"HAD",
+                  "selection":"主胜",
+                  "stake":"60",
+                  "odds":"1.95",
+                  "closing_odds":"1.80",
+                  "return_amount":"108",
+                  "profit_loss":"48",
+                  "hit_status":"HIT",
+                  "settled_at":"2026-06-26T23:00:00",
+                  "review_status":"READY"
+                }]}
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(1);
+        assertThat(count("bets")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM bets WHERE ticket_no='T-001' AND bet_date='2026-06-22' AND matchday='2026-06-26'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM bets WHERE closing_odds=1.8000 AND return_amount=108.0000 AND profit_loss=48.0000", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM bets WHERE clv=0.083333 AND review_status='READY'", Integer.class)).isEqualTo(1);
     }
 
     private ImportItem saveItem(ImportItemType type, ImportItemStatus status, boolean validJson, String rawJson) {
