@@ -14,9 +14,12 @@ import org.springframework.test.web.servlet.ResultActions;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -129,7 +132,18 @@ class SecurityBoundaryTest {
                 .andExpect(jsonPath("$..payload").doesNotExist())
                 .andExpect(jsonPath("$..approvedBy").doesNotExist())
                 .andExpect(jsonPath("$..reviewedBy").doesNotExist())
-                .andExpect(jsonPath("$..reviewNote").doesNotExist());
+                .andExpect(jsonPath("$..reviewNote").doesNotExist())
+                .andExpect(content().string(not(containsString("rawPayload"))))
+                .andExpect(content().string(not(containsString("payload"))))
+                .andExpect(content().string(not(containsString("ticketNo"))))
+                .andExpect(content().string(not(containsString("SECRET"))))
+                .andExpect(content().string(not(containsString("stake"))))
+                .andExpect(content().string(not(containsString("approvedBy"))))
+                .andExpect(content().string(not(containsString("reviewedBy"))))
+                .andExpect(content().string(not(containsString("reviewNote"))))
+                .andExpect(content().string(not(containsString("approved_by"))))
+                .andExpect(content().string(not(containsString("reviewed_by"))))
+                .andExpect(content().string(not(containsString("review_note"))));
     }
 
     private PublicFixture createPublicFixture() {
@@ -214,7 +228,7 @@ class SecurityBoundaryTest {
 
     private void insertConflict(long matchId) {
         jdbcTemplate.update("INSERT INTO data_conflicts(match_id, conflict_type, entity_key, field_name, current_value, incoming_value, resolution_status, raw_payload) VALUES (?,?,?,?,?,?,?,?)",
-                matchId, "LINEUP", "public-home-away-20260623", "lineup", "old", "new", "PENDING", "{\"field\":\"lineup\"}");
+                matchId, "LINEUP", "public-home-away-20260623", "rawPayload", "old", "new", "PENDING", "{\"field\":\"lineup\"}");
     }
 
     private long insertOddsMarket(long importItemId, long matchId) {

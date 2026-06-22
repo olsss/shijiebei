@@ -8,6 +8,8 @@ import com.worldcup.sentimentcenter.api.dto.SentimentCenterDtos.*;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -22,6 +24,10 @@ public class PublicApiMapper {
             "approvedBy", "approved_by", "reviewedBy", "reviewed_by", "reviewNote", "review_note",
             "mappings", "importItemId", "import_item_id"
     );
+    private static final Set<String> FORBIDDEN_TOKEN_ALIASES = Pattern.compile("\\|")
+            .splitAsStream(FORBIDDEN_KEY_ALIASES)
+            .map(alias -> alias.toLowerCase(Locale.ROOT))
+            .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     private static final Pattern SENSITIVE_KEY_VALUE = Pattern.compile(
             "(?<![A-Za-z0-9_])\"?(?:" + FORBIDDEN_KEY_ALIASES + ")\"?\\s*[:=]\\s*"
@@ -37,6 +43,17 @@ public class PublicApiMapper {
         String sanitized = SENSITIVE_KEY_VALUE.matcher(value).replaceAll("[REDACTED]");
         sanitized = WINDOWS_PATH.matcher(sanitized).replaceAll("[REDACTED]");
         return sanitized;
+    }
+
+    public String sanitizeToken(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        String trimmed = value.trim();
+        if (FORBIDDEN_TOKEN_ALIASES.contains(trimmed.toLowerCase(Locale.ROOT))) {
+            return "[REDACTED]";
+        }
+        return sanitizeText(value);
     }
 
     public PublicMatchSummary toPublicMatchSummary(MatchSummaryResponse value) {
@@ -151,7 +168,7 @@ public class PublicApiMapper {
                 value.id(),
                 sanitizeText(value.conflictType()),
                 sanitizeText(value.entityKey()),
-                sanitizeText(value.fieldName()),
+                sanitizeToken(value.fieldName()),
                 sanitizeText(value.resolutionStatus())
         );
     }
