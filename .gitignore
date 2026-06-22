@@ -50,3 +50,6 @@ client/vite.config.d.ts
 
 # Local visual brainstorming sessions
 .superpowers/
+
+# Local subagent workspace
+.agents/
