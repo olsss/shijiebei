@@ -11,13 +11,13 @@
 
 ## 2. 后端 API 与完整性规则
 
-- [ ] 新增 `PrematchWorkbenchControllerTest` 并先确认失败。
-- [ ] 实现 `PrematchWorkbenchDtos`。
-- [ ] 实现 `PrematchWorkbenchQueryService`，聚合比赛、球队、球员、阵容、赔率、舆情、分析报告、AI 下注方案和实际下注。
-- [ ] 实现完整性检查规则与分数计算。
-- [ ] 实现 `PrematchWorkbenchController`。
-- [ ] 覆盖认证、比赛列表、作战室详情、完整性子接口和未知比赛 404。
-- [ ] 后端目标测试和全量测试通过。
+- [x] 新增 `PrematchWorkbenchControllerTest` 并先确认失败。
+- [x] 实现 `PrematchWorkbenchDtos`。
+- [x] 实现 `PrematchWorkbenchQueryService`，聚合比赛、球队、球员、阵容、赔率、舆情、分析报告、AI 下注方案和实际下注。
+- [x] 实现完整性检查规则与分数计算。
+- [x] 实现 `PrematchWorkbenchController`。
+- [x] 覆盖认证、比赛列表、作战室详情、完整性子接口和未知比赛 404。
+- [x] 后端目标测试和全量测试通过。
 
 ## 3. 前端赛前作战室
 
@@ -37,3 +37,4 @@
 - [ ] `git diff --check` 通过。
 - [ ] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
 - [ ] 生成 `docs/java-system/reviews/赛前分析作战室与数据完整性中心-review.md`。
+
