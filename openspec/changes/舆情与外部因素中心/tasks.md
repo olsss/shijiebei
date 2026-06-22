@@ -12,31 +12,31 @@
 
 ## 2. 数据模型与 SOURCE 入库
 
-- [ ] 新增 SOURCE 舆情入库测试并先确认失败。
-- [ ] 新增 V6 迁移：`match_context_factors` 与 `sentiment_risk_assessments`。
-- [ ] 增强 `BusinessJsonMapper.mapSource()` 保存 A1 factors 和 A2 risks。
-- [ ] 保持既有 evidence/conflicts/aliases 行为不变。
-- [ ] 目标后端入库测试通过。
+- [x] 新增 SOURCE 舆情入库测试并先确认失败。
+- [x] 新增 V6 迁移：`match_context_factors` 与 `sentiment_risk_assessments`。
+- [x] 增强 `BusinessJsonMapper.mapSource()` 保存 A1 factors 和 A2 risks。
+- [x] 保持既有 evidence/conflicts/aliases 行为不变。
+- [x] 目标后端入库测试通过。
 
 ## 3. 后端 API
 
-- [ ] 新增舆情中心控制器测试并先确认失败。
-- [ ] 实现 DTO、查询服务和控制器。
-- [ ] 覆盖认证、总览、比赛详情、分类字典、风险类型字典。
-- [ ] 目标后端 API 测试通过。
+- [x] 新增舆情中心控制器测试并先确认失败。
+- [x] 实现 DTO、查询服务和控制器。
+- [x] 覆盖认证、总览、比赛详情、分类字典、风险类型字典。
+- [x] 目标后端 API 测试通过。
 
 ## 4. 前端
 
-- [ ] 新增 sentiment API helper 测试并更新 router 测试，先确认失败。
-- [ ] 实现 sentiment API helper、舆情中心页面、路由和 Dashboard 卡片。
-- [ ] 前端测试与构建通过。
+- [x] 新增 sentiment API helper 测试并更新 router 测试，先确认失败。
+- [x] 实现 sentiment API helper、舆情中心页面、路由和 Dashboard 卡片。
+- [x] 前端测试与构建通过。
 
 ## 5. 验证与代码审查
 
-- [ ] `openspec validate 舆情与外部因素中心 --strict` 通过。
-- [ ] `mvn -f server/pom.xml test` 通过。
-- [ ] `npm run test:run` 在 `client/` 通过。
-- [ ] `npm run build` 在 `client/` 通过。
-- [ ] `git diff --check` 通过。
-- [ ] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
-- [ ] 生成 `docs/java-system/reviews/舆情与外部因素中心-review.md`。
+- [x] `openspec validate 舆情与外部因素中心 --strict` 通过。
+- [x] `mvn -f server/pom.xml test` 通过。
+- [x] `npm run test:run` 在 `client/` 通过。
+- [x] `npm run build` 在 `client/` 通过。
+- [x] `git diff --check` 通过。
+- [x] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
+- [x] 生成 `docs/java-system/reviews/舆情与外部因素中心-review.md`。
