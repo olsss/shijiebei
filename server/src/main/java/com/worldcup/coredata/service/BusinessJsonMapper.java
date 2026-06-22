@@ -48,6 +48,12 @@ public class BusinessJsonMapper {
     ) {
     }
 
+    private record FactorPayload(String defaultCategory, JsonNode node) {
+    }
+
+    private record RiskPayload(Long factorId, JsonNode node) {
+    }
+
     public List<CoreDataMappingResponse> map(ImportItem item, JsonNode json, String actor) {
         if (item.getItemType() == ImportItemType.ANALYSIS) {
             return mapAnalysis(item, json);
@@ -317,8 +323,112 @@ public class BusinessJsonMapper {
             );
             mappings.add(insertMapping(item.getId(), "DATA_CONFLICT", conflictId, "IMPORTED", "数据冲突已导入正式库"));
         }
+
+        for (FactorPayload factor : collectFactorPayloads(json)) {
+            Long factorId = insertContextFactor(item, matchId, factor);
+            mappings.add(insertMapping(item.getId(), "MATCH_CONTEXT_FACTOR", factorId, "IMPORTED", "舆情与外部因素已导入正式库"));
+            for (JsonNode risk : asNodes(factor.node().get("risks"))) {
+                Long riskId = insertRiskAssessment(item, matchId, new RiskPayload(factorId, risk));
+                mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "舆情风险评分已导入正式库"));
+            }
+        }
+        for (RiskPayload risk : collectTopLevelRiskPayloads(json)) {
+            Long riskId = insertRiskAssessment(item, matchId, risk);
+            mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "舆情风险评分已导入正式库"));
+        }
         importAliases(json);
         return mappings;
+    }
+
+    private List<FactorPayload> collectFactorPayloads(JsonNode json) {
+        List<FactorPayload> factors = new ArrayList<>();
+        addFactorArray(factors, json, "external_factors", "OTHER");
+        addFactorArray(factors, json, "factors", "OTHER");
+        addFactorArray(factors, json, "sentiment_records", "PUBLIC_SENTIMENT");
+        addFactorArray(factors, json, "sentiments", "PUBLIC_SENTIMENT");
+        addSingleFactor(factors, json, "weather", "WEATHER");
+        addSingleFactor(factors, json, "venue", "VENUE");
+        addSingleFactor(factors, json, "referee", "REFEREE");
+        addSingleFactor(factors, json, "motivation", "MOTIVATION");
+        addSingleFactor(factors, json, "public_sentiment", "PUBLIC_SENTIMENT");
+        return factors;
+    }
+
+    private void addFactorArray(List<FactorPayload> factors, JsonNode json, String field, String defaultCategory) {
+        for (JsonNode node : asNodes(json.get(field))) {
+            factors.add(new FactorPayload(defaultCategory, node));
+        }
+    }
+
+    private void addSingleFactor(List<FactorPayload> factors, JsonNode json, String field, String category) {
+        JsonNode node = json.get(field);
+        if (node != null && !node.isNull() && !node.isMissingNode()) {
+            factors.add(new FactorPayload(category, node));
+        }
+    }
+
+    private List<RiskPayload> collectTopLevelRiskPayloads(JsonNode json) {
+        List<RiskPayload> risks = new ArrayList<>();
+        addTopLevelRiskArray(risks, json, "risk_assessments");
+        addTopLevelRiskArray(risks, json, "risks");
+        return risks;
+    }
+
+    private void addTopLevelRiskArray(List<RiskPayload> risks, JsonNode json, String field) {
+        for (JsonNode node : asNodes(json.get(field))) {
+            risks.add(new RiskPayload(null, node));
+        }
+    }
+
+    private Long insertContextFactor(ImportItem item, Long matchId, FactorPayload factor) {
+        JsonNode node = factor.node();
+        String category = normalizedCode(fallback(text(node, "category", "factor_category"), factor.defaultCategory()), "OTHER");
+        String type = normalizedCode(fallback(text(node, "type", "factor_type", "key"), "RAW"), "RAW");
+        String title = truncate(fallback(text(node, "title", "name", "headline"), category + ":" + type), 300);
+        return insertAndReturnId(
+                "INSERT INTO match_context_factors(import_item_id, match_id, factor_category, factor_type, title, summary, impact_direction, entity_type, entity_key, evidence_level, source_name, source_url, source_ref, observed_at, expires_at, confidence_score, reliability_score, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                item.getId(), matchId,
+                category,
+                type,
+                title,
+                fallback(text(node, "summary", "note", "description", "content"), toJson(node)),
+                normalizedCode(text(node, "impact_direction", "impact", "direction", "sentiment_label"), "UNKNOWN"),
+                normalizedCode(text(node, "entity_type"), "MATCH"),
+                text(node, "entity_key", "entity", "team", "player"),
+                normalizedCode(text(node, "evidence_level", "tier", "source_tier"), "UNKNOWN"),
+                truncate(fallback(text(node, "source_name", "source"), "UNKNOWN"), 240),
+                text(node, "source_url", "url"),
+                text(node, "source_ref", "ref", "id"),
+                parseDateTime(text(node, "observed_at", "captured_at", "time", "timestamp")),
+                parseDateTime(text(node, "expires_at", "valid_until", "stale_at")),
+                decimal(node, "confidence_score", "confidence"),
+                decimal(node, "reliability_score", "reliability", "score"),
+                toJson(node)
+        );
+    }
+
+    private Long insertRiskAssessment(ImportItem item, Long matchId, RiskPayload risk) {
+        JsonNode node = risk.node();
+        String type = normalizedCode(fallback(text(node, "type", "risk_type"), "RAW_RISK"), "RAW_RISK");
+        String level = normalizedCode(text(node, "level", "risk_level"), "UNKNOWN");
+        return insertAndReturnId(
+                "INSERT INTO sentiment_risk_assessments(import_item_id, match_id, factor_id, risk_type, risk_level, risk_score, title, rationale, suggested_action, source_name, source_ref, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                item.getId(), matchId, risk.factorId(),
+                type,
+                level,
+                decimal(node, "score", "risk_score"),
+                truncate(fallback(text(node, "title", "name"), type), 300),
+                fallback(text(node, "rationale", "summary", "reason", "description"), toJson(node)),
+                normalizedCode(text(node, "suggested_action", "action"), "MONITOR"),
+                truncate(fallback(text(node, "source_name", "source"), "UNKNOWN"), 240),
+                text(node, "source_ref", "ref", "id"),
+                toJson(node)
+        );
+    }
+
+    private String normalizedCode(String value, String fallback) {
+        String safe = fallback(value, fallback);
+        return safe == null ? null : safe.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
     }
 
     private List<CoreDataMappingResponse> mapBets(ImportItem item, JsonNode json) {

@@ -36,6 +36,8 @@ class CoreDataImportServiceTest {
     @BeforeEach
     @AfterEach
     void clean() {
+        jdbcTemplate.update("DELETE FROM sentiment_risk_assessments");
+        jdbcTemplate.update("DELETE FROM match_context_factors");
         jdbcTemplate.update("DELETE FROM import_item_mappings");
         jdbcTemplate.update("DELETE FROM data_dictionaries");
         jdbcTemplate.update("DELETE FROM bets");
@@ -168,6 +170,78 @@ class CoreDataImportServiceTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='主胜' AND odds_value=1.8000 AND selection_status='OPEN'", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='DRAW' AND selection_name='平' AND odds_value=3.4000", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='AWAY' AND selection_name='客胜' AND odds_value=4.2000", Integer.class)).isEqualTo(1);
+    }
+
+
+    @Test
+    void approvedSourceImportsSentimentFactorsAndRiskAssessments() {
+        ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"德国 vs 日本",
+                  "date":"2026-06-24",
+                  "jc_code":"周三001",
+                  "external_factors":[{
+                    "category":"WEATHER",
+                    "type":"RAIN",
+                    "title":"预计小雨",
+                    "summary":"赛前两小时有小雨，草皮可能偏滑。",
+                    "impact_direction":"MIXED",
+                    "evidence_level":"DATA_VENDOR",
+                    "source_name":"Weather Provider",
+                    "source_url":"https://example.test/weather",
+                    "reliability":"8.0",
+                    "confidence":"7.5",
+                    "observed_at":"2026-06-24T16:00:00",
+                    "expires_at":"2026-06-24T19:00:00"
+                  }],
+                  "sentiment_records":[{
+                    "category":"PUBLIC_SENTIMENT",
+                    "type":"MEDIA_HEAT",
+                    "title":"热门方舆论过热",
+                    "summary":"主流预测集中支持德国大胜。",
+                    "impact_direction":"NEGATIVE",
+                    "evidence_level":"MAIN_MEDIA",
+                    "source_name":"Media Digest",
+                    "risks":[{"type":"PUBLIC_OVERHEAT","level":"HIGH","score":"78","title":"舆论过热","rationale":"热门预期过度集中","suggested_action":"LOWER_CONFIDENCE"}]
+                  }]
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(4);
+        assertThat(count("match_context_factors")).isEqualTo(2);
+        assertThat(count("sentiment_risk_assessments")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='WEATHER' AND factor_type='RAIN' AND title='预计小雨'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_SENTIMENT' AND impact_direction='NEGATIVE' AND source_name='Media Digest'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE risk_type='PUBLIC_OVERHEAT' AND risk_level='HIGH' AND risk_score=78.0000", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void approvedSourceImportsAllSentimentAliasArraysWhenPresentTogether() {
+        ImportItem item = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "match":"法国 vs 巴西",
+                  "date":"2026-06-25",
+                  "external_factors":[{"category":"WEATHER","type":"RAIN","title":"小雨"}],
+                  "factors":[{"category":"VENUE","type":"PITCH","title":"草皮偏软"}],
+                  "sentiment_records":[{"type":"MEDIA_HEAT","title":"媒体热度升高"}],
+                  "sentiments":[{"type":"LOCKER_ROOM","title":"更衣室稳定"}],
+                  "risk_assessments":[{"type":"SCHEDULE_FATIGUE","level":"MEDIUM","score":"55","title":"赛程疲劳"}],
+                  "risks":[{"type":"NEWS_CONFLICT","level":"LOW","score":"25","title":"消息冲突"}]
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        assertThat(response.mappings()).hasSize(7);
+        assertThat(count("match_context_factors")).isEqualTo(4);
+        assertThat(count("sentiment_risk_assessments")).isEqualTo(2);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='VENUE' AND factor_type='PITCH'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_SENTIMENT' AND factor_type='LOCKER_ROOM'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE risk_type='NEWS_CONFLICT' AND risk_level='LOW'", Integer.class)).isEqualTo(1);
     }
 
     @Test

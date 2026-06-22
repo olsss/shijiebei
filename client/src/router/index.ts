@@ -4,6 +4,7 @@ import ImportReviewView from '@/views/ImportReviewView.vue';
 import LoginView from '@/views/LoginView.vue';
 import MatchCenterView from '@/views/MatchCenterView.vue';
 import OddsCenterView from '@/views/OddsCenterView.vue';
+import SentimentCenterView from '@/views/SentimentCenterView.vue';
 import PlayerProfilesView from '@/views/PlayerProfilesView.vue';
 import SystemSettingsView from '@/views/SystemSettingsView.vue';
 import TeamProfilesView from '@/views/TeamProfilesView.vue';
@@ -17,9 +18,8 @@ export const router = createRouter({
     { path: '/import-review', name: 'import-review', component: ImportReviewView },
     { path: '/matches', name: 'match-center', component: MatchCenterView },
     { path: '/odds', name: 'odds-center', component: OddsCenterView },
+    { path: '/sentiment', name: 'sentiment-center', component: SentimentCenterView },
     { path: '/profiles/teams', name: 'team-profiles', component: TeamProfilesView },
     { path: '/profiles/players', name: 'player-profiles', component: PlayerProfilesView },
   ],
 });
-
-
