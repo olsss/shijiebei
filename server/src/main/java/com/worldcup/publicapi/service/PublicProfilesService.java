@@ -24,6 +24,8 @@ import java.util.List;
 
 @Service
 public class PublicProfilesService {
+    private static final String APPROVED_FACT_CONDITION = "approved_by IS NOT NULL AND approved_by <> ''";
+
     private final JdbcTemplate jdbcTemplate;
     private final PublicApiMapper mapper;
 
@@ -79,8 +81,8 @@ public class PublicProfilesService {
         return jdbcTemplate.query("""
                 SELECT p.id, p.player_key, p.team_id, t.display_name AS team_name, p.display_name, p.shirt_number,
                        p.position, p.status, p.injury_status, p.card_status, p.locker_room_status,
-                       (SELECT COUNT(*) FROM player_profile_facts f WHERE f.player_id=p.id) AS fact_count,
-                       (SELECT MAX(f.updated_at) FROM player_profile_facts f WHERE f.player_id=p.id) AS latest_profile_update
+                       (SELECT COUNT(*) FROM player_profile_facts f WHERE f.player_id=p.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS fact_count,
+                       (SELECT MAX(f.updated_at) FROM player_profile_facts f WHERE f.player_id=p.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS latest_profile_update
                 FROM players p
                 LEFT JOIN teams t ON t.id=p.team_id
                 ORDER BY p.display_name
@@ -104,8 +106,8 @@ public class PublicProfilesService {
         return jdbcTemplate.query("""
                         SELECT p.id, p.player_key, p.team_id, t.display_name AS team_name, p.display_name, p.shirt_number,
                                p.position, p.status, p.injury_status, p.card_status, p.locker_room_status,
-                               (SELECT COUNT(*) FROM player_profile_facts f WHERE f.player_id=p.id) AS fact_count,
-                               (SELECT MAX(f.updated_at) FROM player_profile_facts f WHERE f.player_id=p.id) AS latest_profile_update
+                               (SELECT COUNT(*) FROM player_profile_facts f WHERE f.player_id=p.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS fact_count,
+                               (SELECT MAX(f.updated_at) FROM player_profile_facts f WHERE f.player_id=p.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS latest_profile_update
                         FROM players p
                         LEFT JOIN teams t ON t.id=p.team_id
                         WHERE p.id=?
@@ -208,15 +210,15 @@ public class PublicProfilesService {
                 SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.style_tags, t.attack_profile,
                        t.defense_profile, t.public_sentiment,
                        (SELECT COUNT(*) FROM players p WHERE p.team_id=t.id) AS player_count,
-                       (SELECT COUNT(*) FROM team_profile_facts f WHERE f.team_id=t.id) AS fact_count,
-                       (SELECT MAX(f.updated_at) FROM team_profile_facts f WHERE f.team_id=t.id) AS latest_profile_update
+                       (SELECT COUNT(*) FROM team_profile_facts f WHERE f.team_id=t.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS fact_count,
+                       (SELECT MAX(f.updated_at) FROM team_profile_facts f WHERE f.team_id=t.id AND f.approved_by IS NOT NULL AND f.approved_by <> '') AS latest_profile_update
                 FROM teams t
                 """;
     }
 
     private String factSelect(String table, String idColumn) {
         return "SELECT id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score, "
-                + "source_name, source_url, source_ref, captured_at FROM " + table + " WHERE " + idColumn + "=?";
+                + "source_name, source_url, source_ref, captured_at FROM " + table + " WHERE " + idColumn + "=? AND " + APPROVED_FACT_CONDITION;
     }
 
     private TeamSummaryRow teamSummary(ResultSet rs) throws SQLException {
@@ -275,7 +277,7 @@ public class PublicProfilesService {
 
     private long evidenceCount(String entityKey, long teamId) {
         Long sourceEvidence = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_ref=?", Long.class, entityKey);
-        Long profileFacts = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM team_profile_facts WHERE team_id=? AND source_name IS NOT NULL", Long.class, teamId);
+        Long profileFacts = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM team_profile_facts WHERE team_id=? AND source_name IS NOT NULL AND approved_by IS NOT NULL AND approved_by <> ''", Long.class, teamId);
         return (sourceEvidence == null ? 0 : sourceEvidence) + (profileFacts == null ? 0 : profileFacts);
     }
 

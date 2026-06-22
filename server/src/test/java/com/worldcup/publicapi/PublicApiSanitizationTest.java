@@ -94,9 +94,25 @@ class PublicApiSanitizationTest {
     }
 
     @Test
+    void sanitizerRemovesGenericTicketProfitAmountAndChineseSensitiveTokens() {
+        String unsafe = "ticket=ABC123 ticketId=T-9 profit=24 profitAmount=25 amount=88 "
+                + "票号=ABC123 金额=88 盈利=24 亏损=-20 C:\\Users\\admin\\Desktop\\世界杯\\skill\\archive\\raw.json";
+
+        String sanitized = mapper.sanitizeText(unsafe);
+
+        assertThat(sanitized).doesNotContain("ticket=ABC123", "ticketId=T-9", "profit=24", "profitAmount=25", "amount=88");
+        assertThat(sanitized).doesNotContain("票号=ABC123", "金额=88", "盈利=24", "亏损=-20");
+        assertThat(sanitized).doesNotContain("C:\\Users\\admin\\Desktop\\世界杯\\skill\\archive\\raw.json");
+        assertThat(sanitized).contains("[REDACTED]");
+    }
+
+    @Test
     void sanitizerRedactsForbiddenTokenPathSegments() {
         assertThat(mapper.sanitizeToken("payload.ticketNo")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("bets.stake")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("bets.ticket")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("bets.profit")).isEqualTo("[REDACTED]");
+        assertThat(mapper.sanitizeToken("bets.amount")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("stake_suggestion.amount")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("raw_payload.field")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("LINEUP.fieldName")).isEqualTo("LINEUP.fieldName");

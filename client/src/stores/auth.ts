@@ -13,9 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const password = ref('');
 
   const isAuthenticated = computed(() => admin.value !== null);
-  const isAdmin = computed(
-    () => admin.value?.authType.toUpperCase() === 'BASIC' && admin.value.username === 'admin',
-  );
+  const isAdmin = computed(() => admin.value?.authType.toUpperCase() === 'BASIC');
   const canWrite = computed(() => isAdmin.value && Boolean(password.value));
   const basicAuthHeader = computed(() => {
     if (!canWrite.value || !admin.value) {

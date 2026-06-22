@@ -83,7 +83,7 @@ Maven note: run Maven from repository root with `-f server/pom.xml`; running ins
 - Modify: rich controllers listed in File Map
 - Create: `server/src/test/java/com/worldcup/security/SecurityBoundaryTest.java`
 
-- [ ] **Step 1: Write the failing security boundary test**
+- [x] **Step 1: Write the failing security boundary test**
 
 Create `server/src/test/java/com/worldcup/security/SecurityBoundaryTest.java`:
 
@@ -150,7 +150,7 @@ class SecurityBoundaryTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -160,7 +160,7 @@ mvn -f server/pom.xml -Dtest=SecurityBoundaryTest test
 
 Expected: FAIL because the current security config does not yet permit anonymous `GET /api/public/**` and does not force public namespace writes through admin auth.
 
-- [ ] **Step 3: Write minimal security implementation**
+- [x] **Step 3: Write minimal security implementation**
 
 Create `MethodSecurityConfig.java`:
 
@@ -208,7 +208,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @PreAuthorize("hasRole('ADMIN')")
 ```
 
-- [ ] **Step 4: Run focused test again**
+- [x] **Step 4: Run focused test again**
 
 Run:
 
@@ -594,7 +594,7 @@ git commit -m "feat: add public overview and decision apis"
 - Create `client/src/api/publicOverview.ts`
 - Modify existing API tests and domain API clients.
 
-- [ ] **Step 1: Write failing HTTP/auth tests**
+- [x] **Step 1: Write failing HTTP/auth tests**
 
 Create `client/src/__tests__/http-client.test.ts`:
 
@@ -638,7 +638,7 @@ it('allows writes only when admin identity and explicit password are present', (
 });
 ```
 
-- [ ] **Step 2: Run tests to verify RED**
+- [x] **Step 2: Run tests to verify RED**
 
 ```bash
 cd client && npm.cmd run test:run -- src/__tests__/http-client.test.ts src/__tests__/auth-store.test.ts
@@ -646,7 +646,7 @@ cd client && npm.cmd run test:run -- src/__tests__/http-client.test.ts src/__tes
 
 Expected: FAIL because helpers and store properties are missing and `setAdmin` defaults to `admin123456`.
 
-- [ ] **Step 3: Implement HTTP/auth helpers**
+- [x] **Step 3: Implement HTTP/auth helpers**
 
 Update `http.ts`:
 
@@ -678,7 +678,7 @@ export function isForbidden(error: unknown): boolean {
 Update `auth.ts`:
 
 ```ts
-const isAdmin = computed(() => admin.value?.authType === 'BASIC' && admin.value.username === 'admin');
+const isAdmin = computed(() => admin.value?.authType === 'BASIC');
 const canWrite = computed(() => isAdmin.value && Boolean(password.value));
 
 function setAdmin(identity: AdminIdentity, rawPassword = '') {
@@ -689,7 +689,7 @@ function setAdmin(identity: AdminIdentity, rawPassword = '') {
 
 Return `isAdmin` and `canWrite`.
 
-- [ ] **Step 4: Run tests to verify GREEN**
+- [x] **Step 4: Run tests to verify GREEN**
 
 ```bash
 cd client && npm.cmd run test:run -- src/__tests__/http-client.test.ts src/__tests__/auth-store.test.ts
@@ -697,7 +697,7 @@ cd client && npm.cmd run test:run -- src/__tests__/http-client.test.ts src/__tes
 
 Expected: PASS.
 
-- [ ] **Step 5: Add public overview API test and implementation**
+- [x] **Step 5: Add public overview API test and implementation**
 
 Create `public-overview-api.test.ts`:
 
@@ -740,7 +740,7 @@ export async function fetchPublicOverview(): Promise<ApiResponse<PublicOverviewR
 }
 ```
 
-- [ ] **Step 6: Add public functions to domain API clients**
+- [x] **Step 6: Add public functions to domain API clients**
 
 Pattern for `matches.ts`:
 
@@ -762,7 +762,7 @@ export async function listMatches(authHeader: string): Promise<ApiResponse<Match
 
 Repeat for odds/sentiment/profiles/prematch/analysis public endpoints. Keep admin rich APIs and auth headers intact.
 
-- [ ] **Step 7: Run frontend verification**
+- [x] **Step 7: Run frontend verification**
 
 ```bash
 cd client && npm.cmd run test:run
@@ -771,7 +771,7 @@ cd client && npm.cmd run build
 
 Expected: PASS; existing chunk-size warning is acceptable.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add client/src/api client/src/stores client/src/__tests__
@@ -784,7 +784,7 @@ git commit -m "feat: add public api client foundation"
 
 **Files:** no new files unless test fixes are required.
 
-- [ ] **Step 1: Run full verification**
+- [x] **Step 1: Run full verification**
 
 ```bash
 cd client && npm.cmd run test:run
@@ -798,7 +798,7 @@ Expected:
 - Frontend build passes; known Rollup chunk-size warning is acceptable.
 - Backend tests pass; count greater than baseline 63.
 
-- [ ] **Step 2: Inspect git diff**
+- [x] **Step 2: Inspect git diff**
 
 ```bash
 git status --short
@@ -807,7 +807,7 @@ git diff --stat main...HEAD
 
 Expected: only planned files changed.
 
-- [ ] **Step 3: Request code review**
+- [x] **Step 3: Request code review**
 
 Dispatch code review with:
 
@@ -816,7 +816,7 @@ Dispatch code review with:
 - Base: `72f295a`.
 - Head: branch HEAD.
 
-- [ ] **Step 4: Fix review feedback**
+- [x] **Step 4: Fix review feedback**
 
 Apply Critical/Important fixes with TDD. Re-run focused tests and full verification.
 
@@ -841,3 +841,15 @@ This plan uses concrete file paths, tests, commands, expected results, and commi
 ### Type consistency
 
 Public DTO names are centralized in `PublicApiDtos`. Frontend public overview type is intentionally minimal for phase 1-5 and can be narrowed when the homepage UI task begins.
+
+
+### 2026-06-23 review-fix addendum
+
+- [x] Removed production default admin password; production must provide `APP_ADMIN_PASSWORD`, while `test` keeps fixture credentials.
+- [x] Public profile and prematch profile facts now return/count only approved facts.
+- [x] Public sanitizer covers generic `ticket`, `profit`, `amount` and Chinese betting amount aliases without redacting public HTTP(S) URLs.
+- [x] Public overview uses an injectable Beijing-time clock and skips already-finished same-day matches.
+- [x] Frontend Basic-auth write capability no longer hard-codes the username `admin`.
+- [x] Public decisions include sanitized review lessons.
+- [x] Sentiment public view no longer displays a raw JSON placeholder section.
+- [x] Fresh verification after fixes: `mvn -f server/pom.xml test` -> 97 tests passed; `npm.cmd run test:run` -> 17 files / 40 tests passed; `npm.cmd run build` -> build passed with existing chunk-size warning.

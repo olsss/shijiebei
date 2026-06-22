@@ -34,6 +34,7 @@ import java.util.Map;
 @Service
 public class PublicPrematchWorkbenchService {
     private static final int DEFAULT_LIMIT = 50;
+    private static final String APPROVED_FACT_CONDITION = "approved_by IS NOT NULL AND approved_by <> ''";
 
     private final JdbcTemplate jdbcTemplate;
     private final PublicApiMapper mapper;
@@ -88,10 +89,13 @@ public class PublicPrematchWorkbenchService {
                        m.kickoff_time, m.status, m.result_status, m.home_team_id,
                        COALESCE(ht.display_name, 'Unknown home team') AS home_team_name,
                        m.away_team_id, COALESCE(at.display_name, 'Unknown away team') AS away_team_name,
-                       (SELECT COUNT(*) FROM team_profile_facts tf WHERE tf.team_id IN (m.home_team_id, m.away_team_id)) AS team_profile_count,
+                       (SELECT COUNT(*) FROM team_profile_facts tf
+                        WHERE tf.team_id IN (m.home_team_id, m.away_team_id)
+                          AND tf.approved_by IS NOT NULL AND tf.approved_by <> '') AS team_profile_count,
                        (SELECT COUNT(*)
                         FROM player_profile_facts pf
-                        WHERE EXISTS (
+                        WHERE pf.approved_by IS NOT NULL AND pf.approved_by <> ''
+                          AND EXISTS (
                             SELECT 1 FROM match_lineups ml
                             WHERE ml.match_id=m.id AND ml.player_id=pf.player_id
                         )) AS player_profile_count,
@@ -234,8 +238,9 @@ public class PublicPrematchWorkbenchService {
                        source_name, source_url, source_ref, captured_at
                 FROM team_profile_facts
                 WHERE team_id IN (%s)
+                  AND %s
                 ORDER BY team_id, captured_at DESC, id DESC
-                """.formatted(placeholders(teamIds.size()));
+                """.formatted(placeholders(teamIds.size()), APPROVED_FACT_CONDITION);
         jdbcTemplate.query(sql, rs -> {
             long teamId = rs.getLong("team_id");
             grouped.computeIfAbsent(teamId, ignored -> new ArrayList<>()).add(fact(rs));
@@ -319,8 +324,9 @@ public class PublicPrematchWorkbenchService {
                        source_name, source_url, source_ref, captured_at
                 FROM player_profile_facts
                 WHERE player_id IN (%s)
+                  AND %s
                 ORDER BY player_id, captured_at DESC, id DESC
-                """.formatted(placeholders(playerIds.size()));
+                """.formatted(placeholders(playerIds.size()), APPROVED_FACT_CONDITION);
         jdbcTemplate.query(sql, rs -> {
             long playerId = rs.getLong("player_id");
             grouped.computeIfAbsent(playerId, ignored -> new ArrayList<>()).add(fact(rs));

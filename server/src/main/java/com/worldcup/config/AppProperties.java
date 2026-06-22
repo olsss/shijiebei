@@ -20,7 +20,7 @@ public class AppProperties {
 
     public static class Admin {
         @NotBlank private String username = "admin";
-        @NotBlank private String password = "admin123456";
+        @NotBlank private String password;
         public String getUsername() { return username; }
         public void setUsername(String username) { this.username = username; }
         public String getPassword() { return password; }

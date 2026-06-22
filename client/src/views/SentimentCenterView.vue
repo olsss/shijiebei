@@ -319,8 +319,6 @@ onMounted(load);
                 <el-table-column prop="suggestedAction" label="动作代码" min-width="120" show-overflow-tooltip />
               </el-table>
 
-              <h3>因素原始 JSON</h3>
-              <pre class="raw-payload">{{ '-' }}</pre>
             </template>
           </el-card>
         </el-col>
@@ -376,14 +374,5 @@ small {
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr;
-}
-.raw-payload {
-  background: #111827;
-  border-radius: 10px;
-  color: #e5e7eb;
-  max-height: 220px;
-  overflow: auto;
-  padding: 14px;
-  white-space: pre-wrap;
 }
 </style>

@@ -3,17 +3,22 @@ package com.worldcup.publicapi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -27,11 +32,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class PublicOverviewControllerTest {
+    private static final ZoneId BEIJING_ZONE = ZoneId.of("Asia/Shanghai");
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.of(2026, 6, 23, 12, 0);
+
     @Autowired
     MockMvc mockMvc;
 
     @Autowired
     JdbcTemplate jdbcTemplate;
+
+    @TestConfiguration
+    static class FixedClockConfig {
+        @Bean
+        @Primary
+        Clock fixedClock() {
+            return Clock.fixed(FIXED_NOW.atZone(BEIJING_ZONE).toInstant(), BEIJING_ZONE);
+        }
+    }
 
     @BeforeEach
     void clean() {
@@ -73,11 +90,11 @@ class PublicOverviewControllerTest {
 
     @Test
     void overviewPrioritizesTodayMatchesAndSkipsPastRows() throws Exception {
-        LocalDate today = LocalDate.now();
+        LocalDate today = FIXED_NOW.toLocalDate();
         insertOverviewMatch("past-match", "Historical Match", today.minusDays(1),
                 LocalDateTime.of(today.minusDays(1), LocalTime.of(12, 0)));
         insertOverviewMatch("today-morning", "Today Morning", today,
-                LocalDateTime.of(today, LocalTime.of(10, 0)));
+                LocalDateTime.of(today, LocalTime.of(14, 0)));
         insertOverviewMatch("today-evening", "Today Evening", today,
                 LocalDateTime.of(today, LocalTime.of(20, 0)));
         insertOverviewMatch("future-match", "Future Match", today.plusDays(1),
@@ -94,7 +111,7 @@ class PublicOverviewControllerTest {
 
     @Test
     void overviewFallsBackToNearestFutureMatchesWhenTodayIsEmpty() throws Exception {
-        LocalDate today = LocalDate.now();
+        LocalDate today = FIXED_NOW.toLocalDate();
         insertOverviewMatch("past-match", "Historical Match", today.minusDays(1),
                 LocalDateTime.of(today.minusDays(1), LocalTime.of(12, 0)));
         insertOverviewMatch("tomorrow-noon", "Tomorrow Noon", today.plusDays(1),
@@ -111,6 +128,19 @@ class PublicOverviewControllerTest {
                         .andExpect(jsonPath("$.data.upcomingMatches[1].matchName").value("Tomorrow Night"))
                         .andExpect(jsonPath("$.data.upcomingMatches[2].matchName").value("Future Later")))
                 .andExpect(content().string(not(containsString("Historical Match"))));
+    }
+
+    @Test
+    void overviewDoesNotShowAlreadyFinishedTodayMatches() throws Exception {
+        LocalDate today = FIXED_NOW.toLocalDate();
+        insertOverviewMatch("today-finished", "Today Finished", today, FIXED_NOW.minusHours(2));
+        insertOverviewMatch("next-available", "Next Available", today, FIXED_NOW.plusHours(1));
+
+        expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/overview"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data.upcomingMatches", hasSize(1)))
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].matchName").value("Next Available")))
+                .andExpect(content().string(not(containsString("Today Finished"))));
     }
 
     private ResultActions expectNoForbiddenFieldsOrTokens(ResultActions result) throws Exception {

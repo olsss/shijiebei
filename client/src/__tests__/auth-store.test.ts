@@ -36,12 +36,12 @@ describe('auth store', () => {
     expect(store.basicAuthHeader).toBe(`Basic ${btoa('admin:secret')}`);
   });
 
-  it('blocks writes for non-admin usernames even with an explicit password', () => {
+  it('allows writes for configured basic administrator usernames', () => {
     const store = useAuthStore();
     store.setAdmin({ username: 'operator', displayName: 'Operator', authType: 'BASIC' }, 'secret');
-    expect(store.isAdmin).toBe(false);
-    expect(store.canWrite).toBe(false);
-    expect(store.basicAuthHeader).toBe('');
+    expect(store.isAdmin).toBe(true);
+    expect(store.canWrite).toBe(true);
+    expect(store.basicAuthHeader).toBe(`Basic ${btoa('operator:secret')}`);
   });
 
   it('blocks writes for non-basic auth types even with an explicit password', () => {

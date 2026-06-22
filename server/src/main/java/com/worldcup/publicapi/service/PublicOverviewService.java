@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,16 +21,18 @@ import java.util.List;
 public class PublicOverviewService {
     private final JdbcTemplate jdbcTemplate;
     private final PublicApiMapper mapper;
+    private final Clock clock;
 
-    public PublicOverviewService(JdbcTemplate jdbcTemplate, PublicApiMapper mapper) {
+    public PublicOverviewService(JdbcTemplate jdbcTemplate, PublicApiMapper mapper, Clock clock) {
         this.jdbcTemplate = jdbcTemplate;
         this.mapper = mapper;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
     public PublicOverviewResponse overview() {
         return new PublicOverviewResponse(
-                LocalDateTime.now(),
+                LocalDateTime.now(clock),
                 upcomingMatches(),
                 riskCounters(),
                 integrityCounters(),
@@ -39,17 +42,17 @@ public class PublicOverviewService {
     }
 
     private List<PublicOverviewMatch> upcomingMatches() {
-        LocalDate today = LocalDate.now();
-        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime now = LocalDateTime.now(clock);
+        LocalDate today = now.toLocalDate();
         LocalDateTime tomorrowStart = today.plusDays(1).atStartOfDay();
 
         List<PublicOverviewMatch> todayMatches = overviewMatches("""
-                WHERE m.matchday = ?
-                   OR (m.kickoff_time >= ? AND m.kickoff_time < ?)
+                WHERE (m.kickoff_time >= ? AND m.kickoff_time < ?)
+                   OR (m.kickoff_time IS NULL AND m.matchday = ?)
                 """,
-                java.sql.Date.valueOf(today),
-                java.sql.Timestamp.valueOf(todayStart),
-                java.sql.Timestamp.valueOf(tomorrowStart));
+                java.sql.Timestamp.valueOf(now),
+                java.sql.Timestamp.valueOf(tomorrowStart),
+                java.sql.Date.valueOf(today));
         if (!todayMatches.isEmpty()) {
             return todayMatches;
         }
@@ -58,7 +61,7 @@ public class PublicOverviewService {
                 WHERE m.kickoff_time >= ?
                    OR (m.kickoff_time IS NULL AND m.matchday > ?)
                 """,
-                java.sql.Timestamp.valueOf(tomorrowStart),
+                java.sql.Timestamp.valueOf(now),
                 java.sql.Date.valueOf(today));
     }
 
@@ -93,7 +96,7 @@ public class PublicOverviewService {
     }
 
     private PublicRiskCounters riskCounters() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(clock);
         return new PublicRiskCounters(
                 count("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE UPPER(risk_level) IN ('HIGH', 'CRITICAL')"),
                 count("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE UPPER(risk_level) = 'MEDIUM'"),
@@ -119,7 +122,7 @@ public class PublicOverviewService {
     }
 
     private PublicOddsFreshness oddsFreshness() {
-        LocalDateTime staleCutoff = LocalDateTime.now().minusHours(3);
+        LocalDateTime staleCutoff = LocalDateTime.now(clock).minusHours(3);
         return new PublicOddsFreshness(
                 count("SELECT COUNT(*) FROM odds_market_snapshots"),
                 count("SELECT COUNT(*) FROM odds_market_snapshots WHERE UPPER(snapshot_type) = 'LIVE'"),

@@ -15,10 +15,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -76,6 +79,29 @@ class PublicProfilesControllerTest {
         verify(richQueryService, never()).player(anyLong());
     }
 
+    @Test
+    void publicProfileEndpointsExposeOnlyApprovedFacts() throws Exception {
+        ProfileFixture fixture = createProfileFixture();
+        insertTeamFact(fixture.teamId(), "Draft team fact", "draft team summary", null);
+        insertPlayerFact(fixture.playerId(), "Draft player fact", "draft player summary", null);
+
+        mockMvc.perform(get("/api/public/profiles/teams/" + fixture.teamId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.team.factCount").value(1))
+                .andExpect(jsonPath("$.data.facts.length()").value(1))
+                .andExpect(jsonPath("$.data.facts[0].title").value("Team style"))
+                .andExpect(content().string(not(containsString("Draft team fact"))))
+                .andExpect(content().string(not(containsString("draft team summary"))));
+
+        mockMvc.perform(get("/api/public/profiles/players/" + fixture.playerId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.player.factCount").value(1))
+                .andExpect(jsonPath("$.data.facts.length()").value(1))
+                .andExpect(jsonPath("$.data.facts[0].title").value("Player form"))
+                .andExpect(content().string(not(containsString("Draft player fact"))))
+                .andExpect(content().string(not(containsString("draft player summary"))));
+    }
+
     private ProfileFixture createProfileFixture() {
         long teamId = insertTeam("profile-home", "Profile Home");
         long awayTeamId = insertTeam("profile-away", "Profile Away");
@@ -121,13 +147,21 @@ class PublicProfilesControllerTest {
     }
 
     private void insertTeamFact(long teamId) {
+        insertTeamFact(teamId, "Team style", "summary reviewedBy=SECRET", "admin");
+    }
+
+    private void insertTeamFact(long teamId, String title, String summary, String approvedBy) {
         jdbcTemplate.update("INSERT INTO team_profile_facts(team_id, fact_type, title, summary, source_name, source_ref, reliability_score, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
-                teamId, "STYLE", "Team style", "summary reviewedBy=SECRET", "test", "source", "8.0", "admin", "{\"raw\":\"SECRET\"}");
+                teamId, "STYLE", title, summary, "test", "source", "8.0", approvedBy, "{\"raw\":\"SECRET\"}");
     }
 
     private void insertPlayerFact(long playerId) {
+        insertPlayerFact(playerId, "Player form", "summary approvedBy=SECRET", "admin");
+    }
+
+    private void insertPlayerFact(long playerId, String title, String summary, String approvedBy) {
         jdbcTemplate.update("INSERT INTO player_profile_facts(player_id, fact_type, title, summary, source_name, source_ref, reliability_score, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
-                playerId, "FORM", "Player form", "summary approvedBy=SECRET", "test", "source", "8.0", "admin", "{\"raw\":\"SECRET\"}");
+                playerId, "FORM", title, summary, "test", "source", "8.0", approvedBy, "{\"raw\":\"SECRET\"}");
     }
 
     private void insertEvidence(long matchId, String sourceRef) {

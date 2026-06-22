@@ -20,9 +20,11 @@ public class PublicApiMapper {
     private static final String FORBIDDEN_KEY_ALIASES = String.join("|",
             "rawJson", "raw_json", "rawPayload", "raw_payload", "raw", "payload",
             "archivePath", "archive_path", "sourcePath", "source_path",
-            "ticketNo", "ticket_no",
+            "ticket", "ticketId", "ticket_id", "ticketNo", "ticket_no", "票号", "票据",
             "stake", "stakeSuggestion", "stake_suggestion",
-            "budgetAmount", "budget_amount", "returnAmount", "return_amount", "profitLoss", "profit_loss",
+            "amount", "budgetAmount", "budget_amount", "returnAmount", "return_amount",
+            "profit", "profitAmount", "profit_amount", "profitLoss", "profit_loss",
+            "金额", "盈利", "亏损",
             "approvedBy", "approved_by", "reviewedBy", "reviewed_by", "reviewNote", "review_note",
             "mappings", "importItemId", "import_item_id"
     );

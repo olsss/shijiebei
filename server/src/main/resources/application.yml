@@ -16,8 +16,8 @@ spring:
 app:
   archive-path: ../skill/archive
   admin:
-    username: admin
-    password: admin123456
+    username: ${APP_ADMIN_USERNAME:admin}
+    password: ${APP_ADMIN_PASSWORD:}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

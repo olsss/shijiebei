@@ -115,6 +115,31 @@ class PublicPrematchWorkbenchControllerTest {
     }
 
     @Test
+    void matchDetailAndSummaryUseOnlyApprovedProfileFacts() throws Exception {
+        PrematchFixture fixture = createPrematchFixture();
+        Long homeTeamId = jdbcTemplate.queryForObject("SELECT id FROM teams WHERE team_key=?", Long.class, "prematch-home");
+        Long playerId = jdbcTemplate.queryForObject("SELECT id FROM players WHERE player_key=?", Long.class, "prematch-player");
+        insertTeamFact(homeTeamId, "Draft team fact", "draft team summary", null);
+        insertPlayerFact(playerId, "Draft player fact", "draft player summary", null);
+
+        expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/prematch-workbench/matches"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data[0].teamProfileCount").value(2))
+                        .andExpect(jsonPath("$.data[0].playerProfileCount").value(1)))
+                .andExpect(content().string(not(containsString("Draft team fact"))))
+                .andExpect(content().string(not(containsString("Draft player fact"))));
+
+        expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/prematch-workbench/matches/" + fixture.matchId()))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data.summary.teamProfileCount").value(2))
+                        .andExpect(jsonPath("$.data.summary.playerProfileCount").value(1)))
+                .andExpect(content().string(not(containsString("Draft team fact"))))
+                .andExpect(content().string(not(containsString("draft team summary"))))
+                .andExpect(content().string(not(containsString("Draft player fact"))))
+                .andExpect(content().string(not(containsString("draft player summary"))));
+    }
+
+    @Test
     void integrityChecksArePublicAndSanitized() throws Exception {
         PrematchFixture fixture = createPrematchFixture();
 
@@ -208,13 +233,21 @@ class PublicPrematchWorkbenchControllerTest {
     }
 
     private void insertTeamFact(long teamId) {
+        insertTeamFact(teamId, "Team style", "summary reviewedBy=SECRET", "admin");
+    }
+
+    private void insertTeamFact(long teamId, String title, String summary, String approvedBy) {
         jdbcTemplate.update("INSERT INTO team_profile_facts(team_id, fact_type, title, summary, source_name, source_ref, reliability_score, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
-                teamId, "STYLE", "Team style", "summary reviewedBy=SECRET", "test", "source", "8.0", "admin", "{\"raw\":\"SECRET\"}");
+                teamId, "STYLE", title, summary, "test", "source", "8.0", approvedBy, "{\"raw\":\"SECRET\"}");
     }
 
     private void insertPlayerFact(long playerId) {
+        insertPlayerFact(playerId, "Player form", "summary approvedBy=SECRET", "admin");
+    }
+
+    private void insertPlayerFact(long playerId, String title, String summary, String approvedBy) {
         jdbcTemplate.update("INSERT INTO player_profile_facts(player_id, fact_type, title, summary, source_name, source_ref, reliability_score, approved_by, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
-                playerId, "FORM", "Player form", "summary approvedBy=SECRET", "test", "source", "8.0", "admin", "{\"raw\":\"SECRET\"}");
+                playerId, "FORM", title, summary, "test", "source", "8.0", approvedBy, "{\"raw\":\"SECRET\"}");
     }
 
     private void insertLineup(long matchId, long teamId, long playerId) {

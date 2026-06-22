@@ -76,7 +76,10 @@ class PublicDecisionsControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(fixture.reviewId()))
                 .andExpect(jsonPath("$.data[0].matchId").value(fixture.matchId()))
-                .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away")));
+                .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away"))
+                .andExpect(jsonPath("$.data[0].lessons.length()").value(1))
+                .andExpect(jsonPath("$.data[0].lessons[0].lessonType").value("RISK"))
+                .andExpect(jsonPath("$.data[0].lessons[0].severity").value("HIGH")));
 
         verify(richQueryService, never()).reviews();
     }
