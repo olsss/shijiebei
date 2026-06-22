@@ -1,7 +1,7 @@
 # 前端整站重设计与 H5 适配设计
 
 日期：2026-06-22
-状态：已根据第二轮子代理审查修订，待第三轮审查
+状态：已根据第三轮子代理审查修订，待最终确认
 范围：前端整体重构；允许为体验、权限边界、公开聚合数据调整后端接口/安全配置。
 
 ## 1. 背景与目标
@@ -224,7 +224,7 @@
 | 新路由 | 名称 | 访问模式 | 说明 |
 |---|---|---|---|
 | `/` | 赛事总览 | 公开只读 | 未登录默认首页，数据来自脱敏 overview |
-| `/workbench` | 赛前作战 | 公开脱敏只读，写动作需登录 | 使用 `/api/public/prematch-workbench/**`；原 `/api/prematch-workbench/**` 管理员 |
+| `/workbench` | 赛前作战 | 公开脱敏只读，写动作需管理员登录 | 使用 `/api/public/prematch-workbench/**`；原 `/api/prematch-workbench/**` 管理员 |
 | `/evidence/matches` | 比赛与赛程 | 公开脱敏只读 | 使用 `/api/public/matches/**`；原 `/api/matches/**` 管理员 |
 | `/evidence/odds` | 赔率与盘口 | 公开脱敏只读 | 使用 `/api/public/odds/**`；原 `/api/odds/**` 管理员 |
 | `/evidence/sentiment` | 舆情与外部因素 | 公开脱敏只读 | 使用 `/api/public/sentiment/**`；原 `/api/sentiment/**` 管理员 |
@@ -291,6 +291,8 @@ H5：
 - 90 分钟结算口径提示，淘汰赛强化“晋级不等于 90 分钟胜”。
 - 阵容、伤停、红黄牌、战意、48 队最佳第三名横向风险。
 - 多源证据、来源冲突、数据时效与完整性检查。
+- 关键数据必须至少 2 个独立来源交叉验证；不足 2 个来源时完整性状态为 `partial` 或 `blocked`，触发降额、空仓或阻断 `ready_to_bet`。
+- 来源冲突必须标出冲突字段、采用依据和未解决状态；未解决冲突不能被包装为“已验证”。
 - 赔率快照、Pinnacle/主流公司、票面 SP 提示、赔率过期提醒。
 - 已入库分析报告、外部 AI/人工归档方案、实际出票记录入口；公开模式只展示脱敏摘要，管理员才可看票号、单票金额、盈亏、rawPayload、stakeSuggestion。
 - 行为偏差自检：近因、球星/牌面、大众盘从众、锚定、结果偏差。
@@ -329,6 +331,7 @@ H5：
 - 显示单一逻辑占比，超过胜负类资金 60%-70% 时警告或阻断。
 - 凯利只作相对权重，显示分数凯利建议，不作为绝对注额。
 - 深盘必须展示保险方向；比分必须展示主比分、卡线比分、冷门比分分层。
+- 保险票必须展示票型、金额、覆盖方向、触发理由、所属主逻辑，以及与主逻辑合计后的资金占比。
 - 守领先、慢热、破密集差场景提示优先考虑 TTG/HAFU，而非默认猜比分。
 - 允许“空仓”并要求记录空仓理由。
 
@@ -341,7 +344,7 @@ H5：
 
 - 首屏顺序：比赛选择器 → 官方核对状态 → 风险总览 → 证据完整性。
 - 九维分析、本届逐场表现、赔率、舆情、资金玩法校验、方案、票据使用折叠区。
-- 关键 CTA 使用 `SafeAreaActionBar`，避开底部导航和安全区；未登录时显示“登录后保存/导入”。
+- 关键 CTA 使用 `SafeAreaActionBar`，避开底部导航和安全区；未登录时显示“需管理员权限才能保存/导入”。
 - 筛选和比赛切换使用底部抽屉或顶部选择器。
 
 ### 5.3 证据中心
@@ -416,6 +419,19 @@ H5：
 - 审核列表使用卡片 + 状态筛选抽屉。
 - 批准/驳回按钮固定在详情页底部操作区，避开安全区。
 - 驳回原因使用可见 label 和错误提示。
+
+
+### 5.6 页面级响应式布局矩阵
+
+每个主要页面必须同时实现 Desktop / Tablet / H5 布局，不能只做 H5 适配后让 PC 自由堆叠。
+
+| 页面 | 1440 标准桌面 | 1024 小桌面 | 768 平板 | 375 H5 |
+|---|---|---|---|---|
+| 赛事总览 | Hero + 今日比赛 + KPI 横排；风险队列与五阶段入口两栏 | Hero 压缩，KPI 2×2，风险队列与入口上下排列 | 卡片 2 列，顶部状态栏收敛 | 单列，今日比赛、高风险提醒、赛前入口优先 |
+| 赛前作战 | 左侧比赛上下文，中区证据/赔率/九维分析，右侧方案与规则检查侧栏 | 双栏：上下文 + 主内容；方案侧栏下移 | 单列折叠区 + 顶部比赛选择器 | 单列任务流，关键 CTA 用 SafeAreaActionBar |
+| 证据中心 | 二级导航 + 表格/矩阵主区，详情可右侧抽屉 | 二级导航顶部化，表格宽度自适应 | 卡片/表格混合，筛选抽屉 | 分类横向滚动，列表卡片，宽表局部横滚 |
+| 决策与复盘 | 左侧列表 + 右侧详情 split view；CLV/复盘卡片并列 | 列表与详情上下切换，详情优先 | 卡片列表 + 详情页 | 卡片列表，五层复盘折叠，管理员动作进底部操作栏 |
+| 管理后台 | master-detail：审核队列左，详情/映射右，批量操作顶部 | 双栏或详情抽屉，队列保持可见 | 队列卡片 + 详情页 | 更多入口进入；审核详情底部批准/驳回固定操作区 |
 
 ## 6. 前端技术架构
 
@@ -492,17 +508,63 @@ client/src/composables/
 
 - H5 详情页如果出现保存、导入、批准、驳回等关键 CTA，优先进入“任务模式”：隐藏 `MobileTabbar`，显示 `SafeAreaActionBar`。
 - 如果必须同时显示底部导航和操作栏，`SafeAreaActionBar` 悬浮在 `MobileTabbar` 上方，并定义 `--safe-actionbar-height: 56px`。
-- 主内容底部 padding：`calc(var(--mobile-tabbar-height) + var(--safe-actionbar-height, 0px) + env(safe-area-inset-bottom))`。
+- 底部 padding 明确三种模式：仅 tabbar = `var(--mobile-tabbar-height) + env(safe-area-inset-bottom)`；仅 actionbar = `var(--safe-actionbar-height) + env(safe-area-inset-bottom)`；共存 = `var(--mobile-tabbar-height) + var(--safe-actionbar-height) + env(safe-area-inset-bottom)`。
+- 任务模式下必须将 `--mobile-tabbar-height` 置为 `0px` 或使用单独 class，避免隐藏 tabbar 后仍保留多余空白。
 - 横屏时操作栏可收敛为顶部 toolbar；验收截图必须覆盖 375px 竖屏和手机横屏。
 
 `ResponsiveTable`：
 
 - 小于 768px 默认卡片模式。
-- `columns.priority` 决定 H5 显示顺序；`mobileSummaryFields` 决定卡片首屏字段；`rowActions` 进入卡片底部或更多菜单。
-- 每个字段必须以 label/value 呈现。
+- 组件只接受受控排序状态；排序、筛选、行操作不能在不同页面各自私有实现。
+- 每个字段必须以 label/value 呈现；卡片阅读顺序为 `mobileSummaryFields` 后接 `columns.priority` 升序，未配置 priority 的字段进入“更多信息”。
 - 保留排序状态；可排序字段必须提供 `aria-sort`，卡片模式也要显示当前排序。
 - 赔率矩阵和宽数据表可局部横向滚动，但滚动容器必须可键盘聚焦并有可见提示；整页不能横向滚动。
 - 卡片模式必须保留筛选状态和关键状态徽章。
+
+Props / slots 契约：
+
+```ts
+interface ResponsiveTableColumn<Row> {
+  key: keyof Row | string
+  label: string
+  priority?: number
+  sortable?: boolean
+  mobileSummary?: boolean
+  align?: 'start' | 'center' | 'end'
+  formatter?: (value: unknown, row: Row) => string
+  ariaLabel?: string
+}
+
+interface RowAction<Row> {
+  key: string
+  label: string
+  ariaLabel: (row: Row) => string
+  disabled?: (row: Row) => boolean
+  danger?: boolean
+}
+
+props: {
+  rows: Row[]
+  columns: ResponsiveTableColumn<Row>[]
+  rowKey: keyof Row | ((row: Row) => string)
+  sortBy?: string
+  sortDirection?: 'asc' | 'desc'
+  mobileSummaryFields?: string[]
+  rowActions?: (row: Row) => RowAction<Row>[]
+  horizontalScrollLabel?: string
+}
+
+emits: {
+  'sort-change': [{ key: string, direction: 'asc' | 'desc' }]
+  'row-action': [{ actionKey: string, row: Row }]
+}
+
+slots:
+  #cell-{key}="{ row, value }"
+  #mobile-summary="{ row }"
+  #row-actions="{ row, actions }"
+  #empty
+```
 
 `FilterDrawer`：
 
@@ -552,27 +614,29 @@ client/src/composables/
 
 ### 7.1 安全原则
 
-现有富详情接口默认不公开。新设计采用 **公开 `/api/public/...` 脱敏接口 + 管理端点优先匹配 + 写接口默认管理员**。
+现有富详情接口始终不公开给匿名用户。新设计采用 **公开 `/api/public/...` 脱敏接口 + 管理端点优先匹配 + 写接口默认管理员**。
 
 硬规则：
 
-1. 先实现公开 DTO，并通过字段级脱敏测试。
+1. 先实现公开 DTO，并通过字段级与值级脱敏测试。
 2. 只有通过脱敏测试的 `/api/public/...` 端点才能进入匿名白名单。
-3. 现有富详情端点（如 `/api/matches/**`、`/api/odds/**`、`/api/sentiment/**`、`/api/prematch-workbench/**`、`/api/analysis-review/**`）默认管理员，除非逐端点完成 public DTO 硬化并有内容级测试证明不泄露。
+3. 现有富详情端点（如 `/api/matches/**`、`/api/odds/**`、`/api/sentiment/**`、`/api/prematch-workbench/**`、`/api/analysis-review/**`）始终管理员；若需公开能力，必须新增或迁移到 `/api/public/...` 脱敏 DTO，原 `/api/...` 路径即使 public DTO 完成也不得进入匿名白名单。
 4. 所有 `POST / PUT / PATCH / DELETE` 默认要求 `hasRole("ADMIN")`。
 5. 其它未列出的 `/api/**` 默认要求 `hasRole("ADMIN")`，避免新增敏感接口意外公开。
 
 Spring Security 规则顺序：
 
-1. 先匹配 admin-only 端点，要求 `hasRole("ADMIN")`。
-2. 再匹配 `/api/public/**`、`/api/health`、`/api/auth/login` 等公开端点。
-3. 写接口默认管理员。
-4. 兜底 `/api/**` 管理员。
+1. 先精确放行 `GET /api/health`、`POST /api/auth/login`，以及必要的 CORS `OPTIONS`。
+2. 再匹配 admin-only 端点，要求 `hasRole("ADMIN")`。
+3. 再匹配所有 `POST/PUT/PATCH/DELETE /api/**`，默认要求 `hasRole("ADMIN")`；不得存在宽泛匿名 `/api/public/**` 写接口。
+4. 只允许 `GET /api/public/**` 进入匿名白名单，且必须已通过字段级与值级脱敏测试。
+5. 兜底 `/api/**` 管理员。
 
 方法级安全：
 
 - 必须启用 `@EnableMethodSecurity`。
 - 管理 Controller 或敏感方法必须加 `@PreAuthorize("hasRole('ADMIN')")`，至少覆盖：ImportReviewController、CoreData import/mappings、Profile collection review、SystemSettingsController、AnalysisReviewCenterController 管理明细。
+- 现有富读 Controller 也必须作为方法级双保险覆盖：MatchesController、OddsController、SentimentController、PrematchWorkbenchController、ProfileController；public Controller 单独命名并只返回 public DTO。
 
 Swagger：
 
@@ -599,10 +663,10 @@ Swagger：
 | 公开画像 | `GET /api/public/profiles/**` | 200 | 200 | 已批准事实，不含 approvedBy/reviewNote |
 | 公开赛前作战 | `GET /api/public/prematch-workbench/**` | 200 | 200 | 脱敏 DTO，不含票据/金额/归档方案明细 |
 | 公开决策复盘 | `GET /api/public/decisions/**` | 200 | 200 | 脱敏摘要 |
-| 现有比赛富接口 | `GET /api/matches/**` | 401 | 200 | 管理员，直到 public DTO 迁移完成 |
-| 现有赔率富接口 | `GET /api/odds/**` | 401 | 200 | 管理员，直到 public DTO 迁移完成 |
-| 现有舆情富接口 | `GET /api/sentiment/**` | 401 | 200 | 管理员，直到 public DTO 迁移完成 |
-| 现有赛前作战富接口 | `GET /api/prematch-workbench/**` | 401 | 200 | 管理员 |
+| 现有比赛富接口 | `GET /api/matches/**` | 401 | 200 | 始终管理员；公开能力只走 `/api/public/matches/**` |
+| 现有赔率富接口 | `GET /api/odds/**` | 401 | 200 | 始终管理员；公开能力只走 `/api/public/odds/**` |
+| 现有舆情富接口 | `GET /api/sentiment/**` | 401 | 200 | 始终管理员；公开能力只走 `/api/public/sentiment/**` |
+| 现有赛前作战富接口 | `GET /api/prematch-workbench/**` | 401 | 200 | 始终管理员；公开能力只走 `/api/public/prematch-workbench/**` |
 | JSON 审核读取 | `GET /api/import-jobs/**`、`GET /api/import-items/**` | 401 | 200 | raw JSON / 归档路径，管理员 |
 | 入库映射 | `GET /api/core-data/import-items/**` | 401 | 200 | 管理员 |
 | 核心数据概览 | `GET /api/core-data/overview` | 401 | 200 | 原接口管理员；公开计数只走 `/api/public/overview` |
@@ -636,7 +700,7 @@ Swagger：
 
 - `rawJson`
 - `rawPayload`
-- `payload`（除非已经人工拆字段并证明不含敏感内容；默认禁止）
+- `payload`；公开 DTO 永远不得包含名为 `payload` 的字段，安全内容必须拆成命名白名单字段
 - `archivePath`
 - `sourcePath` 或本地文件绝对路径
 - `ticketNo`
@@ -710,7 +774,7 @@ GET /api/public/decisions/reports
 GET /api/public/decisions/reviews
 ```
 
-公开字段只包含：比赛、日期、结论类型、置信度、风险摘要、复盘摘要、规则沉淀摘要、状态枚举。完整投注方案、票号、金额、盈亏、rawPayload 仅管理员可见。
+公开字段只包含：比赛、日期、结论类型、置信度、风险摘要、复盘摘要、规则沉淀摘要、状态枚举。完整投注方案、票号、金额、单票 stake/return/profitLoss、stakeSuggestion、budgetAmount、rawPayload 仅管理员可见。
 
 ## 8. 下注硬规则 UI 映射
 
@@ -723,10 +787,10 @@ GET /api/public/decisions/reviews
 | 异常场次 | 赛前作战/决策页 | 延期、腰斩、取消显示“待官方裁定”，禁止提前结算 |
 | 玩法体系 | 决策与复盘 | HAD/HHAD/比分/TTG/HAFU/串关独立字段 |
 | 动态预算 | 决策页管理员态 | 预算来源、两类资金盘、单逻辑 60%-70% 上限、分数凯利、空仓理由 |
-| 深盘/比分分层 | 决策页管理员态 | 深盘保险、主比分/卡线/冷门分层、TTG/HAFU 替代提示 |
+| 深盘/比分分层 | 决策页管理员态 | 深盘保险、保险票字段、主比分/卡线/冷门分层、TTG/HAFU 替代提示 |
 | 票面 SP | 票据明细管理员态 | 票面 SP 优先，网页赔率仅估算 |
 | CLV | 决策与复盘 | 入场赔率、收盘赔率、CLV 指标和趋势 |
-| 多源核验 | 赛前作战/证据中心 | 来源数量、冲突、权威等级、过期状态 |
+| 多源核验 | 赛前作战/证据中心 | 关键数据至少 2 个独立来源；展示来源数量、冲突、权威等级、过期状态；不足时 partial/blocked 并触发降额、空仓或阻断 ready_to_bet |
 | 证据类型分层 | 证据中心 | 数据事实、媒体观点、赔率信号、个人推断分标签展示 |
 | 本届逐场表现 | 赛前作战 | 每队逐场样本折叠区，字段契约见 5.2 |
 | 九维分析框架 | 赛前作战 | 九个固定区块，H5 保留折叠入口 |
@@ -748,11 +812,25 @@ GET /api/public/decisions/reviews
 
 新增或调整 MockMvc 测试：
 
+权限测试必须覆盖 7.2 每一行；每个 legacy rich GET 至少有一个代表性路径验证未登录 401、管理员 200。
+
 | 场景 | 期望 |
 |---|---|
 | 未登录 `GET /api/public/overview` | 200 |
 | 未登录 `GET /api/public/matches` | 200 |
-| 未登录 `GET /api/matches` | 401；如需公开必须新增或迁移到 `/api/public/matches`，不能直接放开原端点 |
+| 未登录 `GET /api/public/odds` | 200 |
+| 未登录 `GET /api/public/sentiment` | 200 |
+| 未登录 `GET /api/public/profiles/teams` | 200 |
+| 未登录 `GET /api/public/prematch-workbench/matches` | 200 |
+| 未登录 `GET /api/public/decisions/reports` | 200 |
+| 未登录 `POST/PUT/PATCH/DELETE /api/public/**` | 401 或 405；不得匿名写 |
+| 未登录 `GET /api/matches` | 401；原端点始终管理员，如需公开必须新增或迁移到 `/api/public/matches` |
+| 未登录 `GET /api/odds` | 401；公开能力只走 `/api/public/odds` |
+| 未登录 `GET /api/sentiment` | 401；公开能力只走 `/api/public/sentiment` |
+| 未登录 `GET /api/prematch-workbench/matches` | 401；公开能力只走 `/api/public/prematch-workbench/matches` |
+| 未登录 `GET /api/profiles/teams` | 401；公开能力只走 `/api/public/profiles/teams` |
+| 未登录 `GET /api/core-data/overview` | 401；公开计数只走 `/api/public/overview` |
+| 未登录 `GET /api/analysis-review/overview` | 401；公开摘要只走 `/api/public/decisions/**` |
 | 未登录 `GET /api/import-items` | 401 |
 | 未登录 `GET /api/import-jobs/{id}` | 401 |
 | 未登录 `GET /api/core-data/import-items/{id}/mappings` | 401 |
@@ -769,6 +847,8 @@ GET /api/public/decisions/reviews
 - 所有匿名 200 的公开接口必须断言以下字段不存在：`rawJson`、`rawPayload`、`payload`、`archivePath`、`sourcePath`、`ticketNo`、`stake`、`stakeSuggestion`、`budgetAmount`、`returnAmount`、`profitLoss`、`approvedBy`、`reviewedBy`、`reviewNote`、`mappings`、`importItemId`。
 - 使用 JSONPath negative assertions，例如：`$..rawPayload` 不存在、`$..ticketNo` 不存在、`$..stake` 不存在。
 - 对 public DTO 做 contract/snapshot 测试：字段新增必须显式评估是否可公开。
+- 增加值级脱敏测试：构造含票号、金额、`archivePath/sourcePath`、raw JSON 片段、审核人、reviewNote、stakeSuggestion、budgetAmount 的 fixture，断言 `summary/riskSummary/reviewSummary/lessonSummary` 等允许文本字段不含这些模式。
+- 匿名白名单必须依赖字段级与值级脱敏测试通过；测试失败时 public endpoint 不得 permitAll。
 - 覆盖：overview、public decisions、public matches、public odds、public sentiment、public profiles、public prematch、core public counters。
 
 ### 9.3 前端路由、API 与组件测试矩阵
@@ -777,7 +857,8 @@ GET /api/public/decisions/reviews
 - auth store 测试覆盖：登录、logout、401 清空、无默认密码兜底、`isAdmin/canWrite`。
 - API 测试覆盖：公开 GET 不带 Authorization；管理读/写注入 Authorization；401 跳登录；403 显示权限不足。
 - public overview API 测试覆盖路径和 DTO 类型。
-- API 迁移矩阵必须逐文件覆盖：`matches.ts`、`odds.ts`、`sentiment.ts`、`profiles.ts`、`prematchWorkbench.ts`、`analysisReview.ts`、`coreData.ts`、`importReview.ts`、`system.ts`。
+- API 迁移矩阵必须逐文件覆盖：`http.ts`、`matches.ts`、`odds.ts`、`sentiment.ts`、`profiles.ts`、`prematchWorkbench.ts`、`analysisReview.ts`、`coreData.ts`、`importReview.ts`、`system.ts`。
+- API 测试必须同步覆盖 §11 旧功能入口矩阵中的每个子能力/API，避免遗漏赔率字典、舆情字典、球队/球员详情等旧能力。
 - ResponsiveTable 测试覆盖卡片模式字段 label/value、排序状态、rowActions。
 - FilterDrawer 测试覆盖 draft/applied、Apply、Reset、Close 焦点回退。
 - AppShell/MobileTabbar/AdminGate/ReadonlyNotice 测试覆盖：未登录隐藏写操作、管理员显示、移动底栏导航项、只读提示、admin route guard。
@@ -801,7 +882,7 @@ GET /api/public/decisions/reviews
 - 筛选抽屉 Apply/Reset/Close 可用，关闭后焦点回到触发器。
 - 登录、管理写操作、驳回原因输入在手机端可用。
 - `prefers-reduced-motion` 下不出现大幅动效。
-- 每个主要页面至少留一张 375px、375px 横屏和 1440px 截图用于人工复核。
+- 每个主要页面至少留：375×667、667×375、768、1024、1440 截图用于人工复核；如某断点只做自动化检查，必须在验收记录中注明。
 
 ### 9.5 可访问性验收
 
@@ -823,10 +904,10 @@ GET /api/public/decisions/reviews
 ### 10.1 阶段顺序
 
 1. 基线测试与旧功能入口矩阵：记录当前路由、接口、页面能力和测试状态。
-2. 公开 DTO 硬化：为 matches/odds/sentiment/profiles/prematch/decisions/overview 建立 `/api/public/...` DTO 字段白名单和内容级脱敏测试；现有富接口保持管理员。
-3. 后端权限矩阵与测试：公开白名单只包含已通过字段级测试的 public 端点；保护敏感 GET 和写接口。
+2. 公开 DTO 契约与脱敏测试：为 matches/odds/sentiment/profiles/prematch/decisions/overview 建立 `/api/public/...` DTO 字段白名单、mapper、fixture、字段级与值级脱敏 contract tests；此阶段不把未完成端点加入匿名白名单。
+3. 后端权限矩阵与测试：公开白名单只包含已通过字段级与值级脱敏测试的 public 端点；保护敏感 GET 和写接口。
 4. API helper 与 auth store：移除默认凭据，统一公开读/管理读写调用。
-5. `/api/public/overview` 与 `/api/public/decisions/**`：提供首页和公开复盘所需脱敏 DTO。
+5. `/api/public/overview` 与 `/api/public/decisions/**`：实现聚合 service、Controller、前端 API 接入和匿名 200 + 禁用字段/值级脱敏测试。
 6. 设计 tokens、AppShell、MobileTabbar、SafeAreaActionBar、基础 UI 组件。
 7. 路由重定向和 admin route guard。
 8. 赛事总览首页。
@@ -841,9 +922,10 @@ GET /api/public/decisions/reviews
 | 阶段 | 产物 | 必跑测试 | 冒烟 | 回滚点 |
 |---|---|---|---|---|
 | 基线 | 旧路由/API/功能矩阵 | 当前 client/server 测试 | 旧页面可打开 | 无改动 |
-| 公开 DTO 硬化 | `/api/public/...` DTO 与服务 | MockMvc 状态码 + 禁用字段不存在 | 匿名访问 public 数据 | public 端点不进白名单 |
+| 公开 DTO 契约 | `/api/public/...` DTO、mapper、fixture、contract tests | 禁用字段不存在 + 值级脱敏测试 | 测试 fixture 通过 | public 端点不进匿名白名单 |
 | 后端权限 | SecurityConfig + method security | 权限矩阵测试 | 未登录管理接口 401 | 回到全接口管理员 |
 | API/auth | public/admin API helper | API/auth/router 测试 | 登录、401、回跳 | 旧 API wrapper 保留 |
+| public overview/decisions | 聚合 service + Controller + 前端 API | 匿名 200 + 禁用字段/值级脱敏 | 首页与复盘摘要可读 | 对应 public endpoint 不进白名单或指回旧页 |
 | AppShell/UI | tokens + Shell + H5 nav | 组件测试 | 375/1440 打开首页 | 旧 App.vue/旧 view alias |
 | 每个模块迁移 | 新 view + domain components | 对应 API/组件测试 | 旧路由 redirect、新路由可用 | alias 指回旧 view |
 | 管理后台迁移 | admin views | 管理权限和写操作测试 | 批准/驳回/入库可用 | 旧 admin view alias |
@@ -852,6 +934,7 @@ GET /api/public/decisions/reviews
 
 | 文件 | 当前职责 | 新公开 API | 新管理 API | 测试 |
 |---|---|---|---|---|
+| `http.ts` | API 基础客户端/interceptor | public client 不带 Authorization | admin helper 注入 Authorization | 401 清空并回跳、403 权限不足、无默认密码 |
 | `matches.ts` | 比赛中心 | `/api/public/matches/**` | `/api/matches/**` | public matches + admin rich |
 | `odds.ts` | 赔率中心 | `/api/public/odds/**` | `/api/odds/**` | freshness + 禁用字段 |
 | `sentiment.ts` | 舆情中心 | `/api/public/sentiment/**` | `/api/sentiment/**` | risk/category + 禁用字段 |
@@ -867,7 +950,7 @@ GET /api/public/decisions/reviews
 - 旧 view + 旧 API wrapper 保留到全量验收后。
 - 新 public API 采用 additive 方式，不替换现有管理 API。
 - SecurityConfig 默认保守：不确定是否公开的接口按管理员处理。
-- 可通过 route map 或 `VITE_USE_NEW_UI` 将未迁移模块指回旧 view。
+- `VITE_USE_NEW_UI` 只控制前端 route map，不改变后端权限；默认关闭时所有新路由 alias 指回旧 view，开启后仅已标记 migrated 的模块使用新 view，未迁移模块仍指向旧 view。router 测试必须覆盖开关两种状态。
 - 如果 public DTO 泄露测试失败，不将对应 public 端点加入匿名白名单。
 - 如果 API helper 破坏旧页面，旧 wrapper 保留并逐页迁移。
 - 每迁移一个模块就运行相关测试和人工冒烟。
@@ -892,15 +975,24 @@ GET /api/public/decisions/reviews
 | 比赛事件 | `GET /api/matches/{id}/events` | `/evidence/matches` via `/api/public/matches/{id}/events` | 公开脱敏；原接口管理员 | 时间线 |
 | 球队统计 | `GET /api/matches/{id}/team-stats` | `/evidence/matches` via `/api/public/matches/{id}/team-stats` | 公开脱敏；原接口管理员 | 统计卡片/表格 |
 | 球员统计 | `GET /api/matches/{id}/player-stats` | `/evidence/matches` via `/api/public/matches/{id}/player-stats` | 公开脱敏；原接口管理员 | H5 卡片 |
-| 赔率市场 | `GET /api/odds/**` | `/evidence/odds` via `/api/public/odds/**` | 公开脱敏；原接口管理员 | bookmakers/markets/盘口 freshness |
-| 舆情因素 | `GET /api/sentiment/**` | `/evidence/sentiment` via `/api/public/sentiment/**` | 公开脱敏；原接口管理员 | categories/risk-types/来源可靠度 |
-| 球队画像 | `GET /api/profiles/teams/**` | `/evidence/teams` via `/api/public/profiles/teams/**` | 公开已批准事实 | 不含 approvedBy/reviewNote |
-| 球员画像 | `GET /api/profiles/players/**` | `/evidence/players` via `/api/public/profiles/players/**` | 公开已批准事实 | 不含 approvedBy/reviewNote |
+| 赔率列表 | `GET /api/odds` | `/evidence/odds` via `/api/public/odds` | 公开脱敏；原接口管理员 | 列表不含 rawPayload |
+| 单场赔率 | `GET /api/odds/matches/{matchId}` | `/evidence/odds` via `/api/public/odds/matches/{matchId}` | 公开脱敏；原接口管理员 | 单场盘口 freshness、bookmaker 摘要 |
+| 赔率公司字典 | `GET /api/odds/bookmakers` | `/evidence/odds` via `/api/public/odds/bookmakers` | 公开脱敏；原接口管理员 | bookmakerName 不含内部采集字段 |
+| 赔率市场字典 | `GET /api/odds/markets` | `/evidence/odds` via `/api/public/odds/markets` | 公开脱敏；原接口管理员 | HAD/HHAD/TTG/HAFU 等市场不丢 |
+| 舆情列表 | `GET /api/sentiment` | `/evidence/sentiment` via `/api/public/sentiment` | 公开脱敏；原接口管理员 | 列表摘要不含 rawPayload |
+| 单场舆情 | `GET /api/sentiment/matches/{matchId}` | `/evidence/sentiment` via `/api/public/sentiment/matches/{matchId}` | 公开脱敏；原接口管理员 | 来源可靠度、风险摘要 |
+| 舆情分类字典 | `GET /api/sentiment/categories` | `/evidence/sentiment` via `/api/public/sentiment/categories` | 公开脱敏；原接口管理员 | categories 不丢 |
+| 风险类型字典 | `GET /api/sentiment/risk-types` | `/evidence/sentiment` via `/api/public/sentiment/risk-types` | 公开脱敏；原接口管理员 | risk-types 不丢 |
+| 球队画像列表 | `GET /api/profiles/teams` | `/evidence/teams` via `/api/public/profiles/teams` | 公开已批准事实；原接口管理员 | 不含 approvedBy/reviewNote |
+| 球队画像详情 | `GET /api/profiles/teams/{id}` | `/evidence/teams` via `/api/public/profiles/teams/{id}` | 公开已批准事实；原接口管理员 | 已批准事实摘要 |
+| 球队球员列表 | `GET /api/profiles/teams/{id}/players` | `/evidence/teams` via `/api/public/profiles/teams/{id}/players` | 公开已批准事实；原接口管理员 | 球员列表 H5 卡片 |
+| 球员画像列表 | `GET /api/profiles/players` | `/evidence/players` via `/api/public/profiles/players` | 公开已批准事实；原接口管理员 | 不含 approvedBy/reviewNote |
+| 球员画像详情 | `GET /api/profiles/players/{id}` | `/evidence/players` via `/api/public/profiles/players/{id}` | 公开已批准事实；原接口管理员 | 伤停/状态事实摘要 |
 | 采集任务创建 | `POST /api/profiles/collections/jobs` | `/admin/collection-review` | 管理员 | 创建任务 |
 | 采集待审项 | `GET /api/profiles/collections/items` | `/admin/collection-review` | 管理员 | 待审队列 |
 | 采集批准/驳回 | `POST /api/profiles/collections/items/**` | `/admin/collection-review` | 管理员 | 批准、驳回、状态筛选 |
 | 赛前作战比赛列表 | `GET /api/prematch-workbench/matches` | `/workbench` via `/api/public/prematch-workbench/matches` | 公开脱敏；原接口管理员 | 单场入口 |
-| 赛前作战详情 | `GET /api/prematch-workbench/matches/{id}` | `/workbench` | 公开脱敏 + 管理员富详情 | 不泄露票据/金额/rawPayload |
+| 赛前作战详情 | `GET /api/prematch-workbench/matches/{id}` | `/workbench` via `/api/public/prematch-workbench/matches/{id}` | 公开脱敏；原接口仅管理员 | 不泄露票据/金额/rawPayload |
 | 完整性检查 | `GET /api/prematch-workbench/matches/{id}/integrity` | `/workbench` via `/api/public/prematch-workbench/matches/{id}/integrity` | 公开脱敏；原接口管理员 | complete/partial/blocked |
 | 分析 overview | `GET /api/analysis-review/overview` | `/decisions` via `/api/public/decisions/**` | 公开脱敏；原接口管理员 | 聚合不含资金明细 |
 | 分析 reports | `GET /api/analysis-review/reports` | `/decisions` | 管理员；公开摘要走 public | rawPayload 不公开 |
@@ -920,10 +1012,10 @@ GET /api/public/decisions/reviews
 
 ## 13. 首轮审查意见处理结论
 
-已纳入首轮与第二轮子代理审查中的关键问题：
+已纳入首轮、第二轮与第三轮子代理审查中的关键问题：
 
-- 将旧稿中宽泛公开业务读取接口的表述改为“仅 `/api/public/...` 脱敏 DTO 可公开；现有富详情接口默认管理员”。
-- 增加后端权限矩阵、公开 DTO 字段白名单、内容级脱敏测试、`/api/public/overview` 字段级 schema。
+- 将旧稿中宽泛公开业务读取接口的表述改为“仅 `GET /api/public/...` 脱敏 DTO 可公开；现有富详情接口始终管理员”。
+- 增加后端权限矩阵、公开 DTO 字段白名单、字段级与值级脱敏测试、`/api/public/overview` 字段级 schema。
 - 明确 `/api/analysis-review/**` 原接口未登录恒 401，公开决策复盘走脱敏 `/api/public/decisions/**`。
 - 明确 Basic Auth 存储、默认凭据、生产密码注入、登录回跳、401/403、`hasRole("ADMIN")` 与 `@EnableMethodSecurity`。
 - 补充下注硬规则 UI 映射。
@@ -933,5 +1025,5 @@ GET /api/public/decisions/reviews
 ## 14. 自检结论
 
 - 核心方向已确认：赛事沉浸、五阶段决策流、PC + H5、公开只读 + 管理写入。
-- 已补齐第三轮审查前必须明确的 public DTO 先行策略、字段级脱敏测试、权限矩阵、硬规则 UI 映射、H5 组件契约、测试矩阵和回滚策略。
-- 仍需通过第三轮子代理审查确认文档可以进入 implementation plan。
+- 已根据第三轮子代理审查补齐 public DTO 方法限定、旧富接口始终管理员、payload 绝禁、值级脱敏测试、PC 页面级布局、ResponsiveTable props/slot 契约、旧 API 子能力矩阵、阶段边界和回滚开关语义。
+- 待最终确认后进入 implementation plan。
