@@ -85,6 +85,7 @@ class OddsCenterControllerTest {
                 .andExpect(jsonPath("$.data.matchId").value(fixture.matchId()))
                 .andExpect(jsonPath("$.data.matchName").value("法国 vs 巴西"))
                 .andExpect(jsonPath("$.data.markets[0].id").value(fixture.marketId()))
+                .andExpect(jsonPath("$.data.markets[0].selectionCount").value(3))
                 .andExpect(jsonPath("$.data.markets[0].selections[0].selectionCode").value("HOME"))
                 .andExpect(jsonPath("$.data.markets[0].selections[0].selectionName").value("主胜"))
                 .andExpect(jsonPath("$.data.markets[0].selections[0].oddsValue").value(1.8))

@@ -95,7 +95,9 @@ public class OddsCenterQueryService {
 
     private String marketDetailSelect() {
         return "SELECT oms.id, oms.match_id, m.match_name, m.matchday, m.jc_code, oms.bookmaker, oms.market_code, oms.market_name, " +
-                "oms.snapshot_type, oms.handicap_line, oms.line_value, oms.captured_at, oms.source_ref, oms.raw_payload " +
+                "oms.snapshot_type, oms.handicap_line, oms.line_value, oms.captured_at, " +
+                "(SELECT COUNT(*) FROM odds_selection_snapshots oss WHERE oss.market_snapshot_id=oms.id) AS selection_count, " +
+                "oms.source_ref, oms.raw_payload " +
                 "FROM odds_market_snapshots oms LEFT JOIN matches m ON m.id=oms.match_id";
     }
 
@@ -133,6 +135,7 @@ public class OddsCenterQueryService {
                     rs.getBigDecimal("handicap_line"),
                     rs.getString("line_value"),
                     localDateTime(rs, "captured_at"),
+                    rs.getLong("selection_count"),
                     rs.getString("source_ref"),
                     rs.getString("raw_payload"),
                     selections(marketId)

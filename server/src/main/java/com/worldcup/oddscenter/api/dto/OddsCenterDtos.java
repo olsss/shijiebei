@@ -48,6 +48,7 @@ public final class OddsCenterDtos {
             BigDecimal handicapLine,
             String lineValue,
             LocalDateTime capturedAt,
+            long selectionCount,
             String sourceRef,
             String rawPayload,
             List<OddsSelectionResponse> selections
