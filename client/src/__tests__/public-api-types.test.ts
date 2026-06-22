@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PublicOverviewResponse } from '@/api/publicOverview';
 import type { PublicProfileFact } from '@/api/profiles';
 import type { PublicPrematchWorkbenchDetail, PublicWorkbenchAnalysisReport } from '@/api/prematchWorkbench';
 
@@ -73,6 +74,40 @@ const publicPrematchWithBets: PublicPrematchWorkbenchDetail = {
   bets: [],
 };
 
+const publicOverview: PublicOverviewResponse = {
+  generatedAt: '2026-06-22T00:00:00',
+  upcomingMatches: [],
+  riskCounters: {
+    highRiskCount: 0,
+    mediumRiskCount: 0,
+    staleFactorCount: 0,
+    unresolvedConflictCount: 0,
+  },
+  integrityCounters: {
+    completeCount: 0,
+    partialCount: 0,
+    blockedCount: 0,
+  },
+  oddsFreshness: {
+    marketCount: 0,
+    liveMarketCount: 0,
+    staleLiveMarketCount: 0,
+  },
+  decisionSummary: {
+    reportCount: 0,
+    reviewCount: 0,
+  },
+};
+
+const publicOverviewWithAdminTodos: PublicOverviewResponse = {
+  ...publicOverview,
+  // @ts-expect-error public overview must not expose admin review queue counters
+  adminTodoCounters: {
+    pendingImportReviews: 1,
+    pendingCollectionReviews: 2,
+  },
+};
+
 describe('public api types', () => {
   it('keeps public fixtures usable at runtime', () => {
     expect(publicFact.sourceName).toBe('Source');
@@ -82,5 +117,7 @@ describe('public api types', () => {
     expect(publicReportWithNarrative.reportId).toBe(1);
     expect(publicPrematchWithBetPlans.summary.matchId).toBe(1);
     expect(publicPrematchWithBets.summary.matchId).toBe(1);
+    expect(publicOverview.upcomingMatches).toEqual([]);
+    expect(publicOverviewWithAdminTodos.generatedAt).toBe('2026-06-22T00:00:00');
   });
 });

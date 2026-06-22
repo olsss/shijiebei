@@ -36,7 +36,10 @@ public class PublicApiMapper {
                     + "(?:\"(?:\\\\.|[^\"])*\"|\\{[^{}]*}|[^\\s,;]+)",
             Pattern.CASE_INSENSITIVE
     );
-    private static final Pattern WINDOWS_PATH = Pattern.compile("[A-Za-z]:[/\\\\][^\\s,;]+");
+    private static final Pattern WINDOWS_PATH = Pattern.compile("(?<![A-Za-z0-9])[A-Za-z]:[/\\\\][^\\s,;]+");
+    private static final Pattern FILE_URI_PATH = Pattern.compile("(?i)file:/{2,3}(?:tmp|var|home|users|etc|mnt|opt|srv|data|secret)(?:/[^\\s,;]+)*");
+    private static final Pattern ARCHIVE_RELATIVE_PATH = Pattern.compile("(?i)(?<![A-Za-z0-9_./-])(?:\\./)?(?:skill/)?archive/[^\\s,;]+");
+    private static final Pattern UNIX_PATH = Pattern.compile("(?i)(?<![A-Za-z0-9_./-])/(?:tmp|var|home|users|etc|mnt|opt|srv|data|secret)(?:/[^\\s,;]+)*");
     private static final Pattern SECRET_SENTINEL = Pattern.compile("(?i)SECRET[^\\s,;]*");
 
     public String sanitizeText(String value) {
@@ -44,7 +47,10 @@ public class PublicApiMapper {
             return value;
         }
         String sanitized = SENSITIVE_KEY_VALUE.matcher(value).replaceAll("[REDACTED]");
+        sanitized = FILE_URI_PATH.matcher(sanitized).replaceAll("[REDACTED]");
         sanitized = WINDOWS_PATH.matcher(sanitized).replaceAll("[REDACTED]");
+        sanitized = ARCHIVE_RELATIVE_PATH.matcher(sanitized).replaceAll("[REDACTED]");
+        sanitized = UNIX_PATH.matcher(sanitized).replaceAll("[REDACTED]");
         sanitized = SECRET_SENTINEL.matcher(sanitized).replaceAll("[REDACTED]");
         return sanitized;
     }

@@ -20,12 +20,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PublicPrematchWorkbenchService {
@@ -183,38 +187,60 @@ public class PublicPrematchWorkbenchService {
     }
 
     private List<PublicPrematchTeam> teams(long matchId) {
-        return jdbcTemplate.query("""
+        List<TeamRow> rows = jdbcTemplate.query("""
                 SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.style_tags,
                        t.attack_profile, t.defense_profile, t.public_sentiment
                 FROM matches m
                 JOIN teams t ON t.id IN (m.home_team_id, m.away_team_id)
                 WHERE m.id=?
                 ORDER BY CASE WHEN t.id=m.home_team_id THEN 0 ELSE 1 END, t.display_name
-                """, (rs, rowNum) -> {
-            long teamId = rs.getLong("id");
-            return new PublicPrematchTeam(
-                    teamId,
-                    mapper.sanitizeText(rs.getString("team_key")),
-                    mapper.sanitizeText(rs.getString("display_name")),
-                    mapper.sanitizeText(rs.getString("fifa_code")),
-                    mapper.sanitizeText(rs.getString("country_region")),
-                    mapper.sanitizeText(rs.getString("style_tags")),
-                    mapper.sanitizeText(rs.getString("attack_profile")),
-                    mapper.sanitizeText(rs.getString("defense_profile")),
-                    mapper.sanitizeText(rs.getString("public_sentiment")),
-                    teamFacts(teamId)
-            );
-        }, matchId);
+                """, (rs, rowNum) -> new TeamRow(
+                rs.getLong("id"),
+                mapper.sanitizeText(rs.getString("team_key")),
+                mapper.sanitizeText(rs.getString("display_name")),
+                mapper.sanitizeText(rs.getString("fifa_code")),
+                mapper.sanitizeText(rs.getString("country_region")),
+                mapper.sanitizeText(rs.getString("style_tags")),
+                mapper.sanitizeText(rs.getString("attack_profile")),
+                mapper.sanitizeText(rs.getString("defense_profile")),
+                mapper.sanitizeText(rs.getString("public_sentiment"))
+        ), matchId);
+        Map<Long, List<PublicPrematchFact>> factsByTeamId = teamFactsByTeamIds(
+                rows.stream().map(TeamRow::teamId).toList()
+        );
+        return rows.stream()
+                .map(row -> new PublicPrematchTeam(
+                        row.teamId(),
+                        row.teamKey(),
+                        row.teamName(),
+                        row.fifaCode(),
+                        row.countryRegion(),
+                        row.styleTags(),
+                        row.attackProfile(),
+                        row.defenseProfile(),
+                        row.publicSentiment(),
+                        factsByTeamId.getOrDefault(row.teamId(), List.of())
+                ))
+                .toList();
     }
 
-    private List<PublicPrematchFact> teamFacts(long teamId) {
-        return jdbcTemplate.query("""
-                SELECT id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score,
+    private Map<Long, List<PublicPrematchFact>> teamFactsByTeamIds(List<Long> teamIds) {
+        if (teamIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<PublicPrematchFact>> grouped = new LinkedHashMap<>();
+        String sql = """
+                SELECT team_id, id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score,
                        source_name, source_url, source_ref, captured_at
                 FROM team_profile_facts
-                WHERE team_id=?
-                ORDER BY captured_at DESC, id DESC
-                """, (rs, rowNum) -> fact(rs), teamId);
+                WHERE team_id IN (%s)
+                ORDER BY team_id, captured_at DESC, id DESC
+                """.formatted(placeholders(teamIds.size()));
+        jdbcTemplate.query(sql, rs -> {
+            long teamId = rs.getLong("team_id");
+            grouped.computeIfAbsent(teamId, ignored -> new ArrayList<>()).add(fact(rs));
+        }, teamIds.toArray());
+        return grouped;
     }
 
     private List<PublicPrematchLineup> lineups(long matchId) {
@@ -241,7 +267,7 @@ public class PublicPrematchWorkbenchService {
     }
 
     private List<PublicPrematchPlayer> players(long matchId) {
-        return jdbcTemplate.query("""
+        List<PlayerRow> rows = jdbcTemplate.query("""
                 SELECT p.id, p.player_key, p.team_id, COALESCE(t.display_name, 'Unknown team') AS team_name, p.display_name,
                        p.shirt_number, p.position, p.status, p.injury_status, p.card_status, p.locker_room_status
                 FROM players p
@@ -249,33 +275,57 @@ public class PublicPrematchWorkbenchService {
                 LEFT JOIN teams t ON t.id=p.team_id
                 WHERE EXISTS (SELECT 1 FROM match_lineups l WHERE l.match_id=m.id AND l.player_id=p.id)
                 ORDER BY CASE WHEN p.team_id=m.home_team_id THEN 0 ELSE 1 END, p.shirt_number, p.display_name, p.id
-                """, (rs, rowNum) -> {
-            long playerId = rs.getLong("id");
-            return new PublicPrematchPlayer(
-                    playerId,
-                    mapper.sanitizeText(rs.getString("player_key")),
-                    nullableLong(rs, "team_id"),
-                    mapper.sanitizeText(rs.getString("team_name")),
-                    mapper.sanitizeText(rs.getString("display_name")),
-                    nullableInt(rs, "shirt_number"),
-                    mapper.sanitizeText(rs.getString("position")),
-                    mapper.sanitizeToken(rs.getString("status")),
-                    mapper.sanitizeText(rs.getString("injury_status")),
-                    mapper.sanitizeText(rs.getString("card_status")),
-                    mapper.sanitizeText(rs.getString("locker_room_status")),
-                    playerFacts(playerId)
-            );
-        }, matchId);
+                """, (rs, rowNum) -> new PlayerRow(
+                rs.getLong("id"),
+                mapper.sanitizeText(rs.getString("player_key")),
+                nullableLong(rs, "team_id"),
+                mapper.sanitizeText(rs.getString("team_name")),
+                mapper.sanitizeText(rs.getString("display_name")),
+                nullableInt(rs, "shirt_number"),
+                mapper.sanitizeText(rs.getString("position")),
+                mapper.sanitizeToken(rs.getString("status")),
+                mapper.sanitizeText(rs.getString("injury_status")),
+                mapper.sanitizeText(rs.getString("card_status")),
+                mapper.sanitizeText(rs.getString("locker_room_status"))
+        ), matchId);
+        Map<Long, List<PublicPrematchFact>> factsByPlayerId = playerFactsByPlayerIds(
+                rows.stream().map(PlayerRow::playerId).toList()
+        );
+        return rows.stream()
+                .map(row -> new PublicPrematchPlayer(
+                        row.playerId(),
+                        row.playerKey(),
+                        row.teamId(),
+                        row.teamName(),
+                        row.playerName(),
+                        row.shirtNumber(),
+                        row.position(),
+                        row.status(),
+                        row.injuryStatus(),
+                        row.cardStatus(),
+                        row.lockerRoomStatus(),
+                        factsByPlayerId.getOrDefault(row.playerId(), List.of())
+                ))
+                .toList();
     }
 
-    private List<PublicPrematchFact> playerFacts(long playerId) {
-        return jdbcTemplate.query("""
-                SELECT id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score,
+    private Map<Long, List<PublicPrematchFact>> playerFactsByPlayerIds(List<Long> playerIds) {
+        if (playerIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<PublicPrematchFact>> grouped = new LinkedHashMap<>();
+        String sql = """
+                SELECT player_id, id, fact_type, period_key, title, summary, sentiment_label, confidence_score, reliability_score,
                        source_name, source_url, source_ref, captured_at
                 FROM player_profile_facts
-                WHERE player_id=?
-                ORDER BY captured_at DESC, id DESC
-                """, (rs, rowNum) -> fact(rs), playerId);
+                WHERE player_id IN (%s)
+                ORDER BY player_id, captured_at DESC, id DESC
+                """.formatted(placeholders(playerIds.size()));
+        jdbcTemplate.query(sql, rs -> {
+            long playerId = rs.getLong("player_id");
+            grouped.computeIfAbsent(playerId, ignored -> new ArrayList<>()).add(fact(rs));
+        }, playerIds.toArray());
+        return grouped;
     }
 
     private PublicPrematchFact fact(ResultSet rs) throws SQLException {
@@ -296,93 +346,145 @@ public class PublicPrematchWorkbenchService {
     }
 
     private List<PublicPrematchOddsMarket> oddsMarkets(long matchId) {
-        return jdbcTemplate.query("""
+        List<OddsMarketRow> rows = jdbcTemplate.query("""
                 SELECT id, bookmaker, market_code, market_name, snapshot_type, handicap_line, line_value, captured_at, source_ref
                 FROM odds_market_snapshots
                 WHERE match_id=?
                 ORDER BY captured_at DESC, id DESC
-                """, (rs, rowNum) -> {
-            long marketId = rs.getLong("id");
-            return new PublicPrematchOddsMarket(
-                    marketId,
-                    mapper.sanitizeText(rs.getString("bookmaker")),
-                    mapper.sanitizeToken(rs.getString("market_code")),
-                    mapper.sanitizeText(rs.getString("market_name")),
-                    mapper.sanitizeToken(rs.getString("snapshot_type")),
-                    rs.getBigDecimal("handicap_line"),
-                    mapper.sanitizeText(rs.getString("line_value")),
-                    localDateTime(rs, "captured_at"),
-                    mapper.sanitizeText(rs.getString("source_ref")),
-                    oddsSelections(marketId)
-            );
-        }, matchId);
+                """, (rs, rowNum) -> new OddsMarketRow(
+                rs.getLong("id"),
+                mapper.sanitizeText(rs.getString("bookmaker")),
+                mapper.sanitizeToken(rs.getString("market_code")),
+                mapper.sanitizeText(rs.getString("market_name")),
+                mapper.sanitizeToken(rs.getString("snapshot_type")),
+                rs.getBigDecimal("handicap_line"),
+                mapper.sanitizeText(rs.getString("line_value")),
+                localDateTime(rs, "captured_at"),
+                mapper.sanitizeText(rs.getString("source_ref"))
+        ), matchId);
+        Map<Long, List<PublicPrematchOddsSelection>> selectionsByMarketId = oddsSelectionsByMarketIds(
+                rows.stream().map(OddsMarketRow::marketId).toList()
+        );
+        return rows.stream()
+                .map(row -> new PublicPrematchOddsMarket(
+                        row.marketId(),
+                        row.bookmaker(),
+                        row.marketCode(),
+                        row.marketName(),
+                        row.snapshotType(),
+                        row.handicapLine(),
+                        row.lineValue(),
+                        row.capturedAt(),
+                        row.sourceRef(),
+                        selectionsByMarketId.getOrDefault(row.marketId(), List.of())
+                ))
+                .toList();
     }
 
-    private List<PublicPrematchOddsSelection> oddsSelections(long marketId) {
-        return jdbcTemplate.query("""
-                SELECT id, selection_code, selection_name, odds_value, implied_probability, selection_status
+    private Map<Long, List<PublicPrematchOddsSelection>> oddsSelectionsByMarketIds(List<Long> marketIds) {
+        if (marketIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<PublicPrematchOddsSelection>> grouped = new LinkedHashMap<>();
+        String sql = """
+                SELECT market_snapshot_id, id, selection_code, selection_name, odds_value, implied_probability, selection_status
                 FROM odds_selection_snapshots
-                WHERE market_snapshot_id=?
-                ORDER BY id
-                """, (rs, rowNum) -> new PublicPrematchOddsSelection(
-                rs.getLong("id"),
-                mapper.sanitizeToken(rs.getString("selection_code")),
-                mapper.sanitizeText(rs.getString("selection_name")),
-                rs.getBigDecimal("odds_value"),
-                rs.getBigDecimal("implied_probability"),
-                mapper.sanitizeToken(rs.getString("selection_status"))
-        ), marketId);
+                WHERE market_snapshot_id IN (%s)
+                ORDER BY market_snapshot_id, id
+                """.formatted(placeholders(marketIds.size()));
+        jdbcTemplate.query(sql, rs -> {
+            long marketId = rs.getLong("market_snapshot_id");
+            grouped.computeIfAbsent(marketId, ignored -> new ArrayList<>()).add(new PublicPrematchOddsSelection(
+                    rs.getLong("id"),
+                    mapper.sanitizeToken(rs.getString("selection_code")),
+                    mapper.sanitizeText(rs.getString("selection_name")),
+                    rs.getBigDecimal("odds_value"),
+                    rs.getBigDecimal("implied_probability"),
+                    mapper.sanitizeToken(rs.getString("selection_status"))
+            ));
+        }, marketIds.toArray());
+        return grouped;
     }
 
     private List<PublicPrematchSentimentFactor> sentimentFactors(long matchId) {
-        return jdbcTemplate.query("""
+        List<SentimentFactorRow> rows = jdbcTemplate.query("""
                 SELECT id, match_id, factor_category, factor_type, title, summary, impact_direction, entity_type, entity_key,
                        evidence_level, source_name, source_url, source_ref, observed_at, expires_at, confidence_score, reliability_score
                 FROM match_context_factors
                 WHERE match_id=?
                 ORDER BY observed_at DESC, id DESC
-                """, (rs, rowNum) -> {
-            long factorId = rs.getLong("id");
-            return new PublicPrematchSentimentFactor(
-                    factorId,
-                    nullableLong(rs, "match_id"),
-                    mapper.sanitizeToken(rs.getString("factor_category")),
-                    mapper.sanitizeToken(rs.getString("factor_type")),
-                    mapper.sanitizeText(rs.getString("title")),
-                    mapper.sanitizeText(rs.getString("summary")),
-                    mapper.sanitizeToken(rs.getString("impact_direction")),
-                    mapper.sanitizeToken(rs.getString("entity_type")),
-                    mapper.sanitizeText(rs.getString("entity_key")),
-                    mapper.sanitizeText(rs.getString("evidence_level")),
-                    mapper.sanitizeText(rs.getString("source_name")),
-                    mapper.sanitizeText(rs.getString("source_url")),
-                    mapper.sanitizeText(rs.getString("source_ref")),
-                    localDateTime(rs, "observed_at"),
-                    localDateTime(rs, "expires_at"),
-                    rs.getBigDecimal("confidence_score"),
-                    rs.getBigDecimal("reliability_score"),
-                    sentimentRisks(factorId)
-            );
-        }, matchId);
+                """, (rs, rowNum) -> new SentimentFactorRow(
+                rs.getLong("id"),
+                nullableLong(rs, "match_id"),
+                mapper.sanitizeToken(rs.getString("factor_category")),
+                mapper.sanitizeToken(rs.getString("factor_type")),
+                mapper.sanitizeText(rs.getString("title")),
+                mapper.sanitizeText(rs.getString("summary")),
+                mapper.sanitizeToken(rs.getString("impact_direction")),
+                mapper.sanitizeToken(rs.getString("entity_type")),
+                mapper.sanitizeText(rs.getString("entity_key")),
+                mapper.sanitizeText(rs.getString("evidence_level")),
+                mapper.sanitizeText(rs.getString("source_name")),
+                mapper.sanitizeText(rs.getString("source_url")),
+                mapper.sanitizeText(rs.getString("source_ref")),
+                localDateTime(rs, "observed_at"),
+                localDateTime(rs, "expires_at"),
+                rs.getBigDecimal("confidence_score"),
+                rs.getBigDecimal("reliability_score")
+        ), matchId);
+        Map<Long, List<PublicPrematchSentimentRisk>> risksByFactorId = sentimentRisksByFactorIds(
+                rows.stream().map(SentimentFactorRow::factorId).toList()
+        );
+        return rows.stream()
+                .map(row -> new PublicPrematchSentimentFactor(
+                        row.factorId(),
+                        row.matchId(),
+                        row.factorCategory(),
+                        row.factorType(),
+                        row.title(),
+                        row.summary(),
+                        row.impactDirection(),
+                        row.entityType(),
+                        row.entityKey(),
+                        row.evidenceLevel(),
+                        row.sourceName(),
+                        row.sourceUrl(),
+                        row.sourceRef(),
+                        row.observedAt(),
+                        row.expiresAt(),
+                        row.confidenceScore(),
+                        row.reliabilityScore(),
+                        risksByFactorId.getOrDefault(row.factorId(), List.of())
+                ))
+                .toList();
     }
 
-    private List<PublicPrematchSentimentRisk> sentimentRisks(long factorId) {
-        return jdbcTemplate.query("""
-                SELECT id, risk_type, risk_level, risk_score, title, rationale, suggested_action, source_name, source_ref
+    private Map<Long, List<PublicPrematchSentimentRisk>> sentimentRisksByFactorIds(List<Long> factorIds) {
+        if (factorIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<PublicPrematchSentimentRisk>> grouped = new LinkedHashMap<>();
+        String sql = """
+                SELECT factor_id, id, risk_type, risk_level, risk_score, title, rationale, suggested_action, source_name, source_ref
                 FROM sentiment_risk_assessments
-                WHERE factor_id=?
-                ORDER BY id DESC
-                """, (rs, rowNum) -> new PublicPrematchSentimentRisk(
-                rs.getLong("id"),
-                mapper.sanitizeToken(rs.getString("risk_type")),
-                mapper.sanitizeToken(rs.getString("risk_level")),
-                rs.getBigDecimal("risk_score"),
-                mapper.sanitizeText(rs.getString("title")),
-                mapper.sanitizeText(rs.getString("rationale")),
-                mapper.sanitizeText(rs.getString("suggested_action")),
-                mapper.sanitizeText(rs.getString("source_name")),
-                mapper.sanitizeText(rs.getString("source_ref"))
-        ), factorId);
+                WHERE factor_id IN (%s)
+                ORDER BY factor_id, id DESC
+                """.formatted(placeholders(factorIds.size()));
+        jdbcTemplate.query(sql, rs -> {
+            long factorId = rs.getLong("factor_id");
+            grouped.computeIfAbsent(factorId, ignored -> new ArrayList<>()).add(new PublicPrematchSentimentRisk(
+                    rs.getLong("id"),
+                    mapper.sanitizeToken(rs.getString("risk_type")),
+                    mapper.sanitizeToken(rs.getString("risk_level")),
+                    rs.getBigDecimal("risk_score"),
+                    mapper.sanitizeText(rs.getString("title")),
+                    mapper.sanitizeText(rs.getString("rationale")),
+                    mapper.sanitizeText(rs.getString("suggested_action")),
+                    mapper.sanitizeText(rs.getString("source_name")),
+                    mapper.sanitizeText(rs.getString("source_ref"))
+            ));
+        }, factorIds.toArray());
+        return grouped;
     }
 
     private List<PublicPrematchEvidence> evidence(long matchId) {
@@ -514,6 +616,72 @@ public class PublicPrematchWorkbenchService {
     private Long nullableLong(ResultSet rs, String column) throws SQLException {
         long value = rs.getLong(column);
         return rs.wasNull() ? null : value;
+    }
+
+    private String placeholders(int size) {
+        return String.join(",", Collections.nCopies(size, "?"));
+    }
+
+    private record TeamRow(
+            Long teamId,
+            String teamKey,
+            String teamName,
+            String fifaCode,
+            String countryRegion,
+            String styleTags,
+            String attackProfile,
+            String defenseProfile,
+            String publicSentiment
+    ) {
+    }
+
+    private record PlayerRow(
+            Long playerId,
+            String playerKey,
+            Long teamId,
+            String teamName,
+            String playerName,
+            Integer shirtNumber,
+            String position,
+            String status,
+            String injuryStatus,
+            String cardStatus,
+            String lockerRoomStatus
+    ) {
+    }
+
+    private record OddsMarketRow(
+            Long marketId,
+            String bookmaker,
+            String marketCode,
+            String marketName,
+            String snapshotType,
+            BigDecimal handicapLine,
+            String lineValue,
+            LocalDateTime capturedAt,
+            String sourceRef
+    ) {
+    }
+
+    private record SentimentFactorRow(
+            Long factorId,
+            Long matchId,
+            String factorCategory,
+            String factorType,
+            String title,
+            String summary,
+            String impactDirection,
+            String entityType,
+            String entityKey,
+            String evidenceLevel,
+            String sourceName,
+            String sourceUrl,
+            String sourceRef,
+            LocalDateTime observedAt,
+            LocalDateTime expiresAt,
+            BigDecimal confidenceScore,
+            BigDecimal reliabilityScore
+    ) {
     }
 
     private record SummaryRow(

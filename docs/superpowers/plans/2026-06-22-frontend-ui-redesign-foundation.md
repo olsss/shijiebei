@@ -542,8 +542,7 @@ return new PublicOverviewResponse(
         new PublicRiskCounters(0, 0, 0, 0),
         new PublicIntegrityCounters(0, 0, 0),
         new PublicOddsFreshness(0, 0, 0),
-        new PublicDecisionSummary(0, 0, null),
-        new PublicAdminTodoCounters(0, 0)
+        new PublicDecisionSummary(0, 0, null)
 );
 ```
 
@@ -728,12 +727,11 @@ import type { ApiResponse } from './system';
 
 export interface PublicOverviewResponse {
   generatedAt: string;
-  todayMatches: unknown[];
+  upcomingMatches: unknown[];
   riskCounters: Record<string, number>;
   integrityCounters: Record<string, number>;
   oddsFreshness: Record<string, number>;
   decisionSummary: Record<string, unknown>;
-  adminTodoCounters: Record<string, number>;
 }
 
 export async function fetchPublicOverview(): Promise<ApiResponse<PublicOverviewResponse>> {
@@ -843,4 +841,3 @@ This plan uses concrete file paths, tests, commands, expected results, and commi
 ### Type consistency
 
 Public DTO names are centralized in `PublicApiDtos`. Frontend public overview type is intentionally minimal for phase 1-5 and can be narrowed when the homepage UI task begins.
-

@@ -374,8 +374,7 @@ public final class PublicApiDtos {
             PublicRiskCounters riskCounters,
             PublicIntegrityCounters integrityCounters,
             PublicOddsFreshness oddsFreshness,
-            PublicDecisionSummary decisionSummary,
-            PublicAdminTodoCounters adminTodoCounters
+            PublicDecisionSummary decisionSummary
     ) {}
 
     public record PublicOverviewMatch(
@@ -414,11 +413,6 @@ public final class PublicApiDtos {
             long reportCount,
             long reviewCount,
             LocalDateTime latestDecisionAt
-    ) {}
-
-    public record PublicAdminTodoCounters(
-            long pendingImportReviews,
-            long pendingCollectionReviews
     ) {}
 
     public record PublicDecisionReview(

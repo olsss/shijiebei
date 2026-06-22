@@ -1,6 +1,5 @@
 package com.worldcup.publicapi.service;
 
-import com.worldcup.publicapi.dto.PublicApiDtos.PublicAdminTodoCounters;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicDecisionSummary;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicIntegrityCounters;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicOddsFreshness;
@@ -35,12 +34,35 @@ public class PublicOverviewService {
                 riskCounters(),
                 integrityCounters(),
                 oddsFreshness(),
-                decisionSummary(),
-                adminTodoCounters()
+                decisionSummary()
         );
     }
 
     private List<PublicOverviewMatch> upcomingMatches() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime todayStart = today.atStartOfDay();
+        LocalDateTime tomorrowStart = today.plusDays(1).atStartOfDay();
+
+        List<PublicOverviewMatch> todayMatches = overviewMatches("""
+                WHERE m.matchday = ?
+                   OR (m.kickoff_time >= ? AND m.kickoff_time < ?)
+                """,
+                java.sql.Date.valueOf(today),
+                java.sql.Timestamp.valueOf(todayStart),
+                java.sql.Timestamp.valueOf(tomorrowStart));
+        if (!todayMatches.isEmpty()) {
+            return todayMatches;
+        }
+
+        return overviewMatches("""
+                WHERE m.kickoff_time >= ?
+                   OR (m.kickoff_time IS NULL AND m.matchday > ?)
+                """,
+                java.sql.Timestamp.valueOf(tomorrowStart),
+                java.sql.Date.valueOf(today));
+    }
+
+    private List<PublicOverviewMatch> overviewMatches(String whereClause, Object... args) {
         return jdbcTemplate.query("""
                 SELECT m.id, m.match_name, m.matchday, m.jc_code, m.competition, m.stage,
                        m.kickoff_time, m.status,
@@ -53,9 +75,10 @@ public class PublicOverviewService {
                            THEN 100 ELSE 0
                        END AS integrity_score
                 FROM matches m
+                %s
                 ORDER BY CASE WHEN m.kickoff_time IS NULL THEN 1 ELSE 0 END, m.kickoff_time ASC, m.id ASC
                 LIMIT 5
-                """, (rs, rowNum) -> new PublicOverviewMatch(
+                """.formatted(whereClause), (rs, rowNum) -> new PublicOverviewMatch(
                 rs.getLong("id"),
                 mapper.sanitizeText(rs.getString("match_name")),
                 localDate(rs, "matchday"),
@@ -66,7 +89,7 @@ public class PublicOverviewService {
                 mapper.sanitizeToken(rs.getString("status")),
                 rs.getInt("integrity_score"),
                 rs.getLong("risk_count")
-        ));
+        ), args);
     }
 
     private PublicRiskCounters riskCounters() {
@@ -111,13 +134,6 @@ public class PublicOverviewService {
                 count("SELECT COUNT(*) FROM analysis_reports"),
                 count("SELECT COUNT(*) FROM post_match_reviews"),
                 max(latestReport, latestReview)
-        );
-    }
-
-    private PublicAdminTodoCounters adminTodoCounters() {
-        return new PublicAdminTodoCounters(
-                count("SELECT COUNT(*) FROM import_items WHERE UPPER(status) IN ('PENDING', 'PENDING_REVIEW')"),
-                count("SELECT COUNT(*) FROM collection_items WHERE UPPER(status) IN ('PENDING', 'PENDING_REVIEW')")
         );
     }
 

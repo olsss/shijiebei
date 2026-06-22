@@ -268,7 +268,7 @@
 - 官方核对、赔率时效、证据完整性、风险提醒 KPI。
 - 高风险比赛队列。
 - 五阶段入口卡片。
-- 管理员待办摘要，但未登录仅显示数量或提示，不暴露原始 JSON 内容。
+- 管理员审核待办不放入公开首页；仅在登录后的管理端区块展示。
 - 快捷入口：进入赛前作战、查看证据完整性、打开复盘中心。
 
 H5：
@@ -724,22 +724,21 @@ DTO schema：
 ```text
 PublicOverviewResponse
   generatedAt: string
-  todayMatches: PublicMatchSpotlight[]
+  upcomingMatches: PublicMatchSpotlight[]
   riskCounters: PublicRiskCounters
   integrityCounters: PublicIntegrityCounters
   oddsFreshness: PublicOddsFreshness
   decisionSummary: PublicDecisionSummary
-  adminTodoCounters: PublicAdminTodoCounters
 ```
 
-字段级禁止：该 DTO 不得包含 `rawJson/rawPayload/archivePath/ticketNo/个人资金明细/入库映射/待审详情`。
+字段级禁止：该 DTO 不得包含 `rawJson/rawPayload/archivePath/ticketNo/个人资金明细/入库映射/待审详情/管理员审核队列计数`。
 
 数据源与计算规则：
 
 | 字段 | 来源 | 规则 | 空库默认值 |
 |---|---|---|---|
 | `generatedAt` | 服务端当前时间 | 北京时间 ISO 字符串 | 当前时间 |
-| `todayMatches` | Match 查询服务或表 | 北京时间今日优先；无今日则取未来最近 5 场；按开赛时间升序 | `[]` |
+| `upcomingMatches` | Match 查询服务或表 | 北京时间今日优先；无今日则取未来最近 5 场；按开赛时间升序 | `[]` |
 | `riskCounters.highRiskMatches` | integrity / sentiment / odds 聚合 | `riskLevel` HIGH 或 BLOCKED 计数 | `0` |
 | `riskCounters.staleOdds` | odds capturedAt | 距当前超过 3 小时视为过期 | `0` |
 | `riskCounters.incompleteEvidence` | integrity checks | partial + blocked 计数 | `0` |
@@ -747,7 +746,6 @@ PublicOverviewResponse
 | `integrityCounters` | Prematch integrity | complete/partial/blocked 分组计数 | 全 0 |
 | `oddsFreshness` | Odds 快照 | fresh/stale/missing 分组计数 | 全 0 |
 | `decisionSummary` | public decisions 服务 | 分析/复盘计数，CLV 只给趋势标签 | 计数 0，趋势 null |
-| `adminTodoCounters` | import/profile collection 服务 | 只返回待办数量，不返回详情 | 全 0 |
 
 后端模块建议：
 

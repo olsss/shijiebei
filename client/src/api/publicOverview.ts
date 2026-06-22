@@ -39,11 +39,6 @@ export interface PublicDecisionSummary {
   latestDecisionAt?: string;
 }
 
-export interface PublicAdminTodoCounters {
-  pendingImportReviews: number;
-  pendingCollectionReviews: number;
-}
-
 export interface PublicOverviewResponse {
   generatedAt: string;
   upcomingMatches: PublicOverviewMatch[];
@@ -51,7 +46,6 @@ export interface PublicOverviewResponse {
   integrityCounters: PublicIntegrityCounters;
   oddsFreshness: PublicOddsFreshness;
   decisionSummary: PublicDecisionSummary;
-  adminTodoCounters: PublicAdminTodoCounters;
 }
 
 export async function fetchPublicOverview(): Promise<ApiResponse<PublicOverviewResponse>> {

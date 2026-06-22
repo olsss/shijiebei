@@ -55,6 +55,32 @@ class PublicApiSanitizationTest {
     }
 
     @Test
+    void sanitizerRemovesBareArchiveAndUnixPathsFromFreeText() {
+        String unsafe = "source skill/archive/2026/raw.json copied to /tmp/worldcup/raw.json and /var/secrets/payload.json";
+
+        String sanitized = mapper.sanitizeText(unsafe);
+
+        assertThat(sanitized).doesNotContain("skill/archive/2026/raw.json", "/tmp/worldcup/raw.json", "/var/secrets/payload.json");
+        assertThat(sanitized).contains("[REDACTED]");
+    }
+
+    @Test
+    void sanitizerPreservesPublicHttpUrls() {
+        assertThat(mapper.sanitizeText("https://example.test/fifa")).isEqualTo("https://example.test/fifa");
+        assertThat(mapper.sanitizeText("http://example.test/source")).isEqualTo("http://example.test/source");
+    }
+
+    @Test
+    void sanitizerRemovesFileUriAndDotRelativeArchivePathsFromFreeText() {
+        String unsafe = "source ./skill/archive/2026/raw.json copied to file:///tmp/worldcup/raw.json";
+
+        String sanitized = mapper.sanitizeText(unsafe);
+
+        assertThat(sanitized).doesNotContain("./skill/archive/2026/raw.json", "file:///tmp/worldcup/raw.json");
+        assertThat(sanitized).contains("[REDACTED]");
+    }
+
+    @Test
     void sanitizerRemovesSnakeCaseAndQuotedJsonSensitiveTokens() {
         String unsafe = "ticket_no=ABC123 stake_suggestion=12 budget_amount=99 return_amount=180 "
                 + "profit_loss=-20 raw_payload={\"ticketNo\":\"ABC123\",\"stake\":88}";

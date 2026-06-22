@@ -39,10 +39,6 @@ const overviewFixture: PublicOverviewResponse = {
     reviewCount: 2,
     latestDecisionAt: '2026-06-22T01:00:00',
   },
-  adminTodoCounters: {
-    pendingImportReviews: 1,
-    pendingCollectionReviews: 2,
-  },
 };
 
 describe('public overview api', () => {
