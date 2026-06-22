@@ -1,4 +1,4 @@
-import ElementPlus from 'element-plus';
+﻿import ElementPlus from 'element-plus';
 import { createPinia, setActivePinia } from 'pinia';
 import { flushPromises, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,7 +6,7 @@ import SentimentCenterView from '@/views/SentimentCenterView.vue';
 import { useAuthStore } from '@/stores/auth';
 
 vi.mock('@/api/sentiment', () => ({
-  listSentimentOverview: vi.fn(async () => ({
+  listPublicSentimentOverview: vi.fn(async () => ({
     data: [
       {
         id: 10,
@@ -22,7 +22,7 @@ vi.mock('@/api/sentiment', () => ({
       },
     ],
   })),
-  getMatchSentiment: vi.fn(async () => ({
+  getPublicMatchSentiment: vi.fn(async () => ({
     data: {
       matchId: 99,
       matchName: '联调法国 vs 联调巴西',
@@ -62,14 +62,14 @@ vi.mock('@/api/sentiment', () => ({
       ],
     },
   })),
-  listSentimentCategories: vi.fn(async () => ({ data: ['WEATHER'] })),
-  listSentimentRiskTypes: vi.fn(async () => ({ data: ['PUBLIC_OVERHEAT', 'RAIN'] })),
+  listPublicSentimentCategories: vi.fn(async () => ({ data: ['WEATHER'] })),
+  listPublicSentimentRiskTypes: vi.fn(async () => ({ data: ['PUBLIC_OVERHEAT', 'RAIN'] })),
 }));
 
 describe('SentimentCenterView', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    useAuthStore().setAdmin({ username: 'admin', displayName: '系统管理员', authType: 'basic' });
+    useAuthStore().setAdmin({ username: 'admin', displayName: 'Admin', authType: 'basic' });
   });
 
   it('renders match-level risks that are not attached to a specific factor', async () => {

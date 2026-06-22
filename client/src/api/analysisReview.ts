@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export interface AnalysisReviewOverview {
@@ -130,8 +130,41 @@ export interface BetRecord {
   rawPayload?: string;
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export interface PublicDecisionReport {
+  id: number;
+  matchId?: number;
+  matchName?: string;
+  matchday?: string;
+  jcCode?: string;
+  conclusionType?: string;
+  confidence?: string;
+  riskSummary?: string;
+  reviewSummary?: string;
+  lessonSummary?: string;
+}
+
+export interface PublicDecisionLesson {
+  id: number;
+  lessonType: string;
+  lessonText: string;
+  severity: string;
+}
+
+export interface PublicDecisionReview {
+  id: number;
+  matchId?: number;
+  matchName?: string;
+  matchday?: string;
+  analysisReportId?: number;
+  reviewKey: string;
+  title: string;
+  mathSummary?: string;
+  footballSummary?: string;
+  handicapSummary?: string;
+  tournamentTemperamentSummary?: string;
+  oddsValueSummary?: string;
+  overallSummary?: string;
+  lessons: PublicDecisionLesson[];
 }
 
 export function buildAnalysisReviewOverviewPath(): string {
@@ -148,49 +181,59 @@ export function buildBetPlanPath(planId: number): string {
 
 export async function fetchAnalysisReviewOverview(authHeader: string): Promise<ApiResponse<AnalysisReviewOverview>> {
   const response = await http.get<ApiResponse<AnalysisReviewOverview>>(buildAnalysisReviewOverviewPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listAnalysisReports(authHeader: string): Promise<ApiResponse<AnalysisReportSummary[]>> {
   const response = await http.get<ApiResponse<AnalysisReportSummary[]>>('/analysis-review/reports', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getAnalysisReport(authHeader: string, reportId: number): Promise<ApiResponse<AnalysisReportDetail>> {
   const response = await http.get<ApiResponse<AnalysisReportDetail>>(buildAnalysisReportPath(reportId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listBetPlans(authHeader: string): Promise<ApiResponse<BetPlanSummary[]>> {
   const response = await http.get<ApiResponse<BetPlanSummary[]>>('/analysis-review/bet-plans', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getBetPlan(authHeader: string, planId: number): Promise<ApiResponse<BetPlanDetail>> {
   const response = await http.get<ApiResponse<BetPlanDetail>>(buildBetPlanPath(planId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listBetRecords(authHeader: string): Promise<ApiResponse<BetRecord[]>> {
   const response = await http.get<ApiResponse<BetRecord[]>>('/analysis-review/bets', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listPostMatchReviews(authHeader: string): Promise<ApiResponse<PostMatchReview[]>> {
   const response = await http.get<ApiResponse<PostMatchReview[]>>('/analysis-review/reviews', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicDecisionReports(): Promise<ApiResponse<PublicDecisionReport[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicDecisionReport[]>>('/decisions/reports');
+  return response.data;
+}
+
+export async function listPublicDecisionReviews(): Promise<ApiResponse<PublicDecisionReview[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicDecisionReview[]>>('/decisions/reviews');
   return response.data;
 }

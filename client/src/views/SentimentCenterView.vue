@@ -2,27 +2,25 @@
 import { computed, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
-  getMatchSentiment,
-  listSentimentCategories,
-  listSentimentOverview,
-  listSentimentRiskTypes,
-  type SentimentFactorDetail,
-  type SentimentFactorSummary,
-  type SentimentMatchDetail,
-  type SentimentRisk,
+  getPublicMatchSentiment,
+  listPublicSentimentCategories,
+  listPublicSentimentOverview,
+  listPublicSentimentRiskTypes,
+  type PublicSentimentFactorDetail,
+  type PublicSentimentFactorSummary,
+  type PublicSentimentMatchDetail,
+  type PublicSentimentRisk,
 } from '@/api/sentiment';
-import { useAuthStore } from '@/stores/auth';
 
-const authStore = useAuthStore();
 const loading = ref(false);
 const detailLoading = ref(false);
-const overview = ref<SentimentFactorSummary[]>([]);
+const overview = ref<PublicSentimentFactorSummary[]>([]);
 const categories = ref<string[]>([]);
 const riskTypes = ref<string[]>([]);
 const selectedCategory = ref('');
 const selectedRiskLevel = ref('');
 const staleOnly = ref(false);
-const selectedMatch = ref<SentimentMatchDetail | null>(null);
+const selectedMatch = ref<PublicSentimentMatchDetail | null>(null);
 const selectedFactorId = ref<number | null>(null);
 const error = ref('');
 
@@ -45,7 +43,7 @@ const stats = computed(() => ({
   stale: overview.value.filter((item) => item.stale).length,
 }));
 
-const currentFactor = computed<SentimentFactorDetail | null>(() => {
+const currentFactor = computed<PublicSentimentFactorDetail | null>(() => {
   if (!selectedMatch.value) {
     return null;
   }
@@ -57,26 +55,19 @@ const currentFactor = computed<SentimentFactorDetail | null>(() => {
     ?? null;
 });
 
-const currentFactorRisks = computed<SentimentRisk[]>(() => {
+const currentFactorRisks = computed<PublicSentimentRisk[]>(() => {
   if (!currentFactor.value || !selectedMatch.value) {
     return [];
   }
   return selectedMatch.value.risks.filter((risk) => risk.factorId === currentFactor.value?.id);
 });
 
-const matchLevelRisks = computed<SentimentRisk[]>(() => {
+const matchLevelRisks = computed<PublicSentimentRisk[]>(() => {
   if (!selectedMatch.value) {
     return [];
   }
   return selectedMatch.value.risks.filter((risk) => risk.factorId == null);
 });
-
-function requireAuthHeader(): string {
-  if (!authStore.basicAuthHeader) {
-    throw new Error('请先登录后查看舆情与外部因素中心。');
-  }
-  return authStore.basicAuthHeader;
-}
 
 function formatDateTime(value?: string): string {
   if (!value) {
@@ -106,7 +97,7 @@ function riskTagType(level?: string): 'primary' | 'success' | 'warning' | 'info'
   }
 }
 
-function factorRiskCount(factor: SentimentFactorDetail): number {
+function factorRiskCount(factor: PublicSentimentFactorDetail): number {
   if (!selectedMatch.value) {
     return 0;
   }
@@ -117,11 +108,10 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const authHeader = requireAuthHeader();
     const [overviewResponse, categoryResponse, riskTypeResponse] = await Promise.all([
-      listSentimentOverview(authHeader),
-      listSentimentCategories(authHeader),
-      listSentimentRiskTypes(authHeader),
+      listPublicSentimentOverview(),
+      listPublicSentimentCategories(),
+      listPublicSentimentRiskTypes(),
     ]);
     overview.value = overviewResponse.data;
     categories.value = categoryResponse.data;
@@ -144,14 +134,14 @@ async function load() {
   }
 }
 
-async function openFactor(row: SentimentFactorSummary) {
+async function openFactor(row: PublicSentimentFactorSummary) {
   if (!row.matchId) {
     ElMessage.warning('该因素未绑定比赛，无法查看比赛维度详情。');
     return;
   }
   detailLoading.value = true;
   try {
-    const response = await getMatchSentiment(requireAuthHeader(), row.matchId);
+    const response = await getPublicMatchSentiment(row.matchId);
     selectedMatch.value = response.data;
     selectedFactorId.value = row.id;
   } catch (cause) {
@@ -263,7 +253,7 @@ onMounted(load);
                 border
                 height="230"
                 highlight-current-row
-                @row-click="(row: SentimentFactorDetail) => selectedFactorId = row.id"
+                @row-click="(row: PublicSentimentFactorDetail) => selectedFactorId = row.id"
               >
                 <el-table-column prop="factorCategory" label="分类" width="110" />
                 <el-table-column prop="factorType" label="类型" width="110" />
@@ -330,7 +320,7 @@ onMounted(load);
               </el-table>
 
               <h3>因素原始 JSON</h3>
-              <pre class="raw-payload">{{ currentFactor?.rawPayload || '无原始字段' }}</pre>
+              <pre class="raw-payload">{{ '-' }}</pre>
             </template>
           </el-card>
         </el-col>

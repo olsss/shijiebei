@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export interface SentimentFactorSummary {
@@ -55,8 +55,12 @@ export interface SentimentMatchDetail {
   risks: SentimentRisk[];
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export type PublicSentimentFactorSummary = SentimentFactorSummary;
+export type PublicSentimentFactorDetail = Omit<SentimentFactorDetail, 'rawPayload'>;
+export type PublicSentimentRisk = Omit<SentimentRisk, 'rawPayload'>;
+export interface PublicSentimentMatchDetail extends Omit<SentimentMatchDetail, 'factors' | 'risks'> {
+  factors: PublicSentimentFactorDetail[];
+  risks: PublicSentimentRisk[];
 }
 
 export function buildMatchSentimentPath(matchId: number): string {
@@ -73,7 +77,7 @@ export function buildSentimentRiskTypesPath(): string {
 
 export async function listSentimentOverview(authHeader: string): Promise<ApiResponse<SentimentFactorSummary[]>> {
   const response = await http.get<ApiResponse<SentimentFactorSummary[]>>('/sentiment', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
@@ -83,21 +87,43 @@ export async function getMatchSentiment(
   matchId: number,
 ): Promise<ApiResponse<SentimentMatchDetail>> {
   const response = await http.get<ApiResponse<SentimentMatchDetail>>(buildMatchSentimentPath(matchId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listSentimentCategories(authHeader: string): Promise<ApiResponse<string[]>> {
   const response = await http.get<ApiResponse<string[]>>(buildSentimentCategoriesPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listSentimentRiskTypes(authHeader: string): Promise<ApiResponse<string[]>> {
   const response = await http.get<ApiResponse<string[]>>(buildSentimentRiskTypesPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicSentimentOverview(): Promise<ApiResponse<PublicSentimentFactorSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicSentimentFactorSummary[]>>('/sentiment');
+  return response.data;
+}
+
+export async function getPublicMatchSentiment(
+  matchId: number,
+): Promise<ApiResponse<PublicSentimentMatchDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicSentimentMatchDetail>>(buildMatchSentimentPath(matchId));
+  return response.data;
+}
+
+export async function listPublicSentimentCategories(): Promise<ApiResponse<string[]>> {
+  const response = await publicHttp.get<ApiResponse<string[]>>(buildSentimentCategoriesPath());
+  return response.data;
+}
+
+export async function listPublicSentimentRiskTypes(): Promise<ApiResponse<string[]>> {
+  const response = await publicHttp.get<ApiResponse<string[]>>(buildSentimentRiskTypesPath());
   return response.data;
 }

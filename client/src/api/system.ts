@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http } from './http';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -30,7 +30,7 @@ export async function fetchHealth(): Promise<ApiResponse<HealthStatus>> {
 
 export async function fetchSystemSettings(authHeader: string): Promise<ApiResponse<SystemSettings>> {
   const response = await http.get<ApiResponse<SystemSettings>>('/system/settings', {
-    headers: { Authorization: authHeader },
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }

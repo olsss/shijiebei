@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export type CollectionItemStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
@@ -153,8 +153,26 @@ export interface PlayerProfileDetail {
   facts: ProfileFact[];
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export type PublicProfileFact = ProfileFact;
+export type PublicTeamProfileSummary = TeamProfileSummary;
+export type PublicTeamPlayer = TeamPlayer;
+export type PublicTeamLineup = TeamLineup;
+export type PublicTeamScoringPattern = TeamScoringPattern;
+export type PublicTeamExternalFactor = TeamExternalFactor;
+export type PublicTeamMatchHistory = TeamMatchHistory;
+export interface PublicTeamProfileDetail extends Omit<TeamProfileDetail, 'team' | 'facts' | 'players' | 'lineups' | 'scoringPatterns' | 'externalFactors' | 'matchHistory'> {
+  team: PublicTeamProfileSummary;
+  facts: PublicProfileFact[];
+  players: PublicTeamPlayer[];
+  lineups: PublicTeamLineup[];
+  scoringPatterns: PublicTeamScoringPattern[];
+  externalFactors: PublicTeamExternalFactor[];
+  matchHistory: PublicTeamMatchHistory[];
+}
+export type PublicPlayerProfileSummary = PlayerProfileSummary;
+export interface PublicPlayerProfileDetail extends Omit<PlayerProfileDetail, 'player' | 'facts'> {
+  player: PublicPlayerProfileSummary;
+  facts: PublicProfileFact[];
 }
 
 export function buildCollectionItemsPath(status?: CollectionItemStatus): string {
@@ -186,7 +204,7 @@ export async function listCollectionItems(
   status?: CollectionItemStatus,
 ): Promise<ApiResponse<CollectionItem[]>> {
   const response = await http.get<ApiResponse<CollectionItem[]>>('/profiles/collections/items', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
     params: status ? { status } : undefined,
   });
   return response.data;
@@ -199,7 +217,7 @@ export async function approveCollectionItem(
   const response = await http.post<ApiResponse<CollectionItemReviewResult>>(
     buildApproveCollectionItemPath(id),
     undefined,
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
@@ -212,42 +230,67 @@ export async function rejectCollectionItem(
   const response = await http.post<ApiResponse<CollectionItemReviewResult>>(
     buildRejectCollectionItemPath(id),
     { reason },
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
 
 export async function listTeamProfiles(authHeader: string): Promise<ApiResponse<TeamProfileSummary[]>> {
   const response = await http.get<ApiResponse<TeamProfileSummary[]>>('/profiles/teams', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getTeamProfile(authHeader: string, id: number): Promise<ApiResponse<TeamProfileDetail>> {
   const response = await http.get<ApiResponse<TeamProfileDetail>>(buildTeamDetailPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listTeamPlayers(authHeader: string, id: number): Promise<ApiResponse<TeamPlayer[]>> {
   const response = await http.get<ApiResponse<TeamPlayer[]>>(buildTeamPlayersPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listPlayerProfiles(authHeader: string): Promise<ApiResponse<PlayerProfileSummary[]>> {
   const response = await http.get<ApiResponse<PlayerProfileSummary[]>>('/profiles/players', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getPlayerProfile(authHeader: string, id: number): Promise<ApiResponse<PlayerProfileDetail>> {
   const response = await http.get<ApiResponse<PlayerProfileDetail>>(buildPlayerDetailPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicTeamProfiles(): Promise<ApiResponse<PublicTeamProfileSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicTeamProfileSummary[]>>('/profiles/teams');
+  return response.data;
+}
+
+export async function getPublicTeamProfile(id: number): Promise<ApiResponse<PublicTeamProfileDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicTeamProfileDetail>>(buildTeamDetailPath(id));
+  return response.data;
+}
+
+export async function listPublicTeamPlayers(id: number): Promise<ApiResponse<PublicTeamPlayer[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicTeamPlayer[]>>(buildTeamPlayersPath(id));
+  return response.data;
+}
+
+export async function listPublicPlayerProfiles(): Promise<ApiResponse<PublicPlayerProfileSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicPlayerProfileSummary[]>>('/profiles/players');
+  return response.data;
+}
+
+export async function getPublicPlayerProfile(id: number): Promise<ApiResponse<PublicPlayerProfileDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicPlayerProfileDetail>>(buildPlayerDetailPath(id));
   return response.data;
 }

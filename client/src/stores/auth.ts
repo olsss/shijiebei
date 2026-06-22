@@ -13,14 +13,18 @@ export const useAuthStore = defineStore('auth', () => {
   const password = ref('');
 
   const isAuthenticated = computed(() => admin.value !== null);
+  const isAdmin = computed(
+    () => admin.value?.authType.toUpperCase() === 'BASIC' && admin.value.username === 'admin',
+  );
+  const canWrite = computed(() => isAdmin.value && Boolean(password.value));
   const basicAuthHeader = computed(() => {
-    if (!admin.value || !password.value) {
+    if (!canWrite.value || !admin.value) {
       return '';
     }
     return buildBasicAuthHeader(admin.value.username, password.value);
   });
 
-  function setAdmin(identity: AdminIdentity, rawPassword = 'admin123456') {
+  function setAdmin(identity: AdminIdentity, rawPassword = '') {
     admin.value = identity;
     password.value = rawPassword;
   }
@@ -33,6 +37,8 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     admin,
     isAuthenticated,
+    isAdmin,
+    canWrite,
     basicAuthHeader,
     setAdmin,
     logout,

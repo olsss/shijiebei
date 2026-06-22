@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export interface MatchSummary {
@@ -108,8 +108,23 @@ export interface MatchDetail {
   conflicts: MatchConflict[];
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export type PublicMatchSummary = MatchSummary;
+export type PublicMatchLineup = MatchLineup;
+export type PublicMatchEvent = Omit<MatchEvent, 'payload'>;
+export type PublicMatchTeamStats = Omit<MatchTeamStats, 'payload'>;
+export type PublicMatchPlayerStats = Omit<MatchPlayerStats, 'payload'>;
+export type PublicMatchEvidence = MatchEvidence;
+export type PublicMatchConflict = Omit<MatchConflict, 'currentValue' | 'incomingValue' | 'rawPayload'>;
+
+export interface PublicMatchDetail {
+  summary: PublicMatchSummary;
+  externalFactors?: string;
+  lineups: PublicMatchLineup[];
+  events: PublicMatchEvent[];
+  teamStats: PublicMatchTeamStats[];
+  playerStats: PublicMatchPlayerStats[];
+  evidence: PublicMatchEvidence[];
+  conflicts: PublicMatchConflict[];
 }
 
 export function buildMatchDetailPath(id: number): string {
@@ -134,42 +149,72 @@ export function buildMatchPlayerStatsPath(id: number): string {
 
 export async function listMatches(authHeader: string): Promise<ApiResponse<MatchSummary[]>> {
   const response = await http.get<ApiResponse<MatchSummary[]>>('/matches', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getMatchDetail(authHeader: string, id: number): Promise<ApiResponse<MatchDetail>> {
   const response = await http.get<ApiResponse<MatchDetail>>(buildMatchDetailPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listMatchLineups(authHeader: string, id: number): Promise<ApiResponse<MatchLineup[]>> {
   const response = await http.get<ApiResponse<MatchLineup[]>>(buildMatchLineupsPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listMatchEvents(authHeader: string, id: number): Promise<ApiResponse<MatchEvent[]>> {
   const response = await http.get<ApiResponse<MatchEvent[]>>(buildMatchEventsPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listMatchTeamStats(authHeader: string, id: number): Promise<ApiResponse<MatchTeamStats[]>> {
   const response = await http.get<ApiResponse<MatchTeamStats[]>>(buildMatchTeamStatsPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listMatchPlayerStats(authHeader: string, id: number): Promise<ApiResponse<MatchPlayerStats[]>> {
   const response = await http.get<ApiResponse<MatchPlayerStats[]>>(buildMatchPlayerStatsPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicMatches(): Promise<ApiResponse<PublicMatchSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchSummary[]>>('/matches');
+  return response.data;
+}
+
+export async function getPublicMatchDetail(id: number): Promise<ApiResponse<PublicMatchDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchDetail>>(buildMatchDetailPath(id));
+  return response.data;
+}
+
+export async function listPublicMatchLineups(id: number): Promise<ApiResponse<PublicMatchLineup[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchLineup[]>>(buildMatchLineupsPath(id));
+  return response.data;
+}
+
+export async function listPublicMatchEvents(id: number): Promise<ApiResponse<PublicMatchEvent[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchEvent[]>>(buildMatchEventsPath(id));
+  return response.data;
+}
+
+export async function listPublicMatchTeamStats(id: number): Promise<ApiResponse<PublicMatchTeamStats[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchTeamStats[]>>(buildMatchTeamStatsPath(id));
+  return response.data;
+}
+
+export async function listPublicMatchPlayerStats(id: number): Promise<ApiResponse<PublicMatchPlayerStats[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicMatchPlayerStats[]>>(buildMatchPlayerStatsPath(id));
   return response.data;
 }

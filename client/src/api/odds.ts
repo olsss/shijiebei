@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export interface OddsMarketSummary {
@@ -47,9 +47,15 @@ export interface OddsMarketDictionaryItem {
   marketName?: string;
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export type PublicOddsMarketSummary = OddsMarketSummary;
+export type PublicOddsSelection = Omit<OddsSelection, 'rawPayload'>;
+export type PublicOddsMarketDetail = Omit<OddsMarketDetail, 'rawPayload' | 'selections'> & {
+  selections: PublicOddsSelection[];
+};
+export interface PublicOddsMatchDetail extends Omit<OddsMatchDetail, 'markets'> {
+  markets: PublicOddsMarketDetail[];
 }
+export type PublicOddsMarketDictionaryItem = OddsMarketDictionaryItem;
 
 export function buildMatchOddsPath(matchId: number): string {
   return `/odds/matches/${matchId}`;
@@ -65,28 +71,48 @@ export function buildMarketsPath(): string {
 
 export async function listOddsOverview(authHeader: string): Promise<ApiResponse<OddsMarketSummary[]>> {
   const response = await http.get<ApiResponse<OddsMarketSummary[]>>('/odds', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getMatchOdds(authHeader: string, matchId: number): Promise<ApiResponse<OddsMatchDetail>> {
   const response = await http.get<ApiResponse<OddsMatchDetail>>(buildMatchOddsPath(matchId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listBookmakers(authHeader: string): Promise<ApiResponse<string[]>> {
   const response = await http.get<ApiResponse<string[]>>(buildBookmakersPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function listOddsMarkets(authHeader: string): Promise<ApiResponse<OddsMarketDictionaryItem[]>> {
   const response = await http.get<ApiResponse<OddsMarketDictionaryItem[]>>(buildMarketsPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicOddsOverview(): Promise<ApiResponse<PublicOddsMarketSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicOddsMarketSummary[]>>('/odds');
+  return response.data;
+}
+
+export async function getPublicMatchOdds(matchId: number): Promise<ApiResponse<PublicOddsMatchDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicOddsMatchDetail>>(buildMatchOddsPath(matchId));
+  return response.data;
+}
+
+export async function listPublicBookmakers(): Promise<ApiResponse<string[]>> {
+  const response = await publicHttp.get<ApiResponse<string[]>>(buildBookmakersPath());
+  return response.data;
+}
+
+export async function listPublicOddsMarkets(): Promise<ApiResponse<PublicOddsMarketDictionaryItem[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicOddsMarketDictionaryItem[]>>(buildMarketsPath());
   return response.data;
 }

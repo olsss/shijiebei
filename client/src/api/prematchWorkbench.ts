@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
 
 export interface WorkbenchMatchSummary {
@@ -235,8 +235,28 @@ export interface PrematchWorkbenchDetail {
   integrityChecks: IntegrityCheck[];
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
+export type PublicWorkbenchMatchSummary = Omit<WorkbenchMatchSummary, 'betPlanCount' | 'betCount'>;
+export type PublicWorkbenchTeam = WorkbenchTeam;
+export type PublicWorkbenchLineup = WorkbenchLineup;
+export type PublicWorkbenchPlayer = WorkbenchPlayer;
+export type PublicWorkbenchOddsMarket = WorkbenchOddsMarket;
+export type PublicWorkbenchSentimentFactor = WorkbenchSentimentFactor;
+export type PublicWorkbenchEvidence = WorkbenchEvidence;
+export type PublicWorkbenchConflict = Omit<WorkbenchConflict, 'currentValue' | 'incomingValue'>;
+export type PublicWorkbenchAnalysisReport = WorkbenchAnalysisReport;
+export type PublicIntegrityCheck = IntegrityCheck;
+
+export interface PublicPrematchWorkbenchDetail {
+  summary: PublicWorkbenchMatchSummary;
+  teams: PublicWorkbenchTeam[];
+  lineups: PublicWorkbenchLineup[];
+  players: PublicWorkbenchPlayer[];
+  oddsMarkets: PublicWorkbenchOddsMarket[];
+  sentimentFactors: PublicWorkbenchSentimentFactor[];
+  evidence: PublicWorkbenchEvidence[];
+  conflicts: PublicWorkbenchConflict[];
+  analysisReports: PublicWorkbenchAnalysisReport[];
+  integrityChecks: PublicIntegrityCheck[];
 }
 
 export function buildPrematchWorkbenchMatchesPath(): string {
@@ -253,21 +273,46 @@ export function buildPrematchWorkbenchIntegrityPath(matchId: number): string {
 
 export async function listPrematchWorkbenchMatches(authHeader: string): Promise<ApiResponse<WorkbenchMatchSummary[]>> {
   const response = await http.get<ApiResponse<WorkbenchMatchSummary[]>>(buildPrematchWorkbenchMatchesPath(), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getPrematchWorkbenchMatch(authHeader: string, matchId: number): Promise<ApiResponse<PrematchWorkbenchDetail>> {
   const response = await http.get<ApiResponse<PrematchWorkbenchDetail>>(buildPrematchWorkbenchMatchPath(matchId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
 
 export async function getPrematchWorkbenchIntegrity(authHeader: string, matchId: number): Promise<ApiResponse<IntegrityCheck[]>> {
   const response = await http.get<ApiResponse<IntegrityCheck[]>>(buildPrematchWorkbenchIntegrityPath(matchId), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
+  return response.data;
+}
+
+export async function listPublicPrematchWorkbenchMatches(): Promise<ApiResponse<PublicWorkbenchMatchSummary[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicWorkbenchMatchSummary[]>>(
+    buildPrematchWorkbenchMatchesPath(),
+  );
+  return response.data;
+}
+
+export async function getPublicPrematchWorkbenchMatch(
+  matchId: number,
+): Promise<ApiResponse<PublicPrematchWorkbenchDetail>> {
+  const response = await publicHttp.get<ApiResponse<PublicPrematchWorkbenchDetail>>(
+    buildPrematchWorkbenchMatchPath(matchId),
+  );
+  return response.data;
+}
+
+export async function getPublicPrematchWorkbenchIntegrity(
+  matchId: number,
+): Promise<ApiResponse<PublicIntegrityCheck[]>> {
+  const response = await publicHttp.get<ApiResponse<PublicIntegrityCheck[]>>(
+    buildPrematchWorkbenchIntegrityPath(matchId),
+  );
   return response.data;
 }

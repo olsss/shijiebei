@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http } from './http';
 import type { ApiResponse } from './system';
 
 export interface CoreDataOverview {
@@ -28,10 +28,6 @@ export interface CoreDataImportResult {
   mappings: CoreDataMapping[];
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
-}
-
 export function buildCoreDataImportPath(id: number): string {
   return `/core-data/import-items/${id}/import`;
 }
@@ -42,7 +38,7 @@ export function buildCoreDataMappingsPath(id: number): string {
 
 export async function fetchCoreDataOverview(authHeader: string): Promise<ApiResponse<CoreDataOverview>> {
   const response = await http.get<ApiResponse<CoreDataOverview>>('/core-data/overview', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
@@ -54,7 +50,7 @@ export async function importCoreDataItem(
   const response = await http.post<ApiResponse<CoreDataImportResult>>(
     buildCoreDataImportPath(id),
     undefined,
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
@@ -64,7 +60,7 @@ export async function listCoreDataMappings(
   id: number,
 ): Promise<ApiResponse<CoreDataMapping[]>> {
   const response = await http.get<ApiResponse<CoreDataMapping[]>>(buildCoreDataMappingsPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }

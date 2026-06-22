@@ -1,4 +1,4 @@
-import { http } from './http';
+import { createAuthHeaders, http } from './http';
 import type { ApiResponse } from './system';
 
 export type ImportItemType = 'BETS' | 'ANALYSIS' | 'ODDS' | 'SOURCE';
@@ -37,10 +37,6 @@ export interface ImportItemFilters {
   type?: ImportItemType;
 }
 
-function authHeaders(authHeader: string) {
-  return authHeader ? { Authorization: authHeader } : undefined;
-}
-
 export function buildImportItemPath(id: number): string {
   return `/import-items/${id}`;
 }
@@ -52,7 +48,7 @@ export async function scanArchive(
   const response = await http.post<ApiResponse<ImportJobResponse>>(
     '/import-jobs/scan',
     { archivePath: archivePath?.trim() || undefined },
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
@@ -62,7 +58,7 @@ export async function listImportItems(
   filters: ImportItemFilters = {},
 ): Promise<ApiResponse<ImportItemResponse[]>> {
   const response = await http.get<ApiResponse<ImportItemResponse[]>>('/import-items', {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
     params: filters,
   });
   return response.data;
@@ -73,7 +69,7 @@ export async function getImportItem(
   id: number,
 ): Promise<ApiResponse<ImportItemDetailResponse>> {
   const response = await http.get<ApiResponse<ImportItemDetailResponse>>(buildImportItemPath(id), {
-    headers: authHeaders(authHeader),
+    headers: createAuthHeaders(authHeader),
   });
   return response.data;
 }
@@ -85,7 +81,7 @@ export async function approveImportItem(
   const response = await http.post<ApiResponse<ImportItemResponse>>(
     `${buildImportItemPath(id)}/approve`,
     undefined,
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
@@ -97,7 +93,7 @@ export async function batchApproveImportItems(
   const response = await http.post<ApiResponse<ImportItemResponse[]>>(
     '/import-items/batch-approve',
     { itemIds },
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
@@ -110,7 +106,7 @@ export async function rejectImportItem(
   const response = await http.post<ApiResponse<ImportItemResponse>>(
     `${buildImportItemPath(id)}/reject`,
     { reason },
-    { headers: authHeaders(authHeader) },
+    { headers: createAuthHeaders(authHeader) },
   );
   return response.data;
 }
