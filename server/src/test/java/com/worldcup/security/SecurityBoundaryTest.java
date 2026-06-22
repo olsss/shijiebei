@@ -40,13 +40,17 @@ class SecurityBoundaryTest {
         jdbcTemplate.update("DELETE FROM match_context_factors");
         jdbcTemplate.update("DELETE FROM odds_selection_snapshots");
         jdbcTemplate.update("DELETE FROM odds_market_snapshots");
+        jdbcTemplate.update("DELETE FROM review_lessons");
+        jdbcTemplate.update("DELETE FROM post_match_reviews");
+        jdbcTemplate.update("DELETE FROM bets");
+        jdbcTemplate.update("DELETE FROM bet_plan_items");
+        jdbcTemplate.update("DELETE FROM bet_plans");
         jdbcTemplate.update("DELETE FROM player_profile_facts");
         jdbcTemplate.update("DELETE FROM team_profile_facts");
         jdbcTemplate.update("DELETE FROM collection_items");
         jdbcTemplate.update("DELETE FROM collection_jobs");
         jdbcTemplate.update("DELETE FROM import_item_mappings");
         jdbcTemplate.update("DELETE FROM data_dictionaries");
-        jdbcTemplate.update("DELETE FROM bets");
         jdbcTemplate.update("DELETE FROM analysis_reports");
         jdbcTemplate.update("DELETE FROM odds_snapshots");
         jdbcTemplate.update("DELETE FROM data_conflicts");
@@ -124,6 +128,13 @@ class SecurityBoundaryTest {
         expectNoForbiddenFields(mockMvc.perform(get("/api/public/profiles/teams/" + fixture.teamId() + "/players")).andExpect(status().isOk()));
         expectNoForbiddenFields(mockMvc.perform(get("/api/public/profiles/players")).andExpect(status().isOk()));
         expectNoForbiddenFields(mockMvc.perform(get("/api/public/profiles/players/" + fixture.playerId())).andExpect(status().isOk()));
+
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/overview")).andExpect(status().isOk()));
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/decisions/reports")).andExpect(status().isOk()));
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/decisions/reviews")).andExpect(status().isOk()));
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/prematch-workbench/matches")).andExpect(status().isOk()));
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/prematch-workbench/matches/" + fixture.matchId())).andExpect(status().isOk()));
+        expectNoForbiddenFields(mockMvc.perform(get("/api/public/prematch-workbench/matches/" + fixture.matchId() + "/integrity")).andExpect(status().isOk()));
     }
 
     private ResultActions expectNoForbiddenFields(ResultActions result) throws Exception {

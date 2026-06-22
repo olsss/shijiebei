@@ -1,7 +1,9 @@
 package com.worldcup.publicapi.service;
 
+import com.worldcup.analysisreviewcenter.api.dto.AnalysisReviewCenterDtos.*;
 import com.worldcup.matchcenter.api.dto.MatchCenterDtos.*;
 import com.worldcup.oddscenter.api.dto.OddsCenterDtos.*;
+import com.worldcup.prematchworkbench.api.dto.PrematchWorkbenchDtos.*;
 import com.worldcup.profile.api.dto.ProfileDtos.*;
 import com.worldcup.publicapi.dto.PublicApiDtos.*;
 import com.worldcup.sentimentcenter.api.dto.SentimentCenterDtos.*;
@@ -35,6 +37,7 @@ public class PublicApiMapper {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern WINDOWS_PATH = Pattern.compile("[A-Za-z]:[/\\\\][^\\s,;]+");
+    private static final Pattern SECRET_SENTINEL = Pattern.compile("(?i)SECRET[^\\s,;]*");
 
     public String sanitizeText(String value) {
         if (value == null || value.isBlank()) {
@@ -42,6 +45,7 @@ public class PublicApiMapper {
         }
         String sanitized = SENSITIVE_KEY_VALUE.matcher(value).replaceAll("[REDACTED]");
         sanitized = WINDOWS_PATH.matcher(sanitized).replaceAll("[REDACTED]");
+        sanitized = SECRET_SENTINEL.matcher(sanitized).replaceAll("[REDACTED]");
         return sanitized;
     }
 
@@ -454,6 +458,286 @@ public class PublicApiMapper {
         return new PublicPlayerProfileDetail(
                 toPublicPlayerProfileSummary(value.player()),
                 mapList(value.facts(), this::toPublicProfileFact)
+        );
+    }
+
+    public PublicDecisionReport toPublicDecisionReport(AnalysisReportSummaryResponse value) {
+        return new PublicDecisionReport(
+                value.id(),
+                value.matchId(),
+                sanitizeText(value.matchName()),
+                value.matchday(),
+                sanitizeText(value.jcCode()),
+                sanitizeToken(value.conclusionType()),
+                sanitizeToken(value.confidence()),
+                sanitizeText(value.riskSummary()),
+                null,
+                null
+        );
+    }
+
+    public PublicDecisionReview toPublicDecisionReview(PostMatchReviewResponse value) {
+        return new PublicDecisionReview(
+                value.id(),
+                value.matchId(),
+                sanitizeText(value.matchName()),
+                value.matchday(),
+                value.analysisReportId(),
+                sanitizeToken(value.reviewKey()),
+                sanitizeText(value.reviewTitle()),
+                sanitizeText(value.mathReview()),
+                sanitizeText(value.footballReview()),
+                sanitizeText(value.handicapReview()),
+                sanitizeText(value.tournamentTemperamentReview()),
+                sanitizeText(value.oddsValueReview()),
+                sanitizeText(value.overallSummary()),
+                mapList(value.lessons(), this::toPublicDecisionLesson)
+        );
+    }
+
+    public PublicDecisionLesson toPublicDecisionLesson(ReviewLessonResponse value) {
+        return new PublicDecisionLesson(
+                value.id(),
+                sanitizeToken(value.lessonType()),
+                sanitizeText(value.lessonText()),
+                sanitizeToken(value.severity())
+        );
+    }
+
+    public PublicPrematchMatchSummary toPublicPrematchMatchSummary(WorkbenchMatchSummaryResponse value) {
+        return new PublicPrematchMatchSummary(
+                value.matchId(),
+                sanitizeText(value.matchKey()),
+                sanitizeText(value.matchName()),
+                value.matchday(),
+                sanitizeText(value.jcCode()),
+                sanitizeText(value.competition()),
+                sanitizeText(value.stage()),
+                sanitizeText(value.venue()),
+                value.kickoffTime(),
+                sanitizeToken(value.status()),
+                sanitizeToken(value.resultStatus()),
+                value.homeTeamId(),
+                sanitizeText(value.homeTeamName()),
+                value.awayTeamId(),
+                sanitizeText(value.awayTeamName()),
+                value.integrityScore(),
+                value.missingCount(),
+                value.staleCount(),
+                value.conflictCount(),
+                value.teamProfileCount(),
+                value.playerProfileCount(),
+                value.lineupCount(),
+                value.oddsMarketCount(),
+                value.sentimentFactorCount(),
+                value.analysisReportCount()
+        );
+    }
+
+    public PublicPrematchDetail toPublicPrematchDetail(PrematchWorkbenchDetailResponse value) {
+        return new PublicPrematchDetail(
+                toPublicPrematchMatchSummary(value.summary()),
+                mapList(value.teams(), this::toPublicPrematchTeam),
+                mapList(value.lineups(), this::toPublicPrematchLineup),
+                mapList(value.players(), this::toPublicPrematchPlayer),
+                mapList(value.oddsMarkets(), this::toPublicPrematchOddsMarket),
+                mapList(value.sentimentFactors(), this::toPublicPrematchSentimentFactor),
+                mapList(value.evidence(), this::toPublicPrematchEvidence),
+                mapList(value.conflicts(), this::toPublicPrematchConflict),
+                mapList(value.analysisReports(), this::toPublicPrematchAnalysisReport),
+                mapList(value.integrityChecks(), this::toPublicPrematchIntegrityCheck)
+        );
+    }
+
+    public PublicPrematchTeam toPublicPrematchTeam(WorkbenchTeamResponse value) {
+        return new PublicPrematchTeam(
+                value.teamId(),
+                sanitizeText(value.teamKey()),
+                sanitizeText(value.teamName()),
+                sanitizeText(value.fifaCode()),
+                sanitizeText(value.countryRegion()),
+                sanitizeText(value.styleTags()),
+                sanitizeText(value.attackProfile()),
+                sanitizeText(value.defenseProfile()),
+                sanitizeText(value.publicSentiment()),
+                mapList(value.facts(), this::toPublicPrematchFact)
+        );
+    }
+
+    public PublicPrematchFact toPublicPrematchFact(WorkbenchTeamFactResponse value) {
+        return new PublicPrematchFact(
+                value.factId(),
+                sanitizeToken(value.factType()),
+                sanitizeText(value.periodKey()),
+                sanitizeText(value.title()),
+                sanitizeText(value.summary()),
+                sanitizeText(value.sentimentLabel()),
+                value.confidenceScore(),
+                value.reliabilityScore(),
+                sanitizeText(value.sourceName()),
+                sanitizeText(value.sourceUrl()),
+                sanitizeText(value.sourceRef()),
+                value.capturedAt()
+        );
+    }
+
+    public PublicPrematchLineup toPublicPrematchLineup(WorkbenchLineupResponse value) {
+        return new PublicPrematchLineup(
+                value.id(),
+                value.matchId(),
+                value.teamId(),
+                sanitizeText(value.teamName()),
+                value.playerId(),
+                sanitizeText(value.playerName()),
+                sanitizeToken(value.role()),
+                sanitizeText(value.position()),
+                value.starter()
+        );
+    }
+
+    public PublicPrematchPlayer toPublicPrematchPlayer(WorkbenchPlayerResponse value) {
+        return new PublicPrematchPlayer(
+                value.playerId(),
+                sanitizeText(value.playerKey()),
+                value.teamId(),
+                sanitizeText(value.teamName()),
+                sanitizeText(value.playerName()),
+                value.shirtNumber(),
+                sanitizeText(value.position()),
+                sanitizeToken(value.status()),
+                sanitizeText(value.injuryStatus()),
+                sanitizeText(value.cardStatus()),
+                sanitizeText(value.lockerRoomStatus()),
+                mapList(value.facts(), this::toPublicPrematchFact)
+        );
+    }
+
+    public PublicPrematchFact toPublicPrematchFact(WorkbenchPlayerFactResponse value) {
+        return new PublicPrematchFact(
+                value.factId(),
+                sanitizeToken(value.factType()),
+                sanitizeText(value.periodKey()),
+                sanitizeText(value.title()),
+                sanitizeText(value.summary()),
+                sanitizeText(value.sentimentLabel()),
+                value.confidenceScore(),
+                value.reliabilityScore(),
+                sanitizeText(value.sourceName()),
+                sanitizeText(value.sourceUrl()),
+                sanitizeText(value.sourceRef()),
+                value.capturedAt()
+        );
+    }
+
+    public PublicPrematchOddsMarket toPublicPrematchOddsMarket(WorkbenchOddsMarketResponse value) {
+        return new PublicPrematchOddsMarket(
+                value.marketId(),
+                sanitizeText(value.bookmaker()),
+                sanitizeToken(value.marketCode()),
+                sanitizeText(value.marketName()),
+                sanitizeToken(value.snapshotType()),
+                value.handicapLine(),
+                sanitizeText(value.lineValue()),
+                value.capturedAt(),
+                sanitizeText(value.sourceRef()),
+                mapList(value.selections(), this::toPublicPrematchOddsSelection)
+        );
+    }
+
+    public PublicPrematchOddsSelection toPublicPrematchOddsSelection(WorkbenchOddsSelectionResponse value) {
+        return new PublicPrematchOddsSelection(
+                value.selectionId(),
+                sanitizeToken(value.selectionCode()),
+                sanitizeText(value.selectionName()),
+                value.oddsValue(),
+                value.impliedProbability(),
+                sanitizeToken(value.selectionStatus())
+        );
+    }
+
+    public PublicPrematchSentimentFactor toPublicPrematchSentimentFactor(WorkbenchSentimentFactorResponse value) {
+        return new PublicPrematchSentimentFactor(
+                value.factorId(),
+                value.matchId(),
+                sanitizeToken(value.factorCategory()),
+                sanitizeToken(value.factorType()),
+                sanitizeText(value.title()),
+                sanitizeText(value.summary()),
+                sanitizeToken(value.impactDirection()),
+                sanitizeToken(value.entityType()),
+                sanitizeText(value.entityKey()),
+                sanitizeText(value.evidenceLevel()),
+                sanitizeText(value.sourceName()),
+                sanitizeText(value.sourceUrl()),
+                sanitizeText(value.sourceRef()),
+                value.observedAt(),
+                value.expiresAt(),
+                value.confidenceScore(),
+                value.reliabilityScore(),
+                mapList(value.risks(), this::toPublicPrematchSentimentRisk)
+        );
+    }
+
+    public PublicPrematchSentimentRisk toPublicPrematchSentimentRisk(WorkbenchSentimentRiskResponse value) {
+        return new PublicPrematchSentimentRisk(
+                value.riskId(),
+                sanitizeToken(value.riskType()),
+                sanitizeToken(value.riskLevel()),
+                value.riskScore(),
+                sanitizeText(value.title()),
+                sanitizeText(value.rationale()),
+                sanitizeText(value.suggestedAction()),
+                sanitizeText(value.sourceName()),
+                sanitizeText(value.sourceRef())
+        );
+    }
+
+    public PublicPrematchEvidence toPublicPrematchEvidence(WorkbenchEvidenceResponse value) {
+        return new PublicPrematchEvidence(
+                value.evidenceId(),
+                sanitizeToken(value.sourceType()),
+                sanitizeText(value.sourceName()),
+                sanitizeText(value.sourceRef()),
+                sanitizeText(value.sourceUrl()),
+                value.evidenceTime(),
+                sanitizeText(value.summary()),
+                value.reliabilityScore()
+        );
+    }
+
+    public PublicPrematchConflict toPublicPrematchConflict(WorkbenchConflictResponse value) {
+        return new PublicPrematchConflict(
+                value.conflictId(),
+                sanitizeToken(value.conflictType()),
+                sanitizeText(value.entityKey()),
+                sanitizeToken(value.fieldName()),
+                sanitizeToken(value.resolutionStatus())
+        );
+    }
+
+    public PublicPrematchAnalysisReport toPublicPrematchAnalysisReport(WorkbenchAnalysisReportResponse value) {
+        return new PublicPrematchAnalysisReport(
+                value.reportId(),
+                sanitizeText(value.analysisId()),
+                sanitizeToken(value.conclusionType()),
+                sanitizeToken(value.confidence()),
+                sanitizeText(value.riskSummary()),
+                sanitizeText(value.recommendedMarkets()),
+                sanitizeText(value.dimensions()),
+                value.createdAt(),
+                value.updatedAt()
+        );
+    }
+
+    public PublicPrematchIntegrityCheck toPublicPrematchIntegrityCheck(IntegrityCheckResponse value) {
+        return new PublicPrematchIntegrityCheck(
+                sanitizeToken(value.code()),
+                sanitizeText(value.label()),
+                sanitizeToken(value.status()),
+                sanitizeToken(value.severity()),
+                sanitizeText(value.message()),
+                value.evidenceCount(),
+                value.lastUpdatedAt()
         );
     }
 

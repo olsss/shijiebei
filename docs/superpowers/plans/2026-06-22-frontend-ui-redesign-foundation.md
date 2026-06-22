@@ -450,7 +450,7 @@ git commit -m "feat: add public evidence read apis"
 - Create `PublicPrematchWorkbenchController.java`, `PublicDecisionsController.java`, `PublicOverviewController.java`, `PublicOverviewService.java`.
 - Tests: `PublicOverviewControllerTest.java`, `PublicDecisionsControllerTest.java`.
 
-- [ ] **Step 1: Write failing overview and decisions tests**
+- [x] **Step 1: Write failing overview and decisions tests**
 
 Create `PublicOverviewControllerTest.java`:
 
@@ -523,7 +523,7 @@ class PublicDecisionsControllerTest {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify RED**
+- [x] **Step 2: Run tests to verify RED**
 
 ```bash
 mvn -f server/pom.xml -Dtest=PublicOverviewControllerTest,PublicDecisionsControllerTest test
@@ -531,7 +531,7 @@ mvn -f server/pom.xml -Dtest=PublicOverviewControllerTest,PublicDecisionsControl
 
 Expected: FAIL until controllers exist.
 
-- [ ] **Step 3: Implement minimal public overview**
+- [x] **Step 3: Implement minimal public overview**
 
 Create `PublicOverviewController` and `PublicOverviewService`. The first green implementation may return empty-safe counters:
 
@@ -547,7 +547,7 @@ return new PublicOverviewResponse(
 );
 ```
 
-- [ ] **Step 4: Implement minimal public decisions**
+- [x] **Step 4: Implement minimal public decisions**
 
 Create `PublicDecisionsController`:
 
@@ -569,7 +569,7 @@ public class PublicDecisionsController {
 
 Then map existing `AnalysisReviewCenterQueryService` summaries in the refactor step after tests are green.
 
-- [ ] **Step 5: Run focused and full backend tests**
+- [x] **Step 5: Run focused and full backend tests**
 
 ```bash
 mvn -f server/pom.xml -Dtest=SecurityBoundaryTest,PublicOverviewControllerTest,PublicDecisionsControllerTest,PublicApiSanitizationTest test
@@ -578,7 +578,7 @@ mvn -f server/pom.xml test
 
 Expected: PASS; full backend test count greater than baseline 63.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/main/java/com/worldcup/publicapi server/src/test/java/com/worldcup/publicapi server/src/test/java/com/worldcup/security/SecurityBoundaryTest.java

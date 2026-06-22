@@ -367,4 +367,273 @@ public final class PublicApiDtos {
             PublicPlayerProfileSummary player,
             List<PublicProfileFact> facts
     ) {}
+
+    public record PublicOverviewResponse(
+            LocalDateTime generatedAt,
+            List<PublicOverviewMatch> upcomingMatches,
+            PublicRiskCounters riskCounters,
+            PublicIntegrityCounters integrityCounters,
+            PublicOddsFreshness oddsFreshness,
+            PublicDecisionSummary decisionSummary,
+            PublicAdminTodoCounters adminTodoCounters
+    ) {}
+
+    public record PublicOverviewMatch(
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            String jcCode,
+            String competition,
+            String stage,
+            LocalDateTime kickoffTime,
+            String status,
+            int integrityScore,
+            long riskCount
+    ) {}
+
+    public record PublicRiskCounters(
+            long highRiskCount,
+            long mediumRiskCount,
+            long staleFactorCount,
+            long unresolvedConflictCount
+    ) {}
+
+    public record PublicIntegrityCounters(
+            long completeCount,
+            long partialCount,
+            long blockedCount
+    ) {}
+
+    public record PublicOddsFreshness(
+            long marketCount,
+            long liveMarketCount,
+            long staleLiveMarketCount
+    ) {}
+
+    public record PublicDecisionSummary(
+            long reportCount,
+            long reviewCount,
+            LocalDateTime latestDecisionAt
+    ) {}
+
+    public record PublicAdminTodoCounters(
+            long pendingImportReviews,
+            long pendingCollectionReviews
+    ) {}
+
+    public record PublicDecisionReview(
+            Long id,
+            Long matchId,
+            String matchName,
+            LocalDate matchday,
+            Long analysisReportId,
+            String reviewKey,
+            String title,
+            String mathSummary,
+            String footballSummary,
+            String handicapSummary,
+            String tournamentTemperamentSummary,
+            String oddsValueSummary,
+            String overallSummary,
+            List<PublicDecisionLesson> lessons
+    ) {}
+
+    public record PublicDecisionLesson(
+            Long id,
+            String lessonType,
+            String lessonText,
+            String severity
+    ) {}
+
+    public record PublicPrematchMatchSummary(
+            Long matchId,
+            String matchKey,
+            String matchName,
+            LocalDate matchday,
+            String jcCode,
+            String competition,
+            String stage,
+            String venue,
+            LocalDateTime kickoffTime,
+            String status,
+            String resultStatus,
+            Long homeTeamId,
+            String homeTeamName,
+            Long awayTeamId,
+            String awayTeamName,
+            int integrityScore,
+            long missingCount,
+            long staleCount,
+            long conflictCount,
+            long teamProfileCount,
+            long playerProfileCount,
+            long lineupCount,
+            long oddsMarketCount,
+            long sentimentFactorCount,
+            long analysisReportCount
+    ) {}
+
+    public record PublicPrematchDetail(
+            PublicPrematchMatchSummary summary,
+            List<PublicPrematchTeam> teams,
+            List<PublicPrematchLineup> lineups,
+            List<PublicPrematchPlayer> players,
+            List<PublicPrematchOddsMarket> oddsMarkets,
+            List<PublicPrematchSentimentFactor> sentimentFactors,
+            List<PublicPrematchEvidence> evidence,
+            List<PublicPrematchConflict> conflicts,
+            List<PublicPrematchAnalysisReport> analysisReports,
+            List<PublicPrematchIntegrityCheck> integrityChecks
+    ) {}
+
+    public record PublicPrematchTeam(
+            Long teamId,
+            String teamKey,
+            String teamName,
+            String fifaCode,
+            String countryRegion,
+            String styleTags,
+            String attackProfile,
+            String defenseProfile,
+            String publicSentiment,
+            List<PublicPrematchFact> facts
+    ) {}
+
+    public record PublicPrematchFact(
+            Long factId,
+            String factType,
+            String periodKey,
+            String title,
+            String summary,
+            String sentimentLabel,
+            BigDecimal confidenceScore,
+            BigDecimal reliabilityScore,
+            String sourceName,
+            String sourceUrl,
+            String sourceRef,
+            LocalDateTime capturedAt
+    ) {}
+
+    public record PublicPrematchLineup(
+            Long id,
+            Long matchId,
+            Long teamId,
+            String teamName,
+            Long playerId,
+            String playerName,
+            String role,
+            String position,
+            boolean starter
+    ) {}
+
+    public record PublicPrematchPlayer(
+            Long playerId,
+            String playerKey,
+            Long teamId,
+            String teamName,
+            String playerName,
+            Integer shirtNumber,
+            String position,
+            String status,
+            String injuryStatus,
+            String cardStatus,
+            String lockerRoomStatus,
+            List<PublicPrematchFact> facts
+    ) {}
+
+    public record PublicPrematchOddsMarket(
+            Long marketId,
+            String bookmaker,
+            String marketCode,
+            String marketName,
+            String snapshotType,
+            BigDecimal handicapLine,
+            String lineValue,
+            LocalDateTime capturedAt,
+            String sourceRef,
+            List<PublicPrematchOddsSelection> selections
+    ) {}
+
+    public record PublicPrematchOddsSelection(
+            Long selectionId,
+            String selectionCode,
+            String selectionName,
+            BigDecimal oddsValue,
+            BigDecimal impliedProbability,
+            String selectionStatus
+    ) {}
+
+    public record PublicPrematchSentimentFactor(
+            Long factorId,
+            Long matchId,
+            String factorCategory,
+            String factorType,
+            String title,
+            String summary,
+            String impactDirection,
+            String entityType,
+            String entityKey,
+            String evidenceLevel,
+            String sourceName,
+            String sourceUrl,
+            String sourceRef,
+            LocalDateTime observedAt,
+            LocalDateTime expiresAt,
+            BigDecimal confidenceScore,
+            BigDecimal reliabilityScore,
+            List<PublicPrematchSentimentRisk> risks
+    ) {}
+
+    public record PublicPrematchSentimentRisk(
+            Long riskId,
+            String riskType,
+            String riskLevel,
+            BigDecimal riskScore,
+            String title,
+            String rationale,
+            String suggestedAction,
+            String sourceName,
+            String sourceRef
+    ) {}
+
+    public record PublicPrematchEvidence(
+            Long evidenceId,
+            String sourceType,
+            String sourceName,
+            String sourceRef,
+            String sourceUrl,
+            LocalDateTime evidenceTime,
+            String summary,
+            BigDecimal reliabilityScore
+    ) {}
+
+    public record PublicPrematchConflict(
+            Long conflictId,
+            String conflictType,
+            String entityKey,
+            String fieldName,
+            String resolutionStatus
+    ) {}
+
+    public record PublicPrematchAnalysisReport(
+            Long reportId,
+            String analysisId,
+            String conclusionType,
+            String confidence,
+            String riskSummary,
+            String recommendedMarkets,
+            String dimensions,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
+    ) {}
+
+    public record PublicPrematchIntegrityCheck(
+            String code,
+            String label,
+            String status,
+            String severity,
+            String message,
+            long evidenceCount,
+            LocalDateTime lastUpdatedAt
+    ) {}
 }
