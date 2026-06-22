@@ -41,10 +41,11 @@ public class PublicPrematchWorkbenchService {
 
     @Transactional(readOnly = true)
     public List<PublicPrematchMatchSummary> matches() {
+        LocalDateTime staleLiveOddsCutoff = staleLiveOddsCutoff();
         return jdbcTemplate.query(summarySelect() + """
                 ORDER BY m.matchday DESC, m.kickoff_time DESC, m.id DESC
                 LIMIT ?
-                """, (rs, rowNum) -> summaryRow(rs).summary(), DEFAULT_LIMIT);
+                """, (rs, rowNum) -> summaryRow(rs).summary(), staleLiveOddsCutoff, DEFAULT_LIMIT);
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +71,8 @@ public class PublicPrematchWorkbenchService {
     }
 
     private SummaryRow findSummary(long matchId) {
-        return jdbcTemplate.query(summarySelect() + " WHERE m.id=?", (rs, rowNum) -> summaryRow(rs), matchId)
+        LocalDateTime staleLiveOddsCutoff = staleLiveOddsCutoff();
+        return jdbcTemplate.query(summarySelect() + " WHERE m.id=?", (rs, rowNum) -> summaryRow(rs), staleLiveOddsCutoff, matchId)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "match not found"));
@@ -93,7 +95,7 @@ public class PublicPrematchWorkbenchService {
                        (SELECT COUNT(*) FROM odds_market_snapshots oms WHERE oms.match_id=m.id) AS odds_market_count,
                        (SELECT COUNT(*) FROM odds_market_snapshots oms
                         WHERE oms.match_id=m.id AND UPPER(oms.snapshot_type)='LIVE'
-                          AND (oms.captured_at IS NULL OR oms.captured_at < DATEADD('HOUR', -3, CURRENT_TIMESTAMP))) AS stale_live_odds_count,
+                          AND (oms.captured_at IS NULL OR oms.captured_at < ?)) AS stale_live_odds_count,
                        (SELECT COUNT(*) FROM match_context_factors mcf WHERE mcf.match_id=m.id) AS sentiment_factor_count,
                        (SELECT COUNT(*) FROM match_context_factors mcf
                         WHERE mcf.match_id=m.id AND mcf.expires_at IS NOT NULL AND mcf.expires_at < CURRENT_TIMESTAMP) AS stale_sentiment_count,
@@ -105,6 +107,10 @@ public class PublicPrematchWorkbenchService {
                 LEFT JOIN teams ht ON ht.id=m.home_team_id
                 LEFT JOIN teams at ON at.id=m.away_team_id
                 """;
+    }
+
+    private LocalDateTime staleLiveOddsCutoff() {
+        return LocalDateTime.now().minusHours(3);
     }
 
     private SummaryRow summaryRow(ResultSet rs) throws SQLException {
