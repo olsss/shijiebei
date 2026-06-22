@@ -14,9 +14,9 @@
 
 ## 3. 前端
 
-- [ ] 新增 matches API helper 测试并更新 router 测试，先确认失败。
-- [ ] 实现 matches API helper、比赛中心页面、路由和 Dashboard 卡片。
-- [ ] 前端测试通过。
+- [x] 新增 matches API helper 测试并更新 router 测试，先确认失败。
+- [x] 实现 matches API helper、比赛中心页面、路由和 Dashboard 卡片。
+- [x] 前端测试通过。
 
 ## 4. 验证与审查
 
@@ -27,5 +27,6 @@
 - [ ] `git diff --check` 通过。
 - [ ] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
 - [ ] 生成代码审查报告。
+
 
 
