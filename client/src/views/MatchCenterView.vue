@@ -89,7 +89,7 @@ onMounted(load);
         <el-col :span="6"><el-card><strong>{{ stats.matches }}</strong><span>比赛</span></el-card></el-col>
         <el-col :span="6"><el-card><strong>{{ stats.events }}</strong><span>事件</span></el-card></el-col>
         <el-col :span="6"><el-card><strong>{{ stats.lineups }}</strong><span>阵容条目</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.conflicts }}</strong><span>待核冲突</span></el-card></el-col>
+        <el-col :span="6"><el-card><strong>{{ stats.conflicts }}</strong><span>数据冲突</span></el-card></el-col>
       </el-row>
 
       <el-row :gutter="16" class="content-row">
