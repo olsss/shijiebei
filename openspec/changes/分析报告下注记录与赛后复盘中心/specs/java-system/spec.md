@@ -10,13 +10,13 @@ The system SHALL persist AI-generated bet plans and post-match reviews from appr
 
 - **WHEN** an authenticated administrator approves an ANALYSIS JSON item containing `bet_plan`, `bet_plans`, or `recommended_plan`
 - **THEN** the backend stores one `bet_plans` row per plan
-- **AND** preserves match, linked analysis report, plan key, title, conclusion type, confidence, budget amount, risk summary, generator metadata, status, and raw payload
+- **AND** preserves match, linked analysis report, plan key, title, conclusion type, confidence, budget amount, risk summary, betting method, strategy type, generator metadata, status, and raw payload
 
 #### Scenario: Bet plan items are stored
 
 - **WHEN** an approved ANALYSIS JSON bet plan contains `items`, `selections`, or `tickets`
 - **THEN** the backend stores one `bet_plan_items` row per item
-- **AND** preserves market type, selection text, stake suggestion, odds, line value, logic type, risk level, order, and raw payload
+- **AND** preserves market type, selection text, stake suggestion, odds, line value, logic type, risk level, play type, pass type, order, and raw payload
 
 #### Scenario: Post-match review is stored from analysis JSON
 
