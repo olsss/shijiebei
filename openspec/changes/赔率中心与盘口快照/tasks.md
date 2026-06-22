@@ -27,11 +27,11 @@
 
 ## 5. 验证与审查
 
-- [ ] `openspec validate 赔率中心与盘口快照 --strict` 通过。
-- [ ] `mvn -f server/pom.xml test` 通过。
-- [ ] `npm run test:run` 在 `client/` 通过。
-- [ ] `npm run build` 在 `client/` 通过。
-- [ ] `git diff --check` 通过。
-- [ ] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
-- [ ] 生成代码审查报告。
+- [x] `openspec validate 赔率中心与盘口快照 --strict` 通过。
+- [x] `mvn -f server/pom.xml test` 通过。
+- [x] `npm run test:run` 在 `client/` 通过。
+- [x] `npm run build` 在 `client/` 通过。
+- [x] `git diff --check` 通过。
+- [x] protected diff 无 `CLAUDE.md` 与 `skill/` 修改。
+- [x] 生成代码审查报告。
 
