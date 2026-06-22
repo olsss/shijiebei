@@ -1,14 +1,18 @@
-﻿import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildAnalysisReportPath,
   buildAnalysisReviewOverviewPath,
   buildBetPlanPath,
+  fetchAnalysisReviewOverview,
+  listAnalysisReports,
+  listBetRecords,
   listPublicDecisionReports,
   listPublicDecisionReviews,
 } from '@/api/analysisReview';
-import { publicHttp } from '@/api/http';
+import { http, publicHttp } from '@/api/http';
 
 const okResponse = { data: { success: true, data: [], message: '', timestamp: '' } };
+const authHeaders = { Authorization: 'Basic abc' };
 
 describe('analysis review api helpers', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -27,5 +31,17 @@ describe('analysis review api helpers', () => {
 
     expect(getSpy).toHaveBeenNthCalledWith(1, '/decisions/reports');
     expect(getSpy).toHaveBeenNthCalledWith(2, '/decisions/reviews');
+  });
+
+  it('calls admin analysis review endpoints with Authorization headers', async () => {
+    const getSpy = vi.spyOn(http, 'get').mockResolvedValue(okResponse);
+
+    await fetchAnalysisReviewOverview('Basic abc');
+    await listAnalysisReports('Basic abc');
+    await listBetRecords('Basic abc');
+
+    expect(getSpy).toHaveBeenNthCalledWith(1, '/analysis-review/overview', { headers: authHeaders });
+    expect(getSpy).toHaveBeenNthCalledWith(2, '/analysis-review/reports', { headers: authHeaders });
+    expect(getSpy).toHaveBeenNthCalledWith(3, '/analysis-review/bets', { headers: authHeaders });
   });
 });

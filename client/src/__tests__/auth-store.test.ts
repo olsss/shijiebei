@@ -1,4 +1,4 @@
-﻿import { createPinia, setActivePinia } from 'pinia';
+import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAuthStore } from '@/stores/auth';
 
@@ -9,6 +9,7 @@ describe('auth store', () => {
     const store = useAuthStore();
     store.setAdmin({ username: 'admin', displayName: 'Admin', authType: 'basic' }, 'admin123456');
     expect(store.isAuthenticated).toBe(true);
+    expect(store.canWrite).toBe(true);
     expect(store.basicAuthHeader).toBe('Basic YWRtaW46YWRtaW4xMjM0NTY=');
   });
 
@@ -33,5 +34,21 @@ describe('auth store', () => {
     expect(store.isAdmin).toBe(true);
     expect(store.canWrite).toBe(true);
     expect(store.basicAuthHeader).toBe(`Basic ${btoa('admin:secret')}`);
+  });
+
+  it('blocks writes for non-admin usernames even with an explicit password', () => {
+    const store = useAuthStore();
+    store.setAdmin({ username: 'operator', displayName: 'Operator', authType: 'BASIC' }, 'secret');
+    expect(store.isAdmin).toBe(false);
+    expect(store.canWrite).toBe(false);
+    expect(store.basicAuthHeader).toBe('');
+  });
+
+  it('blocks writes for non-basic auth types even with an explicit password', () => {
+    const store = useAuthStore();
+    store.setAdmin({ username: 'admin', displayName: 'Admin', authType: 'TOKEN' }, 'secret');
+    expect(store.isAdmin).toBe(false);
+    expect(store.canWrite).toBe(false);
+    expect(store.basicAuthHeader).toBe('');
   });
 });

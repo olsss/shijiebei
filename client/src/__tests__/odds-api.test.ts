@@ -1,16 +1,19 @@
-﻿import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildBookmakersPath,
   buildMarketsPath,
   buildMatchOddsPath,
+  getMatchOdds,
   getPublicMatchOdds,
+  listOddsOverview,
   listPublicBookmakers,
   listPublicOddsMarkets,
   listPublicOddsOverview,
 } from '@/api/odds';
-import { publicHttp } from '@/api/http';
+import { http, publicHttp } from '@/api/http';
 
 const okResponse = { data: { success: true, data: [], message: '', timestamp: '' } };
+const authHeaders = { Authorization: 'Basic abc' };
 
 describe('odds api helpers', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -33,5 +36,15 @@ describe('odds api helpers', () => {
     expect(getSpy).toHaveBeenNthCalledWith(2, '/odds/matches/6');
     expect(getSpy).toHaveBeenNthCalledWith(3, '/odds/bookmakers');
     expect(getSpy).toHaveBeenNthCalledWith(4, '/odds/markets');
+  });
+
+  it('calls admin odds endpoints with Authorization headers', async () => {
+    const getSpy = vi.spyOn(http, 'get').mockResolvedValue(okResponse);
+
+    await listOddsOverview('Basic abc');
+    await getMatchOdds('Basic abc', 6);
+
+    expect(getSpy).toHaveBeenNthCalledWith(1, '/odds', { headers: authHeaders });
+    expect(getSpy).toHaveBeenNthCalledWith(2, '/odds/matches/6', { headers: authHeaders });
   });
 });

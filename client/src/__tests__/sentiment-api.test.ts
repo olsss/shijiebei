@@ -1,16 +1,19 @@
-﻿import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildMatchSentimentPath,
   buildSentimentCategoriesPath,
   buildSentimentRiskTypesPath,
+  getMatchSentiment,
   getPublicMatchSentiment,
   listPublicSentimentCategories,
   listPublicSentimentOverview,
   listPublicSentimentRiskTypes,
+  listSentimentOverview,
 } from '@/api/sentiment';
-import { publicHttp } from '@/api/http';
+import { http, publicHttp } from '@/api/http';
 
 const okResponse = { data: { success: true, data: [], message: '', timestamp: '' } };
+const authHeaders = { Authorization: 'Basic abc' };
 
 describe('sentiment api helpers', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -33,5 +36,15 @@ describe('sentiment api helpers', () => {
     expect(getSpy).toHaveBeenNthCalledWith(2, '/sentiment/matches/6');
     expect(getSpy).toHaveBeenNthCalledWith(3, '/sentiment/categories');
     expect(getSpy).toHaveBeenNthCalledWith(4, '/sentiment/risk-types');
+  });
+
+  it('calls admin sentiment endpoints with Authorization headers', async () => {
+    const getSpy = vi.spyOn(http, 'get').mockResolvedValue(okResponse);
+
+    await listSentimentOverview('Basic abc');
+    await getMatchSentiment('Basic abc', 6);
+
+    expect(getSpy).toHaveBeenNthCalledWith(1, '/sentiment', { headers: authHeaders });
+    expect(getSpy).toHaveBeenNthCalledWith(2, '/sentiment/matches/6', { headers: authHeaders });
   });
 });
