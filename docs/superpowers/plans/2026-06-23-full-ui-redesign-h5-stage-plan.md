@@ -22,15 +22,15 @@
 - Test: `client/src/__tests__/app-shell.test.ts`
 - Test: `client/src/__tests__/router.test.ts`
 
-- [ ] Step 1: Write failing tests for new routes, redirects, admin metadata, AppShell visibility, mobile tabbar, and readonly/admin notices.
-- [ ] Step 2: Run focused tests and confirm they fail for missing shell/routes.
-- [ ] Step 3: Add semantic color/type/spacing tokens, remove desktop-only `min-width`, and add responsive base styles.
-- [ ] Step 4: Implement AppShell with desktop sidebar, top status bar, skip link, main landmark, and admin link visibility based on auth store.
-- [ ] Step 5: Implement MobileTabbar with the 5 documented H5 sections: overview, workbench, evidence, decisions, more/admin.
-- [ ] Step 6: Implement ReadonlyNotice for anonymous read-only mode and admin writable mode.
-- [ ] Step 7: Update router to new paths and old-route redirects: `/workbench`, `/evidence/*`, `/decisions`, `/admin/*`, while preserving `/login`.
-- [ ] Step 8: Run focused tests, full frontend tests, and frontend build.
-- [ ] Step 9: Commit stage and request subagent code review.
+- [x] Step 1: Write failing tests for new routes, redirects, admin metadata, AppShell visibility, mobile tabbar, and readonly/admin notices.
+- [x] Step 2: Run focused tests and confirm they fail for missing shell/routes.
+- [x] Step 3: Add semantic color/type/spacing tokens, remove desktop-only `min-width`, and add responsive base styles.
+- [x] Step 4: Implement AppShell with desktop sidebar, top status bar, skip link, main landmark, and admin link visibility based on auth store.
+- [x] Step 5: Implement MobileTabbar with the 5 documented H5 sections: overview, workbench, evidence, decisions, more/admin.
+- [x] Step 6: Implement ReadonlyNotice for anonymous read-only mode and admin writable mode.
+- [x] Step 7: Update router to new paths and old-route redirects: `/workbench`, `/evidence/*`, `/decisions`, `/admin/*`, while preserving `/login`.
+- [x] Step 8: Run focused tests, full frontend tests, and frontend build.
+- [x] Step 9: Commit stage and request subagent code review.
 
 ## Stage 2: Public overview homepage
 
@@ -39,11 +39,11 @@
 - Possibly create: `client/src/components/overview/*`
 - Test: `client/src/__tests__/dashboard-view.test.ts`
 
-- [ ] Build a public immersive overview homepage backed by `fetchPublicOverview()`.
-- [ ] Show public KPIs, upcoming matches, risk counters, integrity counters, odds freshness, and stage entry cards.
-- [ ] Keep admin todos off the public homepage.
-- [ ] Verify 375px no-horizontal-scroll behavior with an automated DOM check where feasible.
-- [ ] Commit and request subagent review.
+- [x] Build a public immersive overview homepage backed by `fetchPublicOverview()`.
+- [x] Show public KPIs, upcoming matches, risk counters, integrity counters, odds freshness, and stage entry cards.
+- [x] Keep admin todos off the public homepage.
+- [x] Verify 375px no-horizontal-scroll behavior with an automated DOM check where feasible.
+- [x] Commit and request subagent review.
 
 ## Stage 3: Prematch workbench migration
 
