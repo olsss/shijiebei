@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import DashboardView from '@/views/DashboardView.vue';
 import ImportReviewView from '@/views/ImportReviewView.vue';
 import AnalysisReviewCenterView from '@/views/AnalysisReviewCenterView.vue';
+import AdminCollectionReviewView from '@/views/AdminCollectionReviewView.vue';
 import LoginView from '@/views/LoginView.vue';
 import MatchCenterView from '@/views/MatchCenterView.vue';
 import OddsCenterView from '@/views/OddsCenterView.vue';
@@ -36,7 +37,7 @@ export const router = createRouter({
     {
       path: '/admin/collection-review',
       name: 'admin-collection-review',
-      component: TeamProfilesView,
+      component: AdminCollectionReviewView,
       meta: { requiresAdmin: true },
     },
     {

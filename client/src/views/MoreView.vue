@@ -20,6 +20,10 @@
           <strong>JSON 审核中心</strong>
           <span>管理员登录后进行扫描、批准、驳回和入库。</span>
         </RouterLink>
+        <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/collection-review">
+          <strong>采集审核中心</strong>
+          <span>管理员登录后批准或驳回球队/球员画像采集项。</span>
+        </RouterLink>
         <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/settings">
           <strong>系统设置</strong>
           <span>管理员维护系统配置与归档路径。</span>

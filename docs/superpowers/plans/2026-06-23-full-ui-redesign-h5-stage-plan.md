@@ -88,10 +88,10 @@
 - Add collection review surface if backend endpoints are already available.
 - Test: admin route guard and import review tests.
 
-- [ ] Move JSON review center under `/admin/import-review` and keep it admin-only.
-- [ ] Preserve scan, approve, reject, batch approve, mappings, and import-to-core functions.
-- [ ] Show readonly/no-permission states for non-admins.
-- [ ] Commit and request subagent review.
+- [x] Move JSON review center under `/admin/import-review` and keep it admin-only.
+- [x] Preserve scan, approve, reject, batch approve, mappings, and import-to-core functions.
+- [x] Show readonly/no-permission states for non-admins.
+- [x] Commit and request subagent review.
 
 ## Stage 7: Final H5, accessibility, and full verification
 
