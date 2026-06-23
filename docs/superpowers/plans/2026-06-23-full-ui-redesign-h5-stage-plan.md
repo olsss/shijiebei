@@ -76,9 +76,9 @@
 - Possibly create: `client/src/components/decisions/*`
 - Test: decisions view/API tests.
 
-- [ ] Public decisions page shows report summaries and review lessons from public decisions APIs.
-- [ ] Admin-sensitive bet plans, tickets, stake, profit/loss details remain admin-only.
-- [ ] Commit and request subagent review.
+- [x] Public decisions page shows report summaries and review lessons from public decisions APIs.
+- [x] Admin-sensitive bet plans, tickets, stake, profit/loss details remain admin-only.
+- [x] Commit and request subagent review.
 
 ## Stage 6: Admin backend pages
 

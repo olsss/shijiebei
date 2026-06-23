@@ -1,160 +1,102 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import {
-  fetchAnalysisReviewOverview,
-  getAnalysisReport,
-  getBetPlan,
-  listAnalysisReports,
-  listBetPlans,
-  listBetRecords,
-  listPostMatchReviews,
-  type AnalysisReportDetail,
-  type AnalysisReportSummary,
-  type AnalysisReviewOverview,
-  type BetPlanDetail,
-  type BetPlanSummary,
-  type BetRecord,
-  type PostMatchReview,
+  listPublicDecisionReports,
+  listPublicDecisionReviews,
+  type PublicDecisionLesson,
+  type PublicDecisionReport,
+  type PublicDecisionReview,
 } from '@/api/analysisReview';
-import { useAuthStore } from '@/stores/auth';
 
-const authStore = useAuthStore();
 const loading = ref(false);
-const detailLoading = ref(false);
 const error = ref('');
-const overview = ref<AnalysisReviewOverview | null>(null);
-const reports = ref<AnalysisReportSummary[]>([]);
-const betPlans = ref<BetPlanSummary[]>([]);
-const bets = ref<BetRecord[]>([]);
-const reviews = ref<PostMatchReview[]>([]);
-const selectedReport = ref<AnalysisReportDetail | null>(null);
-const selectedPlan = ref<BetPlanDetail | null>(null);
-const activeTab = ref('reports');
+const reports = ref<PublicDecisionReport[]>([]);
+const reviews = ref<PublicDecisionReview[]>([]);
+const selectedReportId = ref<number | null>(null);
 
-const stats = computed(() => [
-  { label: '分析报告', value: overview.value?.reportCount ?? 0 },
-  { label: 'AI 下注方案', value: overview.value?.betPlanCount ?? 0 },
-  { label: '实际出票', value: overview.value?.betCount ?? 0 },
-  { label: '赛后复盘', value: overview.value?.reviewCount ?? 0 },
-  { label: '总投入', value: moneyText(overview.value?.totalStake) },
-  { label: '净盈亏', value: moneyText(overview.value?.netProfit) },
-  { label: 'ROI', value: percentText(overview.value?.roi) },
-  { label: '平均 CLV', value: percentText(overview.value?.averageClv) },
-]);
-
-function requireAuthHeader(): string {
-  if (!authStore.basicAuthHeader) {
-    throw new Error('请先登录后查看分析下注复盘中心。');
+const selectedReport = computed<PublicDecisionReport | null>(() => {
+  if (reports.value.length === 0) {
+    return null;
   }
-  return authStore.basicAuthHeader;
+  if (selectedReportId.value == null) {
+    return reports.value[0];
+  }
+  return reports.value.find((report) => report.id === selectedReportId.value) ?? reports.value[0];
+});
+
+const relatedReviews = computed(() => {
+  if (!selectedReport.value) {
+    return reviews.value;
+  }
+  const selected = selectedReport.value;
+  return reviews.value.filter((review) => (
+    review.analysisReportId === selected.id
+    || (selected.matchId != null && review.matchId === selected.matchId)
+  ));
+});
+
+const lessons = computed<PublicDecisionLesson[]>(() => relatedReviews.value.flatMap((review) => review.lessons));
+
+const stats = computed(() => ({
+  reports: reports.value.length,
+  reviews: reviews.value.length,
+  matches: new Set([
+    ...reports.value.map((report) => report.matchId ?? report.matchName),
+    ...reviews.value.map((review) => review.matchId ?? review.matchName),
+  ].filter(Boolean)).size,
+  lessons: reviews.value.reduce((sum, review) => sum + review.lessons.length, 0),
+}));
+
+function formatDate(value?: string): string {
+  return value ? value.replace('T', ' ').slice(0, 10) : '日期待同步';
 }
 
-function moneyText(value?: number): string {
-  if (value == null) {
-    return '0';
+const publicSensitivePattern = /\b(?:ticketNo|ticket|stakeSuggestion|stake|betPlan|rawPayload|profitLoss|profit|loss|budgetAmount|returnAmount|ROI|CLV)\b|票号|投入|返还|盈亏|预算|下注|金额建议|原始\s*JSON/gi;
+
+function publicText(value?: string, fallback = '暂无公开摘要。'): string {
+  const text = value?.trim();
+  if (!text) {
+    return fallback;
   }
-  return Number(value).toFixed(2).replace(/\.00$/, '');
+  return text.replace(publicSensitivePattern, '已脱敏指标');
 }
 
-function oddsText(value?: number): string {
-  if (value == null) {
-    return '-';
-  }
-  return Number(value).toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
-}
-
-function percentText(value?: number): string {
-  if (value == null) {
-    return '0%';
-  }
-  return `${(Number(value) * 100).toFixed(2).replace(/\.00$/, '')}%`;
-}
-
-function formatDateTime(value?: string): string {
-  if (!value) {
-    return '-';
-  }
-  return value.replace('T', ' ').slice(0, 16);
-}
-
-function tagType(value?: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
-  switch (value) {
-    case 'HIT':
-    case 'IMPORTED':
-    case 'READY':
-      return 'success';
-    case 'MISS':
+function severityClass(severity?: string): string {
+  switch (severity) {
     case 'HIGH':
-      return 'danger';
-    case 'PENDING':
+    case 'CRITICAL':
+      return 'severity-pill--danger';
     case 'MEDIUM':
-      return 'warning';
+      return 'severity-pill--warning';
+    case 'LOW':
+      return 'severity-pill--success';
     default:
-      return 'info';
+      return 'severity-pill--info';
   }
+}
+
+function selectReport(report: PublicDecisionReport) {
+  selectedReportId.value = report.id;
 }
 
 async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const authHeader = requireAuthHeader();
-    const [overviewResponse, reportsResponse, plansResponse, betsResponse, reviewsResponse] = await Promise.all([
-      fetchAnalysisReviewOverview(authHeader),
-      listAnalysisReports(authHeader),
-      listBetPlans(authHeader),
-      listBetRecords(authHeader),
-      listPostMatchReviews(authHeader),
+    const [reportsResponse, reviewsResponse] = await Promise.all([
+      listPublicDecisionReports(),
+      listPublicDecisionReviews(),
     ]);
-    overview.value = overviewResponse.data;
     reports.value = reportsResponse.data;
-    betPlans.value = plansResponse.data;
-    bets.value = betsResponse.data;
     reviews.value = reviewsResponse.data;
-    if (reports.value.length > 0) {
-      await openReport(reports.value[0]);
-    }
-    if (betPlans.value.length > 0) {
-      await openPlan(betPlans.value[0]);
-    }
+    selectedReportId.value = reports.value[0]?.id ?? null;
   } catch (cause) {
-    overview.value = null;
     reports.value = [];
-    betPlans.value = [];
-    bets.value = [];
     reviews.value = [];
-    selectedReport.value = null;
-    selectedPlan.value = null;
-    error.value = cause instanceof Error ? cause.message : '无法读取分析下注复盘中心数据。';
+    selectedReportId.value = null;
+    error.value = cause instanceof Error ? cause.message : '无法读取公开决策复盘数据。';
   } finally {
     loading.value = false;
-  }
-}
-
-async function openReport(row: AnalysisReportSummary) {
-  detailLoading.value = true;
-  try {
-    const response = await getAnalysisReport(requireAuthHeader(), row.id);
-    selectedReport.value = response.data;
-    activeTab.value = 'reports';
-  } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取分析报告详情。');
-  } finally {
-    detailLoading.value = false;
-  }
-}
-
-async function openPlan(row: BetPlanSummary) {
-  detailLoading.value = true;
-  try {
-    const response = await getBetPlan(requireAuthHeader(), row.id);
-    selectedPlan.value = response.data;
-    activeTab.value = 'plans';
-  } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取 AI 下注方案详情。');
-  } finally {
-    detailLoading.value = false;
   }
 }
 
@@ -162,221 +104,338 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="page-shell analysis-review-page">
-    <section class="page-content">
-      <el-page-header content="分析报告下注记录与赛后复盘中心" @back="$router.push('/')" />
+  <section class="page-shell decisions-page" aria-labelledby="decisions-title">
+    <section class="page-content decisions-page__content">
+      <header class="decisions-hero">
+        <div>
+          <p class="eyebrow">Decisions · Reviews</p>
+          <h1 id="decisions-title">决策复盘中心</h1>
+          <p>公开展示分析结论、风险摘要、赛后复盘和规则沉淀；涉及后台执行、票据、资金和收益的明细保留在管理员区域。</p>
+        </div>
+        <button class="action-button" type="button" :disabled="loading" @click="load">
+          {{ loading ? '刷新中' : '刷新公开数据' }}
+        </button>
+      </header>
 
-      <el-alert
-        class="boundary-alert"
-        title="本页只展示已批准 JSON 归档：AI 下注方案来自 AI/Claude/Codex 生成并经用户批准；Java 不生成新推荐、不加注、不倍投。"
-        type="info"
-        show-icon
-        :closable="false"
-      />
-      <el-alert v-if="error" :title="error" type="warning" show-icon class="top-alert" />
+      <section class="stat-grid" aria-label="决策复盘统计">
+        <article class="stat-card"><span>报告</span><strong>{{ stats.reports }}</strong><small>公开分析摘要</small></article>
+        <article class="stat-card"><span>复盘</span><strong>{{ stats.reviews }}</strong><small>赛后总结</small></article>
+        <article class="stat-card"><span>比赛</span><strong>{{ stats.matches }}</strong><small>覆盖场次</small></article>
+        <article class="stat-card"><span>规则</span><strong>{{ stats.lessons }}</strong><small>经验沉淀</small></article>
+      </section>
 
-      <el-row :gutter="16" class="stat-row">
-        <el-col v-for="item in stats" :key="item.label" :span="6">
-          <el-card>
-            <strong>{{ item.value }}</strong>
-            <span>{{ item.label }}</span>
-          </el-card>
-        </el-col>
-      </el-row>
+      <div v-if="error" class="alert-panel" role="alert">{{ error }}</div>
 
-      <el-card class="panel-card content-card">
-        <template #header>
-          <div class="card-header">
-            <span>AI 方案归档 / 实际出票 / 赛后复盘</span>
-            <el-button size="small" :loading="loading" @click="load">刷新</el-button>
+      <section class="decisions-grid">
+        <aside class="side-panel" aria-label="公开分析报告">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Reports</p><h2>分析报告</h2></div>
+            <span class="count-pill">{{ reports.length }}</span>
           </div>
-        </template>
+          <p v-if="loading && !reports.length" class="empty-copy">正在加载公开报告...</p>
+          <p v-else-if="!reports.length" class="empty-copy">暂无公开分析报告。</p>
+          <button
+            v-for="report in reports"
+            v-else
+            :key="report.id"
+            class="list-card"
+            :class="{ 'list-card--active': report.id === selectedReport?.id }"
+            type="button"
+            @click="selectReport(report)"
+          >
+            <span>{{ report.jcCode || 'JC 待定' }} · {{ formatDate(report.matchday) }}</span>
+            <strong>{{ report.matchName || '比赛待同步' }}</strong>
+            <small>{{ report.conclusionType || '结论待同步' }} · 置信度 {{ report.confidence || '-' }}</small>
+            <small>{{ publicText(report.riskSummary, '暂无风险摘要') }}</small>
+          </button>
+        </aside>
 
-        <el-tabs v-model="activeTab" type="border-card">
-          <el-tab-pane label="分析报告" name="reports">
-            <el-row :gutter="16">
-              <el-col :span="11">
-                <el-table :data="reports" v-loading="loading" height="560" @row-click="openReport">
-                  <el-table-column prop="matchName" label="比赛" min-width="150" />
-                  <el-table-column prop="analysisId" label="分析 ID" min-width="140" show-overflow-tooltip />
-                  <el-table-column prop="conclusionType" label="结论" width="110" />
-                  <el-table-column prop="confidence" label="置信度" width="90" />
-                  <el-table-column label="关联" width="92">
-                    <template #default="{ row }">{{ row.betPlanCount }} 方案 / {{ row.reviewCount }} 复盘</template>
-                  </el-table-column>
-                </el-table>
-              </el-col>
-              <el-col :span="13">
-                <el-card v-loading="detailLoading" shadow="never">
-                  <el-empty v-if="!selectedReport" description="请选择分析报告" />
-                  <template v-else>
-                    <h3>{{ selectedReport.report.matchName || selectedReport.report.analysisId }}</h3>
-                    <el-descriptions :column="2" border size="small">
-                      <el-descriptions-item label="结论类型">{{ selectedReport.report.conclusionType || '-' }}</el-descriptions-item>
-                      <el-descriptions-item label="置信度">{{ selectedReport.report.confidence || '-' }}</el-descriptions-item>
-                      <el-descriptions-item label="风险摘要" :span="2">{{ selectedReport.report.riskSummary || '-' }}</el-descriptions-item>
-                      <el-descriptions-item label="长文" :span="2">{{ selectedReport.report.narrativeMd || '-' }}</el-descriptions-item>
-                    </el-descriptions>
-                    <h3>关联 AI 方案</h3>
-                    <el-table :data="selectedReport.betPlans" border size="small" empty-text="暂无关联方案">
-                      <el-table-column prop="planTitle" label="标题" min-width="150" />
-                      <el-table-column prop="bettingMethod" label="下注方式" min-width="120" />
-                      <el-table-column prop="budgetAmount" label="预算" width="90" />
-                    </el-table>
-                    <h3>报告原始 JSON</h3>
-                    <pre class="raw-payload">{{ selectedReport.report.rawPayload || '无原始 JSON' }}</pre>
-                  </template>
-                </el-card>
-              </el-col>
-            </el-row>
-          </el-tab-pane>
+        <article class="detail-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Decision Detail</p>
+              <h2>{{ selectedReport?.matchName || '公开决策详情' }}</h2>
+            </div>
+            <span v-if="selectedReport" class="status-pill">{{ selectedReport.conclusionType || '结论待定' }}</span>
+          </div>
 
-          <el-tab-pane label="AI 下注方案归档" name="plans">
-            <el-row :gutter="16">
-              <el-col :span="11">
-                <el-table :data="betPlans" v-loading="loading" height="560" @row-click="openPlan">
-                  <el-table-column prop="matchName" label="比赛" min-width="150" />
-                  <el-table-column prop="planTitle" label="方案" min-width="160" show-overflow-tooltip />
-                  <el-table-column prop="bettingMethod" label="下注方式" width="130" />
-                  <el-table-column prop="strategyType" label="策略" width="120" />
-                  <el-table-column label="明细" width="70">
-                    <template #default="{ row }">{{ row.itemCount }}</template>
-                  </el-table-column>
-                </el-table>
-              </el-col>
-              <el-col :span="13">
-                <el-card v-loading="detailLoading" shadow="never">
-                  <el-empty v-if="!selectedPlan" description="请选择 AI 下注方案" />
-                  <template v-else>
-                    <h3>{{ selectedPlan.plan.planTitle }}</h3>
-                    <el-alert title="AI 方案为已批准 JSON 归档，不代表 Java 系统新生成的下注建议。" type="success" show-icon :closable="false" />
-                    <el-descriptions :column="2" border size="small" class="detail-block">
-                      <el-descriptions-item label="下注方式">{{ selectedPlan.plan.bettingMethod || '-' }}</el-descriptions-item>
-                      <el-descriptions-item label="策略类型">{{ selectedPlan.plan.strategyType || '-' }}</el-descriptions-item>
-                      <el-descriptions-item label="预算">{{ moneyText(selectedPlan.plan.budgetAmount) }}</el-descriptions-item>
-                      <el-descriptions-item label="状态"><el-tag :type="tagType(selectedPlan.plan.status)">{{ selectedPlan.plan.status }}</el-tag></el-descriptions-item>
-                      <el-descriptions-item label="风险说明" :span="2">{{ selectedPlan.plan.riskSummary || '-' }}</el-descriptions-item>
-                    </el-descriptions>
-                    <h3>方案明细</h3>
-                    <el-table :data="selectedPlan.items" border size="small">
-                      <el-table-column prop="marketType" label="玩法" width="90" />
-                      <el-table-column prop="selectionText" label="选项" min-width="110" />
-                      <el-table-column label="金额建议" width="100">
-                        <template #default="{ row }">{{ moneyText(row.stakeSuggestion) }}</template>
-                      </el-table-column>
-                      <el-table-column label="赔率" width="86">
-                        <template #default="{ row }">{{ oddsText(row.odds) }}</template>
-                      </el-table-column>
-                      <el-table-column prop="playType" label="玩法表达" width="110" />
-                      <el-table-column prop="passType" label="过关" width="90" />
-                      <el-table-column prop="riskLevel" label="风险" width="90" />
-                    </el-table>
-                    <h3>方案原始 JSON</h3>
-                    <pre class="raw-payload">{{ selectedPlan.plan.rawPayload || '无原始 JSON' }}</pre>
-                  </template>
-                </el-card>
-              </el-col>
-            </el-row>
-          </el-tab-pane>
+          <p v-if="!selectedReport && !loading" class="empty-copy">请选择左侧公开报告。</p>
+          <template v-else-if="selectedReport">
+            <section class="summary-grid" aria-label="报告摘要">
+              <div><span>比赛编号</span><strong>{{ selectedReport.jcCode || '-' }}</strong></div>
+              <div><span>比赛日期</span><strong>{{ formatDate(selectedReport.matchday) }}</strong></div>
+              <div><span>结论类型</span><strong>{{ selectedReport.conclusionType || '-' }}</strong></div>
+              <div><span>置信度</span><strong>{{ selectedReport.confidence || '-' }}</strong></div>
+            </section>
 
-          <el-tab-pane label="实际出票记录" name="bets">
-            <el-alert title="实际出票以票号、出票赔率、返还和结算字段为准；不要与 AI 方案金额建议混用。" type="warning" show-icon :closable="false" />
-            <el-table :data="bets" v-loading="loading" height="580" class="tab-table">
-              <el-table-column prop="ticketNo" label="票号" min-width="120" />
-              <el-table-column prop="matchName" label="比赛" min-width="150" />
-              <el-table-column prop="marketType" label="玩法" width="90" />
-              <el-table-column prop="selectionText" label="投注项" min-width="120" />
-              <el-table-column label="投入" width="90"><template #default="{ row }">{{ moneyText(row.stake) }}</template></el-table-column>
-              <el-table-column label="出票赔率" width="100"><template #default="{ row }">{{ oddsText(row.odds) }}</template></el-table-column>
-              <el-table-column label="收盘赔率" width="100"><template #default="{ row }">{{ oddsText(row.closingOdds) }}</template></el-table-column>
-              <el-table-column label="CLV" width="90"><template #default="{ row }">{{ percentText(row.clv) }}</template></el-table-column>
-              <el-table-column label="返还" width="90"><template #default="{ row }">{{ moneyText(row.returnAmount) }}</template></el-table-column>
-              <el-table-column label="盈亏" width="90"><template #default="{ row }">{{ moneyText(row.profitLoss) }}</template></el-table-column>
-              <el-table-column label="状态" width="100"><template #default="{ row }"><el-tag :type="tagType(row.hitStatus)">{{ row.hitStatus }}</el-tag></template></el-table-column>
-              <el-table-column label="复盘" width="100"><template #default="{ row }"><el-tag type="info">{{ row.reviewStatus }}</el-tag></template></el-table-column>
-            </el-table>
-          </el-tab-pane>
+            <section class="card-grid">
+              <article class="info-card">
+                <p class="eyebrow">Risk</p>
+                <h3>风险摘要</h3>
+                <p>{{ publicText(selectedReport.riskSummary) }}</p>
+              </article>
+              <article class="info-card">
+                <p class="eyebrow">Review</p>
+                <h3>复盘摘要</h3>
+                <p>{{ publicText(selectedReport.reviewSummary) }}</p>
+              </article>
+              <article class="info-card info-card--wide">
+                <p class="eyebrow">Lesson Summary</p>
+                <h3>规则沉淀摘要</h3>
+                <p>{{ publicText(selectedReport.lessonSummary) }}</p>
+              </article>
+            </section>
 
-          <el-tab-pane label="赛后复盘" name="reviews">
-            <el-table :data="reviews" v-loading="loading" height="580" class="tab-table" row-key="id">
-              <el-table-column type="expand">
-                <template #default="{ row }">
-                  <el-descriptions :column="1" border size="small">
-                    <el-descriptions-item label="数学层">{{ row.mathReview || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="足球层">{{ row.footballReview || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="盘口层">{{ row.handicapReview || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="大赛气质层">{{ row.tournamentTemperamentReview || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="赔率价值层">{{ row.oddsValueReview || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="总评">{{ row.overallSummary || '-' }}</el-descriptions-item>
-                  </el-descriptions>
-                  <h3>规则沉淀</h3>
-                  <el-tag v-for="lesson in row.lessons" :key="lesson.id" class="lesson-chip" :type="tagType(lesson.severity)">
-                    {{ lesson.lessonType }}：{{ lesson.lessonText }}
-                  </el-tag>
-                  <pre class="raw-payload">{{ row.rawPayload || '无原始 JSON' }}</pre>
-                </template>
-              </el-table-column>
-              <el-table-column prop="matchName" label="比赛" min-width="150" />
-              <el-table-column prop="reviewTitle" label="复盘标题" min-width="180" />
-              <el-table-column prop="reviewKey" label="复盘 Key" min-width="150" />
-              <el-table-column label="规则" width="80"><template #default="{ row }">{{ row.lessons.length }}</template></el-table-column>
-            </el-table>
-          </el-tab-pane>
-        </el-tabs>
-      </el-card>
+            <section class="info-card">
+              <div class="panel-heading">
+                <div><p class="eyebrow">Post-match Reviews</p><h3>相关赛后复盘</h3></div>
+                <span class="count-pill">{{ relatedReviews.length }}</span>
+              </div>
+              <div v-if="relatedReviews.length" class="review-grid">
+                <article v-for="review in relatedReviews" :key="review.id" class="review-card">
+                  <span>{{ review.reviewKey }} · {{ formatDate(review.matchday) }}</span>
+                  <strong>{{ review.title }}</strong>
+                  <p>{{ publicText(review.overallSummary, '暂无总评。') }}</p>
+                  <div class="review-layers">
+                    <small>{{ publicText(review.mathSummary, '数学层待同步') }}</small>
+                    <small>{{ publicText(review.footballSummary, '足球层待同步') }}</small>
+                    <small>{{ publicText(review.handicapSummary, '盘口层待同步') }}</small>
+                    <small>{{ publicText(review.tournamentTemperamentSummary, '大赛气质层待同步') }}</small>
+                    <small>{{ publicText(review.oddsValueSummary, '价值层待同步') }}</small>
+                  </div>
+                </article>
+              </div>
+              <p v-else class="empty-copy">暂无相关赛后复盘。</p>
+            </section>
+
+            <section class="info-card">
+              <div class="panel-heading">
+                <div><p class="eyebrow">Lessons</p><h3>规则沉淀</h3></div>
+                <span class="count-pill">{{ lessons.length }}</span>
+              </div>
+              <div v-if="lessons.length" class="lesson-grid">
+                <article v-for="lesson in lessons" :key="lesson.id" class="lesson-card">
+                  <span class="severity-pill" :class="severityClass(lesson.severity)">{{ lesson.severity }}</span>
+                  <strong>{{ lesson.lessonType }}</strong>
+                  <p>{{ publicText(lesson.lessonText, '暂无规则描述。') }}</p>
+                </article>
+              </div>
+              <p v-else class="empty-copy">暂无规则沉淀。</p>
+            </section>
+          </template>
+        </article>
+      </section>
     </section>
   </section>
 </template>
 
 <style scoped>
-.analysis-review-page {
-  background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 34rem), #f5f7fb;
+.decisions-page {
+  max-width: 100%;
+  overflow-x: hidden;
 }
-.boundary-alert,
-.top-alert,
-.stat-row,
-.content-card {
-  margin-top: 16px;
+.decisions-page__content {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
 }
-.stat-row :deep(.el-card__body) {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.decisions-hero,
+.stat-card,
+.side-panel,
+.detail-panel,
+.info-card,
+.summary-grid div,
+.alert-panel {
+  background: var(--wc-glass);
+  border: 1px solid var(--wc-border);
+  border-radius: var(--wc-radius-lg);
+  color: var(--wc-text);
 }
-.stat-row strong {
-  color: #1d4ed8;
-  font-size: 28px;
+.decisions-hero {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(20px, 4vw, 38px);
 }
-.stat-row span {
-  color: #6b7280;
+.decisions-hero h1 {
+  font-family: var(--wc-font-display);
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 1;
+  margin: 0 0 12px;
 }
-.panel-card {
-  border-radius: 14px;
+.decisions-hero p:not(.eyebrow),
+.empty-copy,
+.list-card span,
+.list-card small,
+.summary-grid span,
+.info-card p,
+.review-card span,
+.review-card p,
+.review-layers small,
+.lesson-card p {
+  color: var(--wc-text-muted);
 }
-.card-header {
+.eyebrow {
+  color: var(--wc-warning);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+.action-button {
+  background: var(--wc-accent);
+  border: 0;
+  border-radius: 999px;
+  color: var(--wc-on-accent);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.stat-grid,
+.summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.stat-card,
+.side-panel,
+.detail-panel,
+.info-card,
+.summary-grid div,
+.alert-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+}
+.stat-card strong {
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 36px;
+}
+.decisions-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 350px) minmax(0, 1fr);
+  min-width: 0;
+}
+.panel-heading {
   align-items: center;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
 }
-.detail-block {
-  margin-top: 12px;
+.panel-heading h2,
+.panel-heading h3,
+.info-card h3 {
+  margin: 0;
 }
-.tab-table {
-  margin-top: 12px;
-}
-h3 {
-  margin-top: 18px;
-}
-.lesson-chip {
-  margin: 0 8px 8px 0;
-}
-.raw-payload {
-  background: #111827;
-  border-radius: 10px;
-  color: #e5e7eb;
-  max-height: 220px;
-  overflow: auto;
+.list-card,
+.review-card,
+.lesson-card {
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(147, 197, 253, .18);
+  border-radius: var(--wc-radius-md);
+  color: var(--wc-text);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
   padding: 14px;
-  white-space: pre-wrap;
+  text-align: left;
+}
+.list-card {
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+.list-card--active {
+  border-color: rgba(217, 119, 6, .62);
+}
+.count-pill,
+.status-pill,
+.severity-pill {
+  border-radius: 999px;
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+.count-pill,
+.status-pill {
+  background: rgba(147, 197, 253, .12);
+  color: var(--wc-primary);
+}
+.card-grid,
+.review-grid,
+.lesson-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+.info-card--wide {
+  grid-column: 1 / -1;
+}
+.review-layers {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+.severity-pill--danger {
+  background: rgba(239, 68, 68, .16);
+  color: #fecaca;
+}
+.severity-pill--warning {
+  background: rgba(245, 158, 11, .18);
+  color: #fde68a;
+}
+.severity-pill--success {
+  background: rgba(34, 197, 94, .16);
+  color: #bbf7d0;
+}
+.severity-pill--info {
+  background: rgba(147, 197, 253, .12);
+  color: var(--wc-primary);
+}
+@media (max-width: 1024px) {
+  .decisions-hero,
+  .decisions-grid,
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-grid,
+  .card-grid,
+  .review-grid,
+  .lesson-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .decisions-hero,
+  .stat-grid,
+  .decisions-grid,
+  .summary-grid,
+  .card-grid,
+  .review-grid,
+  .lesson-grid,
+  .review-layers {
+    grid-template-columns: 1fr;
+  }
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .action-button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .list-card {
+    transition: none;
+  }
 }
 </style>
