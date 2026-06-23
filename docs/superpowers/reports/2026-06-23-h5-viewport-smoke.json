@@ -1,0 +1,348 @@
+{
+  "generatedAt": "2026-06-23T06:40:34.156Z",
+  "tool": "Playwright via system Microsoft Edge",
+  "browserExecutable": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+  "baseUrl": "http://127.0.0.1:5273",
+  "commandSummary": "Vite dev server on port 5273; checked routes /, /workbench, /decisions, /admin/import-review at 375/768/1024/1440 widths.",
+  "passed": true,
+  "failureCount": 0,
+  "failures": [],
+  "results": [
+    {
+      "route": "/",
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/",
+      "hasAppShell": true,
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/workbench",
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/workbench",
+      "hasAppShell": true,
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/decisions",
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/decisions",
+      "hasAppShell": true,
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/admin/import-review",
+      "viewport": {
+        "width": 375,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/login?redirect=/admin/import-review",
+      "hasAppShell": false,
+      "scrollWidth": 375,
+      "clientWidth": 375,
+      "sidebarDisplay": "missing",
+      "mobileTabbarDisplay": "missing",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/",
+      "hasAppShell": true,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/workbench",
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/workbench",
+      "hasAppShell": true,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/decisions",
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/decisions",
+      "hasAppShell": true,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "sidebarDisplay": "none",
+      "mobileTabbarDisplay": "flex",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/admin/import-review",
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "expectedMode": "mobile-tabbar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/login?redirect=/admin/import-review",
+      "hasAppShell": false,
+      "scrollWidth": 768,
+      "clientWidth": 768,
+      "sidebarDisplay": "missing",
+      "mobileTabbarDisplay": "missing",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/",
+      "hasAppShell": true,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/workbench",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/workbench",
+      "hasAppShell": true,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/decisions",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/decisions",
+      "hasAppShell": true,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/admin/import-review",
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/login?redirect=/admin/import-review",
+      "hasAppShell": false,
+      "scrollWidth": 1024,
+      "clientWidth": 1024,
+      "sidebarDisplay": "missing",
+      "mobileTabbarDisplay": "missing",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/",
+      "hasAppShell": true,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/workbench",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/workbench",
+      "hasAppShell": true,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/decisions",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/decisions",
+      "hasAppShell": true,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "sidebarDisplay": "flex",
+      "mobileTabbarDisplay": "none",
+      "h1Count": 1,
+      "mainCount": 1
+    },
+    {
+      "route": "/admin/import-review",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "expectedMode": "desktop-sidebar",
+      "anonymousAdminRedirectOk": true,
+      "overflowPx": 0,
+      "navigationOk": true,
+      "overflowOk": true,
+      "landmarkOk": true,
+      "finalPath": "/login?redirect=/admin/import-review",
+      "hasAppShell": false,
+      "scrollWidth": 1440,
+      "clientWidth": 1440,
+      "sidebarDisplay": "missing",
+      "mobileTabbarDisplay": "missing",
+      "h1Count": 1,
+      "mainCount": 1
+    }
+  ]
+}

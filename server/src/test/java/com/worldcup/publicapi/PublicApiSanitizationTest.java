@@ -107,6 +107,19 @@ class PublicApiSanitizationTest {
     }
 
     @Test
+    void sanitizerRemovesRoiClvAndClosingOddsFromFreeText() {
+        String unsafe = "ROI 12% / CLV 为正; roi: 0.18 clv=-0.02 closingOdds=1.88 "
+                + "closing_odds=2.01 closing odds: 1.97";
+
+        String sanitized = mapper.sanitizeText(unsafe);
+
+        assertThat(sanitized).doesNotContain("ROI", "CLV", "roi", "clv");
+        assertThat(sanitized).doesNotContain("closingOdds", "closing_odds", "closing odds");
+        assertThat(sanitized).doesNotContain("12%", "0.18", "-0.02", "1.88", "2.01", "1.97");
+        assertThat(sanitized).contains("[REDACTED]");
+    }
+
+    @Test
     void sanitizerRedactsForbiddenTokenPathSegments() {
         assertThat(mapper.sanitizeToken("payload.ticketNo")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("bets.stake")).isEqualTo("[REDACTED]");

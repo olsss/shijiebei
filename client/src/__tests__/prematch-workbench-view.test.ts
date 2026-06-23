@@ -200,6 +200,31 @@ describe('PrematchWorkbenchView', () => {
     expect(wrapper.text()).not.toMatch(/profit|loss|stake|budget/i);
   });
 
+  it('scrubs ROI, CLV, and closing odds text from public analysis cards', async () => {
+    vi.mocked(getPublicPrematchWorkbenchMatch).mockResolvedValue({
+      success: true,
+      data: {
+        ...publicDetail,
+        analysisReports: [
+          {
+            ...publicDetail.analysisReports[0],
+            riskSummary: 'ROI 12% / CLV 为正',
+            recommendedMarkets: 'closing_odds=2.01',
+            dimensions: 'closing odds: 1.97',
+          },
+        ],
+      },
+      message: '',
+      timestamp: '',
+    });
+
+    const wrapper = await mountWorkbench();
+    const text = wrapper.find('[data-test="analysis-card"]').text();
+
+    expect(text).toContain('已脱敏指标');
+    expect(text).not.toMatch(/ROI|CLV|closing[_\s-]?odds|12%|2\.01|1\.97/i);
+  });
+
   it('shows admin-only actions only after Basic admin login', async () => {
     const anonymousWrapper = await mountWorkbench();
     expect(anonymousWrapper.find('a[href="/admin/import-review"]').exists()).toBe(false);

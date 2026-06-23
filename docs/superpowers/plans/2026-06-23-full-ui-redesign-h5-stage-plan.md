@@ -102,3 +102,8 @@
 - [x] Verify keyboard focus, landmarks, aria-current, skip link, form labels, and visible focus states.
 - [x] Run full frontend tests, frontend build, backend tests, and route smoke checks.
 - [x] Request final subagent review before merge.
+
+## Post-review closure evidence
+
+- [x] Public sanitizer redacts ROI / CLV / closing-odds free text in backend DTO mapping and in the prematch workbench UI fallback path.
+- [x] Edge/Playwright smoke covered `/`, `/workbench`, `/decisions`, `/admin/import-review` at 375, 768, 1024, and 1440 px with zero horizontal overflow. 375/768 showed mobile tabbar and hidden sidebar; 1024/1440 showed desktop sidebar and hidden mobile tabbar. Anonymous `/admin/import-review` redirected to `/login?redirect=/admin/import-review`. Raw evidence: `docs/superpowers/reports/2026-06-23-h5-viewport-smoke.json`.

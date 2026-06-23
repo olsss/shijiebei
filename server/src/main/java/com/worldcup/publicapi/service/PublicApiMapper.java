@@ -24,6 +24,7 @@ public class PublicApiMapper {
             "stake", "stakeSuggestion", "stake_suggestion",
             "amount", "budgetAmount", "budget_amount", "returnAmount", "return_amount",
             "profit", "profitAmount", "profit_amount", "profitLoss", "profit_loss",
+            "roi", "clv", "closingOdds", "closing_odds", "closing-odds", "closing odds",
             "金额", "盈利", "亏损",
             "approvedBy", "approved_by", "reviewedBy", "reviewed_by", "reviewNote", "review_note",
             "mappings", "importItemId", "import_item_id"
@@ -43,12 +44,17 @@ public class PublicApiMapper {
     private static final Pattern ARCHIVE_RELATIVE_PATH = Pattern.compile("(?i)(?<![A-Za-z0-9_./-])(?:\\./)?(?:skill/)?archive/[^\\s,;]+");
     private static final Pattern UNIX_PATH = Pattern.compile("(?i)(?<![A-Za-z0-9_./-])/(?:tmp|var|home|users|etc|mnt|opt|srv|data|secret)(?:/[^\\s,;]+)*");
     private static final Pattern SECRET_SENTINEL = Pattern.compile("(?i)SECRET[^\\s,;]*");
+    private static final Pattern PUBLIC_VALUE_METRIC = Pattern.compile(
+            "(?i)(?<![A-Za-z0-9_])(?:roi|clv|closingOdds|closing[_\\-\\s]?odds)(?![A-Za-z0-9_])"
+                    + "\\s*(?:[:=：]|为|是)?\\s*(?:[+\\-]?\\d+(?:\\.\\d+)?%?|[^\\s,;，。；、/]+)?"
+    );
 
     public String sanitizeText(String value) {
         if (value == null || value.isBlank()) {
             return value;
         }
         String sanitized = SENSITIVE_KEY_VALUE.matcher(value).replaceAll("[REDACTED]");
+        sanitized = PUBLIC_VALUE_METRIC.matcher(sanitized).replaceAll("[REDACTED]");
         sanitized = FILE_URI_PATH.matcher(sanitized).replaceAll("[REDACTED]");
         sanitized = WINDOWS_PATH.matcher(sanitized).replaceAll("[REDACTED]");
         sanitized = ARCHIVE_RELATIVE_PATH.matcher(sanitized).replaceAll("[REDACTED]");

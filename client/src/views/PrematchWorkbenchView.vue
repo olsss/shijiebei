@@ -59,6 +59,17 @@ const decisionSteps = computed(() => {
   ];
 });
 
+const publicSensitivePattern =
+  /\b(?:ticketNo|ticket|stakeSuggestion|stake|betPlan|rawPayload|profitLoss|profit|loss|budgetAmount|returnAmount|ROI|CLV|closingOdds|closing[_\s-]?odds)\b\s*(?::|=|：|为|是)?\s*(?:[+\-]?\d+(?:\.\d+)?%?|[^\s,;，。；、/]+)?|票号|投入|返还|盈亏|预算|下注|金额建议|原始\s*JSON/gi;
+
+function publicText(value?: string, fallback = '暂无公开摘要。'): string {
+  const text = value?.trim();
+  if (!text) {
+    return fallback;
+  }
+  return text.replace(publicSensitivePattern, '已脱敏指标');
+}
+
 function matchTitle(match?: PublicWorkbenchMatchSummary | null): string {
   if (!match) {
     return '赛前分析作战室';
@@ -405,8 +416,8 @@ onMounted(load);
                 </div>
                 <div v-for="report in selected.analysisReports" :key="report.reportId" class="stack-item">
                   <strong>{{ report.conclusionType || '结论待定' }} <small>{{ report.confidence || '置信度待定' }}</small></strong>
-                  <p>{{ report.riskSummary || '暂无风险摘要' }}</p>
-                  <small>{{ report.recommendedMarkets || '推荐玩法待定' }} · {{ report.dimensions || '维度待定' }}</small>
+                  <p>{{ publicText(report.riskSummary, '暂无风险摘要') }}</p>
+                  <small>{{ publicText(report.recommendedMarkets, '推荐玩法待定') }} &middot; {{ publicText(report.dimensions, '维度待定') }}</small>
                 </div>
               </article>
             </section>
