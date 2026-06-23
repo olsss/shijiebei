@@ -41,7 +41,7 @@ public class ImportJsonCommandLineRunner implements CommandLineRunner {
         if (args == null || Arrays.stream(args).noneMatch("import-json"::equals)) {
             return new ImportCommand(false, "", false, false);
         }
-        String path = "../skill/archive";
+        String path = "../data-inbox/pending";
         boolean dryRun = false;
         boolean approve = false;
         for (int i = 0; i < args.length; i++) {

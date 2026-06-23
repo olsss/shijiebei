@@ -76,6 +76,18 @@ const approvedImport: ImportItemResponse = {
   validationMessage: 'ok',
 };
 
+const betPlanImport: ImportItemResponse = {
+  id: 13,
+  jobId: 1,
+  itemType: 'BET_PLAN',
+  status: 'PENDING_REVIEW',
+  relativePath: 'bet-plan.json',
+  sha256: 'ghi',
+  summaryTitle: '法国方向下注方案',
+  validJson: true,
+  validationMessage: 'ok',
+};
+
 const collectionItem: CollectionItem = {
   id: 21,
   jobId: 2,
@@ -115,11 +127,11 @@ function setBasicAdmin() {
 describe('admin backend pages', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
-    vi.mocked(listImportItems).mockReset().mockResolvedValue(apiOk([pendingImport, approvedImport]));
+    vi.mocked(listImportItems).mockReset().mockResolvedValue(apiOk([pendingImport, approvedImport, betPlanImport]));
     vi.mocked(getImportItem).mockReset().mockResolvedValue(apiOk({ item: pendingImport, rawJson: '{"ok":true}' }));
     vi.mocked(scanArchive).mockReset().mockResolvedValue(apiOk({
       id: 3,
-      archivePath: '../skill/archive',
+      archivePath: '../data-inbox/pending',
       status: 'DONE',
       totalItems: 2,
       validItems: 2,
@@ -132,7 +144,7 @@ describe('admin backend pages', () => {
     vi.mocked(listCoreDataMappings).mockReset().mockResolvedValue(apiOk([{ id: 1, importItemId: 12, targetType: 'ODDS', targetId: 99, mappingStatus: 'IMPORTED', message: 'ok' }]));
     vi.mocked(importCoreDataItem).mockReset().mockResolvedValue(apiOk({ importItemId: 12, status: 'IMPORTED', message: '导入成功', mappings: [] }));
     vi.mocked(fetchSystemSettings).mockReset().mockResolvedValue(apiOk({
-      archivePath: '../skill/archive',
+      archivePath: '../data-inbox/pending',
       analysisSystemProtected: true,
       boundaryDescription: 'Java 只负责归档与审核',
     }));
@@ -156,6 +168,8 @@ describe('admin backend pages', () => {
     expect(wrapper.text()).toContain('驳回');
     expect(wrapper.text()).toContain('导入正式库');
     expect(wrapper.text()).toContain('法国巴西分析');
+    expect(wrapper.text()).toContain('下注方案');
+    expect(wrapper.text()).toContain('数据库是唯一权威源');
   });
 
   it('keeps SystemSettings behind Basic admin login', async () => {
@@ -167,7 +181,7 @@ describe('admin backend pages', () => {
     const wrapper = await mountAndFlush(SystemSettingsView);
     expect(fetchSystemSettings).toHaveBeenCalledTimes(1);
     expect(wrapper.text()).toContain('系统设置');
-    expect(wrapper.text()).toContain('../skill/archive');
+    expect(wrapper.text()).toContain('../data-inbox/pending');
     expect(wrapper.text()).toContain('Java 只负责归档与审核');
   });
 
@@ -192,5 +206,9 @@ describe('admin backend pages', () => {
       expect(source).toContain('grid-template-columns: 1fr');
       expect(source).toContain('min-width: 0');
     }
+    expect(importReviewSource).toContain('../data-inbox/pending');
+    expect(importReviewSource).toContain('数据库是唯一权威源');
+    expect(importReviewSource).toContain('赛后复盘');
+    expect(importReviewSource).toContain('导入成功会归档');
   });
 });

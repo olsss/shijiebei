@@ -1,0 +1,25 @@
+{
+  "type": "ANALYSIS",
+  "idempotency_key": "analysis-20260626-france-brazil",
+  "source": {
+    "name": "codex-analysis",
+    "url": "local://analysis",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "id": "analysis-20260626-france-brazil",
+    "match_key": "20260626-france-brazil",
+    "match": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "jc_code": "周五001",
+    "conclusion_type": "盘口判断",
+    "confidence": "MEDIUM",
+    "risks": ["可替换：主要风险点"],
+    "recommended": [{"type": "HAD", "selection": "HOME"}],
+    "dimensions": {
+      "team_form": "可替换：状态分析",
+      "odds_value": "可替换：赔率价值"
+    },
+    "narrative_md": "可替换：完整中文分析正文"
+  }
+}

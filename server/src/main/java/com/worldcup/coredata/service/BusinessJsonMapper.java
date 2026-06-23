@@ -59,6 +59,36 @@ public class BusinessJsonMapper {
     }
 
     public List<CoreDataMappingResponse> map(ImportItem item, JsonNode json, String actor) {
+        if (item.getItemType() == ImportItemType.TEAM) {
+            return mapTeam(item, json);
+        }
+        if (item.getItemType() == ImportItemType.PLAYER) {
+            return mapPlayer(item, json);
+        }
+        if (item.getItemType() == ImportItemType.MATCH) {
+            return mapMatch(item, json);
+        }
+        if (item.getItemType() == ImportItemType.MATCH_LINEUP) {
+            return mapMatchLineup(item, json);
+        }
+        if (item.getItemType() == ImportItemType.MATCH_EVENT) {
+            return mapMatchEvent(item, json);
+        }
+        if (item.getItemType() == ImportItemType.MATCH_STATS) {
+            return mapMatchStats(item, json);
+        }
+        if (item.getItemType() == ImportItemType.BET_PLAN) {
+            return mapBetPlan(item, json);
+        }
+        if (item.getItemType() == ImportItemType.BET) {
+            return mapBets(item, json);
+        }
+        if (item.getItemType() == ImportItemType.POST_REVIEW) {
+            return mapPostReview(item, json);
+        }
+        if (item.getItemType() == ImportItemType.REVIEW_LESSON) {
+            return mapReviewLesson(item, json);
+        }
         if (item.getItemType() == ImportItemType.ANALYSIS) {
             return mapAnalysis(item, json);
         }
@@ -74,29 +104,165 @@ public class BusinessJsonMapper {
         return List.of();
     }
 
+    private List<CoreDataMappingResponse> mapTeam(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        String teamKey = truncate(required(text(payload, "team_key", "key", "id"), "team_key 不能为空"), 240);
+        String displayName = truncate(fallback(text(payload, "display_name", "name", "team_name"), teamKey), 240);
+        List<Long> existing = jdbcTemplate.query("SELECT id FROM teams WHERE team_key=?", (rs, rowNum) -> rs.getLong("id"), teamKey);
+        Long teamId;
+        if (existing.isEmpty()) {
+            teamId = insertAndReturnId(
+                    "INSERT INTO teams(team_key, display_name, fifa_code, country_region, style_tags, attack_profile, defense_profile, public_sentiment, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
+                    teamKey,
+                    displayName,
+                    truncate(text(payload, "fifa_code", "fifaCode"), 20),
+                    truncate(text(payload, "country_region", "region"), 120),
+                    textOrJson(payload, "style_tags", "tags"),
+                    text(payload, "attack_profile", "attackProfile"),
+                    text(payload, "defense_profile", "defenseProfile"),
+                    text(payload, "public_sentiment", "sentiment"),
+                    toJson(json)
+            );
+        } else {
+            teamId = existing.get(0);
+            jdbcTemplate.update(
+                    "UPDATE teams SET display_name=?, fifa_code=COALESCE(?, fifa_code), country_region=COALESCE(?, country_region), style_tags=COALESCE(?, style_tags), attack_profile=COALESCE(?, attack_profile), defense_profile=COALESCE(?, defense_profile), public_sentiment=COALESCE(?, public_sentiment), raw_payload=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    displayName,
+                    truncate(text(payload, "fifa_code", "fifaCode"), 20),
+                    truncate(text(payload, "country_region", "region"), 120),
+                    textOrJson(payload, "style_tags", "tags"),
+                    text(payload, "attack_profile", "attackProfile"),
+                    text(payload, "defense_profile", "defenseProfile"),
+                    text(payload, "public_sentiment", "sentiment"),
+                    toJson(json),
+                    teamId
+            );
+        }
+        return List.of(insertMapping(item.getId(), "TEAM", teamId, "IMPORTED", "球队主数据已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapPlayer(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        String playerKey = truncate(required(text(payload, "player_key", "key", "id"), "player_key 不能为空"), 240);
+        String displayName = truncate(fallback(text(payload, "display_name", "name", "player_name"), playerKey), 240);
+        Long teamId = resolveTeamIdIfProvided(payload, "team_key does not exist for player", "team_key", "team");
+        List<Long> existing = jdbcTemplate.query("SELECT id FROM players WHERE player_key=?", (rs, rowNum) -> rs.getLong("id"), playerKey);
+        Long playerId;
+        if (existing.isEmpty()) {
+            playerId = insertAndReturnId(
+                    "INSERT INTO players(player_key, team_id, display_name, shirt_number, position, status, injury_status, card_status, locker_room_status, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                    playerKey,
+                    teamId,
+                    displayName,
+                    integer(payload, "shirt_number", "number"),
+                    truncate(text(payload, "position"), 80),
+                    truncate(text(payload, "status"), 80),
+                    truncate(text(payload, "injury_status", "injury"), 240),
+                    truncate(text(payload, "card_status", "cards"), 240),
+                    truncate(text(payload, "locker_room_status", "locker_room"), 500),
+                    toJson(json)
+            );
+        } else {
+            playerId = existing.get(0);
+            jdbcTemplate.update(
+                    "UPDATE players SET team_id=COALESCE(?, team_id), display_name=?, shirt_number=COALESCE(?, shirt_number), position=COALESCE(?, position), status=COALESCE(?, status), injury_status=COALESCE(?, injury_status), card_status=COALESCE(?, card_status), locker_room_status=COALESCE(?, locker_room_status), raw_payload=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    teamId,
+                    displayName,
+                    integer(payload, "shirt_number", "number"),
+                    truncate(text(payload, "position"), 80),
+                    truncate(text(payload, "status"), 80),
+                    truncate(text(payload, "injury_status", "injury"), 240),
+                    truncate(text(payload, "card_status", "cards"), 240),
+                    truncate(text(payload, "locker_room_status", "locker_room"), 500),
+                    toJson(json),
+                    playerId
+            );
+        }
+        return List.of(insertMapping(item.getId(), "PLAYER", playerId, "IMPORTED", "球员主数据已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapMatch(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        Long matchId = upsertMatchFromPayload(payload, json);
+        return List.of(insertMapping(item.getId(), "MATCH", matchId, "IMPORTED", "比赛主数据已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapMatchLineup(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        Long matchId = requiredId(findMatchId(payload), "比赛不存在，无法导入阵容");
+        Long teamId = resolveTeamIdIfProvided(payload, "team_key does not exist for lineup", "team_key", "team");
+        Long playerId = resolvePlayerIdIfProvided(payload, "player_key does not exist for lineup", "player_key", "player");
+        Long lineupId = insertAndReturnId(
+                "INSERT INTO match_lineups(match_id, team_id, player_id, role, position, is_starter) VALUES (?,?,?,?,?,?)",
+                matchId,
+                teamId,
+                playerId,
+                truncate(text(payload, "role"), 80),
+                truncate(text(payload, "position"), 80),
+                bool(payload, "is_starter", "starter")
+        );
+        return List.of(insertMapping(item.getId(), "MATCH_LINEUP", lineupId, "IMPORTED", "比赛阵容已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapMatchEvent(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        Long matchId = requiredId(findMatchId(payload), "比赛不存在，无法导入事件");
+        Long teamId = resolveTeamIdIfProvided(payload, "team_key does not exist for event", "team_key", "team");
+        Long playerId = resolvePlayerIdIfProvided(payload, "player_key does not exist for event", "player_key", "player");
+        Long eventId = insertAndReturnId(
+                "INSERT INTO match_events(match_id, event_minute, event_type, team_id, player_id, payload) VALUES (?,?,?,?,?,?)",
+                matchId,
+                integer(payload, "event_minute", "minute"),
+                truncate(required(text(payload, "event_type", "type"), "event_type 不能为空"), 120),
+                teamId,
+                playerId,
+                toJson(json)
+        );
+        return List.of(insertMapping(item.getId(), "MATCH_EVENT", eventId, "IMPORTED", "比赛事件已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapMatchStats(ImportItem item, JsonNode json) {
+        JsonNode payload = payload(json);
+        Long matchId = requiredId(findMatchId(payload), "比赛不存在，无法导入技术统计");
+        Long teamId = resolveTeamIdIfProvided(payload, "team_key does not exist for stats", "team_key", "team");
+        Long statsId = insertAndReturnId(
+                "INSERT INTO match_team_stats(match_id, team_id, stats_type, goals_for, goals_against, first_goal_minute, scoring_minutes, payload) VALUES (?,?,?,?,?,?,?,?)",
+                matchId,
+                teamId,
+                truncate(fallback(text(payload, "stats_type", "type"), "IMPORTED"), 80),
+                integer(payload, "goals_for"),
+                integer(payload, "goals_against"),
+                integer(payload, "first_goal_minute"),
+                textOrJson(payload, "scoring_minutes"),
+                toJson(json)
+        );
+        return List.of(insertMapping(item.getId(), "MATCH_STATS", statsId, "IMPORTED", "球队技术统计已导入正式库"));
+    }
+
     private List<CoreDataMappingResponse> mapAnalysis(ImportItem item, JsonNode json) {
+        JsonNode root = payload(json);
         List<CoreDataMappingResponse> mappings = new ArrayList<>();
         Long matchId = upsertMatch(
-                fallback(text(json, "match", "match_name", "比赛"), item.getSummaryTitle()),
-                text(json, "matchday", "date", "比赛日"),
-                text(json, "jc_code", "竞彩编号"),
+                fallback(text(root, "match", "match_name", "比赛"), item.getSummaryTitle()),
+                text(root, "matchday", "date", "比赛日"),
+                text(root, "jc_code", "竞彩编号"),
                 json
         );
-        String analysisId = fallback(text(json, "id", "analysis_id"), "analysis-" + item.getId());
+        String analysisId = fallback(fallback(text(root, "id", "analysis_id"), text(json, "idempotency_key")), "analysis-" + item.getId());
         Long reportId = insertAndReturnId(
                 "INSERT INTO analysis_reports(import_item_id, match_id, analysis_id, conclusion_type, confidence, risk_summary, recommended_markets, dimensions, narrative_md, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?)",
                 item.getId(), matchId, analysisId,
-                text(json, "conclusion_type", "结论类型"),
-                text(json, "confidence", "置信度"),
-                nullableJson(json.get("risks")),
-                nullableJson(json.get("recommended")),
-                nullableJson(json.get("dimensions")),
-                text(json, "narrative_md", "正文"),
+                text(root, "conclusion_type", "结论类型"),
+                text(root, "confidence", "置信度"),
+                nullableJson(root.get("risks")),
+                nullableJson(root.get("recommended")),
+                nullableJson(root.get("dimensions")),
+                text(root, "narrative_md", "正文"),
                 toJson(json)
         );
         mappings.add(insertMapping(item.getId(), "ANALYSIS_REPORT", reportId, "IMPORTED", "比赛分析已导入正式库"));
 
-        JsonNode sources = json.get("sources");
+        JsonNode sources = root.get("sources");
         for (JsonNode source : asNodes(sources)) {
             Long evidenceId = insertAndReturnId(
                     "INSERT INTO source_evidence(import_item_id, match_id, source_type, source_name, source_ref, source_url, summary, raw_payload) VALUES (?,?,?,?,?,?,?,?)",
@@ -109,8 +275,8 @@ public class BusinessJsonMapper {
             );
             mappings.add(insertMapping(item.getId(), "SOURCE_EVIDENCE", evidenceId, "IMPORTED", "分析来源证据已导入正式库"));
         }
-        for (BetPlanPayload plan : collectBetPlanPayloads(json, analysisId)) {
-            Long planId = insertBetPlan(item, reportId, matchId, analysisId, json, plan);
+        for (BetPlanPayload plan : collectBetPlanPayloads(root, analysisId)) {
+            Long planId = insertBetPlan(item, reportId, matchId, analysisId, root, plan);
             mappings.add(insertMapping(item.getId(), "BET_PLAN", planId, "IMPORTED", "AI 下注方案已导入正式库"));
             int order = 0;
             for (JsonNode planItem : collectBetPlanItems(plan.node())) {
@@ -120,7 +286,7 @@ public class BusinessJsonMapper {
             }
         }
         int reviewIndex = 0;
-        for (JsonNode review : collectPostMatchReviews(json)) {
+        for (JsonNode review : collectPostMatchReviews(root)) {
             Long reviewId = insertPostMatchReview(item, reportId, matchId, analysisId, review, reviewIndex);
             mappings.add(insertMapping(item.getId(), "POST_MATCH_REVIEW", reviewId, "IMPORTED", "赛后复盘已导入正式库"));
             for (JsonNode lesson : collectReviewLessons(review)) {
@@ -130,6 +296,37 @@ public class BusinessJsonMapper {
             reviewIndex++;
         }
         return mappings;
+    }
+
+    private List<CoreDataMappingResponse> mapBetPlan(ImportItem item, JsonNode json) {
+        JsonNode plan = payload(json);
+        Long matchId = resolveMatchId(plan, json, item.getSummaryTitle());
+        String defaultKey = fallback(text(json, "idempotency_key"), "bet-plan-" + item.getId());
+        List<CoreDataMappingResponse> mappings = new ArrayList<>();
+        Long planId = insertBetPlan(item, null, matchId, defaultKey, plan, new BetPlanPayload(defaultKey, plan));
+        mappings.add(insertMapping(item.getId(), "BET_PLAN", planId, "IMPORTED", "AI 下注方案已导入正式库"));
+        int order = 0;
+        for (JsonNode planItem : collectBetPlanItems(plan)) {
+            Long planItemId = insertBetPlanItem(planId, matchId, plan, planItem, order);
+            mappings.add(insertMapping(item.getId(), "BET_PLAN_ITEM", planItemId, "IMPORTED", "AI 下注方案明细已导入正式库"));
+            order++;
+        }
+        return mappings;
+    }
+
+    private List<CoreDataMappingResponse> mapPostReview(ImportItem item, JsonNode json) {
+        JsonNode review = payload(json);
+        Long matchId = resolveMatchId(review, json, item.getSummaryTitle());
+        String analysisId = fallback(text(review, "analysis_id", "analysisId"), "standalone-" + item.getId());
+        Long reviewId = insertPostMatchReview(item, null, matchId, analysisId, review, 0);
+        return List.of(insertMapping(item.getId(), "POST_MATCH_REVIEW", reviewId, "IMPORTED", "赛后复盘已导入正式库"));
+    }
+
+    private List<CoreDataMappingResponse> mapReviewLesson(ImportItem item, JsonNode json) {
+        JsonNode lesson = payload(json);
+        Long reviewId = requiredId(findPostReviewId(lesson), "复盘记录不存在，无法导入复盘规则");
+        Long lessonId = insertReviewLesson(reviewId, lesson);
+        return List.of(insertMapping(item.getId(), "REVIEW_LESSON", lessonId, "IMPORTED", "复盘沉淀规则已导入正式库"));
     }
 
     private List<BetPlanPayload> collectBetPlanPayloads(JsonNode json, String analysisId) {
@@ -159,6 +356,10 @@ public class BusinessJsonMapper {
                                BetPlanPayload payload) {
         JsonNode node = payload.node();
         String planKey = truncate(fallback(text(node, "plan_key", "id", "key", "方案编号"), payload.defaultKey()), 160);
+        Long existingPlanId = findExistingBetPlanId(planKey, matchId);
+        if (existingPlanId != null) {
+            return existingPlanId;
+        }
         String title = truncate(fallback(text(node, "title", "name", "plan_title", "方案名称"), planKey), 300);
         String riskSummary = fallback(
                 text(node, "risk_summary", "risk_note", "risk", "资金分配理由", "风险说明"),
@@ -193,6 +394,14 @@ public class BusinessJsonMapper {
     private Long insertBetPlanItem(Long planId, Long matchId, JsonNode planNode, JsonNode itemNode, int order) {
         String marketType = marketCode(itemNode);
         String selection = fallback(text(itemNode, "selection", "selection_text", "选择", "投注项", "name", "label"), toJson(itemNode));
+        Long existingItemId = findFirstId(
+                "SELECT id FROM bet_plan_items WHERE bet_plan_id=? AND item_order=? ORDER BY id",
+                planId,
+                order
+        );
+        if (existingItemId != null) {
+            return existingItemId;
+        }
         return insertAndReturnId(
                 "INSERT INTO bet_plan_items(bet_plan_id, match_id, market_type, selection_text, stake_suggestion, odds, line_value, logic_type, risk_level, play_type, pass_type, item_order, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 planId,
@@ -221,6 +430,10 @@ public class BusinessJsonMapper {
 
     private Long insertPostMatchReview(ImportItem item, Long reportId, Long matchId, String analysisId, JsonNode review, int index) {
         String reviewKey = truncate(fallback(text(review, "review_key", "id", "key", "复盘编号"), "review-" + analysisId + "-" + index), 160);
+        Long existingReviewId = findExistingPostMatchReviewId(reviewKey, matchId);
+        if (existingReviewId != null) {
+            return existingReviewId;
+        }
         String title = truncate(fallback(text(review, "title", "name", "review_title", "复盘标题"), reviewKey), 300);
         return insertAndReturnId(
                 "INSERT INTO post_match_reviews(import_item_id, match_id, analysis_report_id, review_key, review_title, math_review, football_review, handicap_review, tournament_temperament_review, odds_value_review, overall_summary, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -248,10 +461,20 @@ public class BusinessJsonMapper {
 
     private Long insertReviewLesson(Long reviewId, JsonNode lesson) {
         String lessonText = fallback(text(lesson, "text", "lesson_text", "rule", "content", "summary", "规则"), toJson(lesson));
+        String lessonType = truncate(normalizedCode(text(lesson, "type", "lesson_type", "\u89c4\u5219\u7c7b\u578b"), "GENERAL"), 120);
+        Long existingLessonId = findFirstId(
+                "SELECT id FROM review_lessons WHERE review_id=? AND lesson_type=? AND lesson_text=? ORDER BY id",
+                reviewId,
+                lessonType,
+                lessonText
+        );
+        if (existingLessonId != null) {
+            return existingLessonId;
+        }
         return insertAndReturnId(
                 "INSERT INTO review_lessons(review_id, lesson_type, lesson_text, severity, raw_payload) VALUES (?,?,?,?,?)",
                 reviewId,
-                truncate(normalizedCode(text(lesson, "type", "lesson_type", "规则类型"), "GENERAL"), 120),
+                lessonType,
                 lessonText,
                 truncate(normalizedCode(text(lesson, "severity", "level", "严重性"), "INFO"), 80),
                 toJson(lesson)
@@ -259,21 +482,22 @@ public class BusinessJsonMapper {
     }
 
     private List<CoreDataMappingResponse> mapOdds(ImportItem item, JsonNode json) {
+        JsonNode root = payload(json);
         List<CoreDataMappingResponse> mappings = new ArrayList<>();
         Long matchId = upsertMatch(
-                fallback(text(json, "match", "match_name", "比赛"), item.getSummaryTitle()),
-                text(json, "matchday", "date", "date_beijing", "比赛日"),
-                text(json, "jc_code", "竞彩编号"),
+                fallback(text(root, "match", "match_name", "比赛"), item.getSummaryTitle()),
+                text(root, "matchday", "date", "date_beijing", "比赛日"),
+                text(root, "jc_code", "竞彩编号"),
                 json
         );
 
-        List<OddsPayload> oddsPayloads = collectOddsPayloads(json);
+        List<OddsPayload> oddsPayloads = collectOddsPayloads(root);
         if (oddsPayloads.isEmpty()) {
-            oddsPayloads = List.of(new OddsPayload(fallback(text(json, "source", "bookmaker"), "UNKNOWN"), json));
+            oddsPayloads = List.of(new OddsPayload(fallback(text(root, "source", "bookmaker"), "UNKNOWN"), root));
         }
         for (OddsPayload payload : oddsPayloads) {
             JsonNode oddsNode = payload.node();
-            String bookmaker = fallback(payload.bookmaker(), fallback(text(oddsNode, "name", "bookmaker", "company"), fallback(text(json, "source", "bookmaker"), "UNKNOWN")));
+            String bookmaker = fallback(payload.bookmaker(), fallback(text(oddsNode, "name", "bookmaker", "company"), fallback(text(root, "source", "bookmaker"), "UNKNOWN")));
             String marketCode = marketCode(oddsNode);
             Long snapshotId = insertAndReturnId(
                     "INSERT INTO odds_snapshots(import_item_id, match_id, bookmaker, market_type, odds_value, raw_payload) VALUES (?,?,?,?,?,?)",
@@ -433,34 +657,35 @@ public class BusinessJsonMapper {
     }
 
     private List<CoreDataMappingResponse> mapSource(ImportItem item, JsonNode json) {
+        JsonNode root = payload(json);
         List<CoreDataMappingResponse> mappings = new ArrayList<>();
         Long matchId = upsertMatch(
-                fallback(text(json, "match", "match_name", "比赛"), item.getSummaryTitle()),
-                text(json, "matchday", "date", "比赛日"),
-                text(json, "jc_code", "竞彩编号"),
+                fallback(text(root, "match", "match_name", "\u6bd4\u8d5b"), item.getSummaryTitle()),
+                text(root, "matchday", "date", "\u6bd4\u8d5b\u65e5"),
+                text(root, "jc_code", "\u7ade\u5f69\u7f16\u53f7"),
                 json
         );
 
-        List<JsonNode> snapshots = asNodes(json.get("snapshots"));
+        List<JsonNode> snapshots = asNodes(root.get("snapshots"));
         if (snapshots.isEmpty()) {
-            snapshots = List.of(json);
+            snapshots = List.of(root);
         }
         for (JsonNode snapshot : snapshots) {
             Long evidenceId = insertAndReturnId(
                     "INSERT INTO source_evidence(import_item_id, match_id, source_type, source_name, source_ref, source_url, summary, reliability_score, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
                     item.getId(), matchId,
                     fallback(text(snapshot, "type", "source_type"), "SOURCE_SNAPSHOT"),
-                    fallback(text(snapshot, "name", "title", "source"), fallback(text(json, "source", "title"), "UNKNOWN")),
+                    fallback(text(snapshot, "name", "title", "source"), fallback(text(root, "source", "title"), "UNKNOWN")),
                     text(snapshot, "id", "ref", "source_ref"),
                     text(snapshot, "url", "source_url"),
                     fallback(text(snapshot, "summary", "note", "title"), toJson(snapshot)),
                     decimal(snapshot, "reliability", "score"),
                     toJson(snapshot)
             );
-            mappings.add(insertMapping(item.getId(), "SOURCE_EVIDENCE", evidenceId, "IMPORTED", "来源证据已导入正式库"));
+            mappings.add(insertMapping(item.getId(), "SOURCE_EVIDENCE", evidenceId, "IMPORTED", "Source evidence imported"));
         }
 
-        for (JsonNode conflict : asNodes(json.get("conflicts"))) {
+        for (JsonNode conflict : asNodes(root.get("conflicts"))) {
             Long conflictId = insertAndReturnId(
                     "INSERT INTO data_conflicts(import_item_id, match_id, conflict_type, entity_key, field_name, current_value, incoming_value, raw_payload) VALUES (?,?,?,?,?,?,?,?)",
                     item.getId(), matchId,
@@ -471,22 +696,22 @@ public class BusinessJsonMapper {
                     text(conflict, "incoming", "incoming_value"),
                     toJson(conflict)
             );
-            mappings.add(insertMapping(item.getId(), "DATA_CONFLICT", conflictId, "IMPORTED", "数据冲突已导入正式库"));
+            mappings.add(insertMapping(item.getId(), "DATA_CONFLICT", conflictId, "IMPORTED", "Data conflict imported"));
         }
 
-        for (FactorPayload factor : collectFactorPayloads(json)) {
+        for (FactorPayload factor : collectFactorPayloads(root)) {
             Long factorId = insertContextFactor(item, matchId, factor);
-            mappings.add(insertMapping(item.getId(), "MATCH_CONTEXT_FACTOR", factorId, "IMPORTED", "舆情与外部因素已导入正式库"));
+            mappings.add(insertMapping(item.getId(), "MATCH_CONTEXT_FACTOR", factorId, "IMPORTED", "Context factor imported"));
             for (JsonNode risk : asNodes(factor.node().get("risks"))) {
                 Long riskId = insertRiskAssessment(item, matchId, new RiskPayload(factorId, risk));
-                mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "舆情风险评分已导入正式库"));
+                mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "Risk assessment imported"));
             }
         }
-        for (RiskPayload risk : collectTopLevelRiskPayloads(json)) {
+        for (RiskPayload risk : collectTopLevelRiskPayloads(root)) {
             Long riskId = insertRiskAssessment(item, matchId, risk);
-            mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "舆情风险评分已导入正式库"));
+            mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "Risk assessment imported"));
         }
-        importAliases(json);
+        importAliases(root);
         return mappings;
     }
 
@@ -583,17 +808,24 @@ public class BusinessJsonMapper {
 
     private List<CoreDataMappingResponse> mapBets(ImportItem item, JsonNode json) {
         List<CoreDataMappingResponse> mappings = new ArrayList<>();
-        List<JsonNode> bets = asNodes(json.get("bets"));
+        JsonNode root = payload(json);
+        List<JsonNode> bets = asNodes(root.get("bets"));
         if (bets.isEmpty()) {
-            bets = List.of(json);
+            bets = List.of(root);
         }
         int index = 0;
         for (JsonNode bet : bets) {
-            String matchName = fallback(text(bet, "match", "match_name", "比赛"), fallback(text(json, "match", "比赛"), item.getSummaryTitle()));
-            String matchday = fallback(text(bet, "matchday", "date", "比赛日"), text(json, "matchday", "date", "比赛日"));
-            String jcCode = fallback(text(bet, "jc_code", "竞彩编号"), text(json, "jc_code", "竞彩编号"));
+            String matchName = fallback(text(bet, "match", "match_name", "比赛"), fallback(text(root, "match", "比赛"), item.getSummaryTitle()));
+            String matchday = fallback(text(bet, "matchday", "date", "比赛日"), text(root, "matchday", "date", "比赛日"));
+            String jcCode = fallback(text(bet, "jc_code", "竞彩编号"), text(root, "jc_code", "竞彩编号"));
             Long matchId = upsertMatch(matchName, matchday, jcCode, bet);
             String betId = fallback(text(bet, "bet_id", "id", "编号"), "bet-" + item.getId() + "-" + index);
+            Long existingBetId = findFirstId("SELECT id FROM bets WHERE bet_id=? ORDER BY id", betId);
+            if (existingBetId != null) {
+                mappings.add(insertMapping(item.getId(), "BET", existingBetId, "IMPORTED", "Existing bet row reused"));
+                index++;
+                continue;
+            }
             BigDecimal odds = decimal(bet, "odds", "赔率");
             BigDecimal closingOdds = decimal(bet, "closing_odds", "closingOdds", "收盘赔率");
             BigDecimal clv = calculateClv(odds, closingOdds, decimal(bet, "clv", "CLV"));
@@ -601,7 +833,7 @@ public class BusinessJsonMapper {
                     "INSERT INTO bets(import_item_id, match_id, bet_id, ticket_no, bet_date, matchday, match_name, market_type, selection_text, stake, odds, closing_odds, clv, return_amount, hit_status, profit_loss, settled_at, review_status, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     item.getId(), matchId, betId,
                     text(bet, "ticket_no", "ticket", "票号"),
-                    parseDate(fallback(text(bet, "bet_date", "下注日期"), text(json, "bet_date", "下注日期"))),
+                    parseDate(fallback(text(bet, "bet_date", "下注日期"), text(root, "bet_date", "下注日期"))),
                     parseDate(matchday),
                     matchName,
                     text(bet, "market", "market_type", "玩法"),
@@ -623,9 +855,21 @@ public class BusinessJsonMapper {
         return mappings;
     }
 
+    private Long resolveMatchId(JsonNode payload, JsonNode rawPayload, String fallbackSummary) {
+        Long existingMatchId = findMatchId(payload);
+        if (existingMatchId != null) {
+            return existingMatchId;
+        }
+        String matchName = fallback(text(payload, "match_name", "match", "比赛"), fallbackSummary);
+        String matchday = text(payload, "matchday", "date", "比赛日");
+        String jcCode = text(payload, "jc_code", "竞彩编号");
+        return upsertMatch(matchName, matchday, jcCode, rawPayload);
+    }
+
     private Long upsertMatch(String matchName, String matchday, String jcCode, JsonNode rawPayload) {
         String safeMatchName = fallback(matchName, "UNKNOWN_MATCH");
-        String key = matchKeyNormalizer.normalize(safeMatchName, matchday, jcCode);
+        String explicitKey = text(payload(rawPayload), "match_key");
+        String key = fallback(explicitKey, matchKeyNormalizer.normalize(safeMatchName, matchday, jcCode));
         List<Long> existing = jdbcTemplate.query(
                 "SELECT id FROM matches WHERE match_key = ?",
                 (rs, rowNum) -> rs.getLong("id"),
@@ -645,6 +889,56 @@ public class BusinessJsonMapper {
                 toJson(rawPayload)
         );
         return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key = ?", Long.class, key);
+    }
+
+    private Long upsertMatchFromPayload(JsonNode payload, JsonNode rawPayload) {
+        String incomingMatchName = text(payload, "match_name", "match", "\u6bd4\u8d5b");
+        String matchName = fallback(incomingMatchName, "UNKNOWN_MATCH");
+        String matchday = text(payload, "matchday", "date", "\u6bd4\u8d5b\u65e5");
+        String jcCode = text(payload, "jc_code", "\u7ade\u5f69\u7f16\u53f7");
+        String matchKey = fallback(text(payload, "match_key"), matchKeyNormalizer.normalize(matchName, matchday, jcCode));
+        Long homeTeamId = findTeamId(text(payload, "home_team_key", "home_team", "home"));
+        Long awayTeamId = findTeamId(text(payload, "away_team_key", "away_team", "away"));
+        List<Long> existing = jdbcTemplate.query("SELECT id FROM matches WHERE match_key=?", (rs, rowNum) -> rs.getLong("id"), matchKey);
+        if (existing.isEmpty()) {
+            insertAndReturnId(
+                    "INSERT INTO matches(match_key, match_name, matchday, jc_code, competition, stage, venue, kickoff_time, home_team_id, away_team_id, status, result_status, external_factors, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    matchKey,
+                    matchName,
+                    parseDate(matchday),
+                    jcCode,
+                    truncate(text(payload, "competition"), 160),
+                    truncate(text(payload, "stage"), 120),
+                    truncate(text(payload, "venue"), 240),
+                    parseDateTime(text(payload, "kickoff_time", "kickoff", "commence_time")),
+                    homeTeamId,
+                    awayTeamId,
+                    fallback(text(payload, "status"), "IMPORTED"),
+                    fallback(text(payload, "result_status"), "UNKNOWN"),
+                    nullableJson(payload.get("external_factors")),
+                    toJson(rawPayload)
+            );
+            return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, matchKey);
+        }
+        Long matchId = existing.get(0);
+        jdbcTemplate.update(
+                "UPDATE matches SET match_name=COALESCE(?, match_name), matchday=COALESCE(?, matchday), jc_code=COALESCE(?, jc_code), competition=COALESCE(?, competition), stage=COALESCE(?, stage), venue=COALESCE(?, venue), kickoff_time=COALESCE(?, kickoff_time), home_team_id=COALESCE(?, home_team_id), away_team_id=COALESCE(?, away_team_id), status=COALESCE(?, status), result_status=COALESCE(?, result_status), external_factors=COALESCE(?, external_factors), raw_payload=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                incomingMatchName,
+                parseDate(matchday),
+                jcCode,
+                truncate(text(payload, "competition"), 160),
+                truncate(text(payload, "stage"), 120),
+                truncate(text(payload, "venue"), 240),
+                parseDateTime(text(payload, "kickoff_time", "kickoff", "commence_time")),
+                homeTeamId,
+                awayTeamId,
+                text(payload, "status"),
+                text(payload, "result_status"),
+                nullableJson(payload.get("external_factors")),
+                toJson(rawPayload),
+                matchId
+        );
+        return matchId;
     }
 
     private CoreDataMappingResponse insertMapping(Long importItemId, String targetType, Long targetId, String status, String message) {
@@ -710,6 +1004,39 @@ public class BusinessJsonMapper {
                 .setScale(6, RoundingMode.HALF_UP);
     }
 
+    private Long findExistingBetPlanId(String planKey, Long matchId) {
+        if (matchId != null) {
+            Long existingForMatch = findFirstId(
+                    "SELECT id FROM bet_plans WHERE plan_key=? AND match_id=? ORDER BY id",
+                    planKey,
+                    matchId
+            );
+            if (existingForMatch != null) {
+                return existingForMatch;
+            }
+        }
+        return findFirstId("SELECT id FROM bet_plans WHERE plan_key=? ORDER BY id", planKey);
+    }
+
+    private Long findExistingPostMatchReviewId(String reviewKey, Long matchId) {
+        if (matchId != null) {
+            Long existingForMatch = findFirstId(
+                    "SELECT id FROM post_match_reviews WHERE review_key=? AND match_id=? ORDER BY id",
+                    reviewKey,
+                    matchId
+            );
+            if (existingForMatch != null) {
+                return existingForMatch;
+            }
+        }
+        return findFirstId("SELECT id FROM post_match_reviews WHERE review_key=? ORDER BY id", reviewKey);
+    }
+
+    private Long findFirstId(String sql, Object... args) {
+        List<Long> ids = jdbcTemplate.query(sql, (rs, rowNum) -> rs.getLong("id"), args);
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
     private Long insertAndReturnId(String sql, Object... args) {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -767,6 +1094,11 @@ public class BusinessJsonMapper {
             }
         }
         return null;
+    }
+
+    private JsonNode payload(JsonNode json) {
+        JsonNode payload = firstPresent(json, "payload");
+        return payload != null && payload.isObject() ? payload : json;
     }
 
     private String textValue(JsonNode node) {
@@ -852,6 +1184,130 @@ public class BusinessJsonMapper {
         } catch (NumberFormatException cause) {
             return null;
         }
+    }
+
+    private Integer integer(JsonNode node, String... fields) {
+        String value = text(node, fields);
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException cause) {
+            return null;
+        }
+    }
+
+    private Long resolveTeamIdIfProvided(JsonNode payload, String message, String... fields) {
+        String teamKey = text(payload, fields);
+        Long teamId = findTeamId(teamKey);
+        if (teamKey != null && teamId == null) {
+            throw new IllegalArgumentException(message + ": " + teamKey);
+        }
+        return teamId;
+    }
+
+    private Long resolvePlayerIdIfProvided(JsonNode payload, String message, String... fields) {
+        String playerKey = text(payload, fields);
+        Long playerId = findPlayerId(playerKey);
+        if (playerKey != null && playerId == null) {
+            throw new IllegalArgumentException(message + ": " + playerKey);
+        }
+        return playerId;
+    }
+
+    private Long findTeamId(String teamKey) {
+        if (teamKey == null || teamKey.isBlank()) {
+            return null;
+        }
+        List<Long> ids = jdbcTemplate.query("SELECT id FROM teams WHERE team_key=?", (rs, rowNum) -> rs.getLong("id"), teamKey);
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    private Long findPlayerId(String playerKey) {
+        if (playerKey == null || playerKey.isBlank()) {
+            return null;
+        }
+        List<Long> ids = jdbcTemplate.query("SELECT id FROM players WHERE player_key=?", (rs, rowNum) -> rs.getLong("id"), playerKey);
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    private Long findMatchId(JsonNode payload) {
+        String matchKey = text(payload, "match_key");
+        if (matchKey != null && !matchKey.isBlank()) {
+            List<Long> ids = jdbcTemplate.query("SELECT id FROM matches WHERE match_key=?", (rs, rowNum) -> rs.getLong("id"), matchKey);
+            if (!ids.isEmpty()) {
+                return ids.get(0);
+            }
+        }
+        String matchName = text(payload, "match_name", "match", "比赛");
+        if (matchName == null || matchName.isBlank()) {
+            return null;
+        }
+        String key = matchKeyNormalizer.normalize(matchName, text(payload, "matchday", "date", "比赛日"), text(payload, "jc_code", "竞彩编号"));
+        List<Long> ids = jdbcTemplate.query("SELECT id FROM matches WHERE match_key=?", (rs, rowNum) -> rs.getLong("id"), key);
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    private Long findPostReviewId(JsonNode payload) {
+        String reviewKey = text(payload, "review_key", "id", "key");
+        if (reviewKey == null || reviewKey.isBlank()) {
+            return null;
+        }
+        Long matchId = findMatchId(payload);
+        List<Long> ids;
+        if (matchId != null) {
+            ids = jdbcTemplate.query(
+                    "SELECT id FROM post_match_reviews WHERE review_key=? AND match_id=? ORDER BY id DESC",
+                    (rs, rowNum) -> rs.getLong("id"),
+                    reviewKey,
+                    matchId
+            );
+        } else {
+            ids = jdbcTemplate.query(
+                    "SELECT id FROM post_match_reviews WHERE review_key=? ORDER BY id DESC",
+                    (rs, rowNum) -> rs.getLong("id"),
+                    reviewKey
+            );
+        }
+        return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    private String textOrJson(JsonNode node, String... fields) {
+        JsonNode value = firstPresent(node, fields);
+        if (value == null || value.isNull() || value.isMissingNode()) {
+            return null;
+        }
+        if (value.isTextual() || value.isNumber() || value.isBoolean()) {
+            return value.asText();
+        }
+        return toJson(value);
+    }
+
+    private String required(String value, String message) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    private Long requiredId(Long value, String message) {
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    private Boolean bool(JsonNode node, String... fields) {
+        JsonNode value = firstPresent(node, fields);
+        if (value == null || value.isNull() || value.isMissingNode()) {
+            return false;
+        }
+        if (value.isBoolean()) {
+            return value.asBoolean();
+        }
+        String text = textValue(value);
+        return text != null && ("true".equalsIgnoreCase(text.trim()) || "1".equals(text.trim()) || "yes".equalsIgnoreCase(text.trim()));
     }
 
     private String fallback(String value, String fallback) {

@@ -16,7 +16,7 @@ import {
 import { useAuthStore } from '@/stores/auth';
 
 const authStore = useAuthStore();
-const archivePath = ref('../skill/archive');
+const archivePath = ref('../data-inbox/pending');
 const loading = ref(false);
 const scanning = ref(false);
 const detailLoading = ref(false);
@@ -38,10 +38,20 @@ const statusOptions: Array<{ label: string; value: ImportItemStatus }> = [
 ];
 
 const typeOptions: Array<{ label: string; value: ImportItemType }> = [
+  { label: '球队主数据', value: 'TEAM' },
+  { label: '球员主数据', value: 'PLAYER' },
+  { label: '比赛主数据', value: 'MATCH' },
+  { label: '比赛阵容', value: 'MATCH_LINEUP' },
+  { label: '比赛事件', value: 'MATCH_EVENT' },
+  { label: '技术统计', value: 'MATCH_STATS' },
   { label: '下注汇总', value: 'BETS' },
+  { label: '下注记录', value: 'BET' },
+  { label: '下注方案', value: 'BET_PLAN' },
   { label: '比赛分析', value: 'ANALYSIS' },
   { label: '赔率快照', value: 'ODDS' },
   { label: '来源证据', value: 'SOURCE' },
+  { label: '赛后复盘', value: 'POST_REVIEW' },
+  { label: '复盘规则', value: 'REVIEW_LESSON' },
 ];
 
 const canAdminWrite = computed(() => authStore.canWrite);
@@ -142,7 +152,7 @@ async function handleScan() {
   error.value = '';
   try {
     const response = await scanArchive(authHeader(), archivePath.value);
-    lastJob.value = `任务 #${response.data.id}：共 ${response.data.totalItems} 条，可批准 ${response.data.validItems} 条，无效 ${response.data.invalidItems} 条`;
+    lastJob.value = `任务 #${response.data.id}：共 ${response.data.totalItems} 条，可批准 ${response.data.validItems} 条，无效 ${response.data.invalidItems} 条；已进入审核暂存，数据库仍是唯一权威源`;
     await loadItems();
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '扫描失败，请确认路径和后端服务。';
@@ -225,7 +235,7 @@ onMounted(loadItems);
         <div>
           <p class="eyebrow">Admin · JSON review</p>
           <h1 id="import-review-title">JSON 审核中心</h1>
-          <p>仅 Basic 管理员可以扫描、批准、驳回、批量批准并导入正式库；公开页面不会暴露这些写入动作。</p>
+          <p>仅 Basic 管理员可以扫描、批准、驳回、批量批准并导入正式库；数据库是唯一权威源，本地 JSON 只作为临时投递与审核材料。</p>
         </div>
         <RouterLink v-if="!canAdminWrite" class="login-link" to="/login">去登录</RouterLink>
         <button v-else class="action-button" type="button" :disabled="loading" @click="loadItems">
@@ -241,9 +251,9 @@ onMounted(loadItems);
       <template v-else>
         <section class="scan-card">
           <div>
-            <p class="eyebrow">Archive scan</p>
-            <h2>档案扫描</h2>
-            <p>扫描已人工确认的 JSON 档案进入审核暂存区。</p>
+            <p class="eyebrow">Data inbox</p>
+            <h2>临时投递扫描</h2>
+            <p>扫描 `data-inbox/pending` 中的临时 JSON 进入审核暂存区；导入成功会归档到 `imported/日期`，驳回会归档到 `rejected/日期`，正式数据始终以数据库为准。</p>
           </div>
           <label>
             JSON 路径
@@ -288,7 +298,7 @@ onMounted(loadItems);
 
         <section class="review-card-list" aria-label="JSON 审核条目">
           <p v-if="loading && !items.length" class="empty-copy">正在加载审核条目...</p>
-          <p v-else-if="!items.length" class="empty-copy">暂无 JSON 审核条目，请先扫描档案。</p>
+          <p v-else-if="!items.length" class="empty-copy">暂无临时投递 JSON 审核条目，请把文件放入 data-inbox/pending 后扫描。</p>
           <article v-for="item in items" v-else :key="item.id" class="review-card">
             <div class="review-card__main">
               <label class="select-line">

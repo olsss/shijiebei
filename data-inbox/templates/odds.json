@@ -1,0 +1,30 @@
+{
+  "type": "ODDS",
+  "idempotency_key": "odds-20260626-france-brazil-opening",
+  "source": {
+    "name": "bookmaker-or-data-vendor",
+    "url": "https://example.test/odds",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "event_id": "odds-20260626-france-brazil-opening",
+    "match_key": "20260626-france-brazil",
+    "match": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "bookmaker": "Pinnacle",
+    "markets": [
+      {
+        "bookmaker": "Pinnacle",
+        "market": "HAD",
+        "market_name": "胜平负",
+        "snapshot_type": "OPEN",
+        "captured_at": "2026-06-24T12:00:00",
+        "selections": [
+          {"code": "HOME", "name": "主胜", "odds": "1.95"},
+          {"code": "DRAW", "name": "平", "odds": "3.30"},
+          {"code": "AWAY", "name": "客胜", "odds": "4.10"}
+        ]
+      }
+    ]
+  }
+}

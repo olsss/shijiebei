@@ -1,0 +1,19 @@
+{
+  "type": "TEAM",
+  "idempotency_key": "team-france",
+  "source": {
+    "name": "manual-input",
+    "url": "https://example.test/source",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "team_key": "france",
+    "display_name": "法国",
+    "fifa_code": "FRA",
+    "country_region": "Europe",
+    "style_tags": ["边路推进", "高压"],
+    "attack_profile": "可替换：球队进攻特征",
+    "defense_profile": "可替换：球队防守特征",
+    "public_sentiment": "可替换：舆情概述"
+  }
+}

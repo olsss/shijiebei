@@ -1,0 +1,33 @@
+{
+  "type": "BET_PLAN",
+  "idempotency_key": "bet-plan-20260626-france-brazil",
+  "source": {
+    "name": "codex-analysis",
+    "url": "local://bet-plan",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "plan_key": "bet-plan-20260626-france-brazil",
+    "title": "法国方向组合方案",
+    "conclusion_type": "盘口判断",
+    "confidence": "MEDIUM",
+    "budget_amount": "200",
+    "risk_summary": "可替换：资金分配与风险说明",
+    "betting_method": "AI_VALUE_SPLIT",
+    "strategy_type": "主线加保护",
+    "status": "IMPORTED",
+    "generated_by": "codex",
+    "generated_at": "2026-06-24T12:00:00",
+    "items": [
+      {
+        "market_type": "HAD",
+        "selection": "主胜",
+        "stake_suggestion": "100",
+        "odds": "1.95",
+        "logic_type": "MAIN",
+        "risk_level": "MEDIUM"
+      }
+    ]
+  }
+}

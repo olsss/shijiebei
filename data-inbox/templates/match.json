@@ -1,0 +1,23 @@
+{
+  "type": "MATCH",
+  "idempotency_key": "match-20260626-france-brazil",
+  "source": {
+    "name": "manual-input",
+    "url": "https://example.test/source",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "match_name": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "jc_code": "周五001",
+    "competition": "World Cup",
+    "stage": "Group Stage",
+    "venue": "可替换：球场",
+    "kickoff_time": "2026-06-26T20:00:00",
+    "home_team_key": "france",
+    "away_team_key": "brazil",
+    "status": "IMPORTED",
+    "result_status": "UNKNOWN"
+  }
+}

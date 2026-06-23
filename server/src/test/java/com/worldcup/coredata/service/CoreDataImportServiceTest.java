@@ -7,13 +7,19 @@ import com.worldcup.importreview.domain.ImportItemType;
 import com.worldcup.importreview.domain.ImportJob;
 import com.worldcup.importreview.repo.ImportItemRepository;
 import com.worldcup.importreview.repo.ImportJobRepository;
+import com.worldcup.importreview.service.JsonImportReviewService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +39,12 @@ class CoreDataImportServiceTest {
     @Autowired
     CoreDataImportService service;
 
+    @Autowired
+    JsonImportReviewService reviewService;
+
+    @TempDir
+    Path tempDir;
+
     @BeforeEach
     @AfterEach
     void clean() {
@@ -51,13 +63,13 @@ class CoreDataImportServiceTest {
         jdbcTemplate.update("DELETE FROM odds_snapshots");
         jdbcTemplate.update("DELETE FROM data_conflicts");
         jdbcTemplate.update("DELETE FROM source_evidence");
+        jdbcTemplate.update("DELETE FROM match_events");
         jdbcTemplate.update("DELETE FROM match_lineups");
         jdbcTemplate.update("DELETE FROM match_player_stats");
         jdbcTemplate.update("DELETE FROM match_team_stats");
-        jdbcTemplate.update("DELETE FROM match_events");
+        jdbcTemplate.update("DELETE FROM matches");
         jdbcTemplate.update("DELETE FROM players");
         jdbcTemplate.update("DELETE FROM teams");
-        jdbcTemplate.update("DELETE FROM matches");
         itemRepository.deleteAll();
         jobRepository.deleteAll();
     }
@@ -96,6 +108,295 @@ class CoreDataImportServiceTest {
         assertThat(count("matches")).isEqualTo(1);
         assertThat(count("analysis_reports")).isEqualTo(1);
         assertThat(count("source_evidence")).isEqualTo(1);
+    }
+
+    @Test
+    void approvedTeamPlayerAndMatchImportsMasterDataAndIsIdempotent() {
+        ImportItem team = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France","fifa_code":"FRA"}}
+                """);
+        ImportItem player = saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"PLAYER","payload":{"player_key":"france-10","team_key":"france","display_name":"France 10","shirt_number":10}}
+                """);
+        ImportItem match = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26","home_team_key":"france"}}
+                """);
+
+        assertThat(service.importItem(team.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(player.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(match.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(match.getId(), "admin").mappings()).hasSize(1);
+
+        assertThat(count("teams")).isEqualTo(1);
+        assertThat(count("players")).isEqualTo(1);
+        assertThat(count("matches")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM teams WHERE team_key='france' AND fifa_code='FRA'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM players WHERE player_key='france-10' AND team_id IS NOT NULL", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM matches WHERE match_key='20260626-france-brazil' AND home_team_id IS NOT NULL", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void approvedLineupEventAndStatsImportMatchDetailRows() {
+        ImportItem team = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France"}}
+                """);
+        ImportItem player = saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"PLAYER","payload":{"player_key":"france-10","team_key":"france","display_name":"France 10"}}
+                """);
+        ImportItem match = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26"}}
+                """);
+        service.importItem(team.getId(), "admin");
+        service.importItem(player.getId(), "admin");
+        service.importItem(match.getId(), "admin");
+
+        ImportItem lineup = saveItem(ImportItemType.MATCH_LINEUP, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH_LINEUP","payload":{"match_key":"20260626-france-brazil","team_key":"france","player_key":"france-10","role":"STARTER","position":"LW","is_starter":true}}
+                """);
+        ImportItem event = saveItem(ImportItemType.MATCH_EVENT, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH_EVENT","payload":{"match_key":"20260626-france-brazil","team_key":"france","player_key":"france-10","event_minute":12,"event_type":"GOAL"}}
+                """);
+        ImportItem stats = saveItem(ImportItemType.MATCH_STATS, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH_STATS","payload":{"match_key":"20260626-france-brazil","team_key":"france","stats_type":"FULL_TIME","goals_for":2,"goals_against":1}}
+                """);
+
+        assertThat(service.importItem(lineup.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(event.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(stats.getId(), "admin").mappings()).hasSize(1);
+        assertThat(count("match_lineups")).isEqualTo(1);
+        assertThat(count("match_events")).isEqualTo(1);
+        assertThat(count("match_team_stats")).isEqualTo(1);
+    }
+
+    @Test
+    void matchDetailWithMissingProvidedAssociationFailsClearly() {
+        ImportItem match = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26"}}
+                """);
+        service.importItem(match.getId(), "admin");
+
+        ImportItem lineup = saveItem(ImportItemType.MATCH_LINEUP, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH_LINEUP","payload":{"match_key":"20260626-france-brazil","team_key":"missing-team","role":"STARTER"}}
+                """);
+
+        assertThatThrownBy(() -> service.importItem(lineup.getId(), "admin"))
+                .hasMessageContaining("team_key does not exist for lineup: missing-team");
+        assertThat(count("match_lineups")).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM import_item_mappings WHERE target_type='MATCH_LINEUP'", Integer.class)).isZero();
+    }
+
+    @Test
+    void approvedStandaloneDecisionAndReviewTypesImportBusinessRows() {
+        ImportItem team = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France"}}
+                """);
+        ImportItem match = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26","home_team_key":"france"}}
+                """);
+        service.importItem(team.getId(), "admin");
+        service.importItem(match.getId(), "admin");
+
+        ImportItem plan = saveItem(ImportItemType.BET_PLAN, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"BET_PLAN","payload":{"match_key":"20260626-france-brazil","plan_key":"plan-france-brazil","title":"France plan","budget_amount":"200","items":[{"market_type":"HAD","selection":"HOME","stake_suggestion":"100","odds":"1.95"},{"market_type":"TTG","selection":"2 goals","stake_suggestion":"40","odds":"3.10"}]}}
+                """);
+        ImportItem bet = saveItem(ImportItemType.BET, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"BET","payload":{"bet_id":"ticket-001-1","ticket_no":"TICKET-001","match_key":"20260626-france-brazil","match":"France vs Brazil","matchday":"2026-06-26","market_type":"HAD","selection":"HOME","stake":"100","odds":"1.95"}}
+                """);
+        ImportItem review = saveItem(ImportItemType.POST_REVIEW, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"POST_REVIEW","payload":{"match_key":"20260626-france-brazil","review_key":"review-france-brazil","title":"France vs Brazil review","overall_summary":"logic works"}}
+                """);
+        ImportItem lesson = saveItem(ImportItemType.REVIEW_LESSON, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"REVIEW_LESSON","payload":{"review_key":"review-france-brazil","lesson_type":"CLV","lesson_text":"track closing odds","severity":"INFO"}}
+                """);
+
+        assertThat(service.importItem(plan.getId(), "admin").mappings()).hasSize(3);
+        assertThat(service.importItem(bet.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(review.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(lesson.getId(), "admin").mappings()).hasSize(1);
+        assertThat(count("bet_plans")).isEqualTo(1);
+        assertThat(count("bet_plan_items")).isEqualTo(2);
+        assertThat(count("bets")).isEqualTo(1);
+        assertThat(count("post_match_reviews")).isEqualTo(1);
+        assertThat(count("review_lessons")).isEqualTo(1);
+    }
+
+    @Test
+    void envelopeAnalysisOddsAndSourceImportPayloadContent() {
+        ImportItem analysis = saveItem(ImportItemType.ANALYSIS, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"ANALYSIS","idempotency_key":"analysis-envelope-1","source":{"name":"codex"},"payload":{"id":"analysis-envelope-1","match":"France vs Brazil","matchday":"2026-06-26","jc_code":"001","conclusion_type":"PAYLOAD_CONCLUSION","confidence":"HIGH","sources":[{"name":"Payload Source","url":"https://example.test","summary":"payload evidence"}],"narrative_md":"payload narrative"}}
+                """);
+        ImportItem odds = saveItem(ImportItemType.ODDS, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"ODDS","idempotency_key":"odds-envelope-1","source":{"name":"vendor"},"payload":{"event_id":"odds-envelope-1","match":"France vs Brazil","matchday":"2026-06-26","markets":[{"bookmaker":"PayloadBook","market":"HAD","selections":[{"code":"HOME","name":"Home","odds":"1.90"},{"code":"AWAY","name":"Away","odds":"4.10"}]}]}}
+                """);
+        ImportItem source = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"SOURCE","idempotency_key":"source-envelope-1","source":{"name":"scout"},"payload":{"id":"source-envelope-1","match":"France vs Brazil","matchday":"2026-06-26","snapshots":[{"type":"INJURY","name":"Payload Team News","summary":"payload source summary"}],"conflicts":[{"type":"LINEUP","entity":"france","field":"status","current":"unknown","incoming":"fit"}]}}
+                """);
+
+        assertThat(service.importItem(analysis.getId(), "admin").mappings()).hasSize(2);
+        assertThat(service.importItem(odds.getId(), "admin").mappings()).hasSize(1);
+        assertThat(service.importItem(source.getId(), "admin").mappings()).hasSize(2);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM analysis_reports WHERE analysis_id='analysis-envelope-1' AND conclusion_type='PAYLOAD_CONCLUSION' AND confidence='HIGH'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_name='Payload Source' AND summary='payload evidence'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_market_snapshots WHERE bookmaker='PayloadBook' AND market_code='HAD'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='Home' AND odds_value=1.9000", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_name='Payload Team News' AND summary='payload source summary'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM data_conflicts WHERE conflict_type='LINEUP' AND entity_key='france'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void partialMasterDataUpdateDoesNotClearExistingAuthoritativeFields() {
+        ImportItem france = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France","fifa_code":"FRA","attack_profile":"attack","defense_profile":"defense"}}
+                """);
+        ImportItem brazil = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"brazil","display_name":"Brazil","fifa_code":"BRA"}}
+                """);
+        service.importItem(france.getId(), "admin");
+        service.importItem(brazil.getId(), "admin");
+        ImportItem playerFull = saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"PLAYER","payload":{"player_key":"france-10","team_key":"france","display_name":"France 10","shirt_number":10,"position":"FW","status":"AVAILABLE"}}
+                """);
+        ImportItem matchFull = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26","jc_code":"001","competition":"World Cup","stage":"Group","venue":"Lusail","kickoff_time":"2026-06-26T20:00:00","home_team_key":"france","away_team_key":"brazil","status":"SCHEDULED","result_status":"UNKNOWN"}}
+                """);
+        service.importItem(playerFull.getId(), "admin");
+        service.importItem(matchFull.getId(), "admin");
+
+        service.importItem(saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France Team"}}
+                """).getId(), "admin");
+        service.importItem(saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"PLAYER","payload":{"player_key":"france-10","display_name":"France Ten"}}
+                """).getId(), "admin");
+        service.importItem(saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France Team vs Brazil Team"}}
+                """).getId(), "admin");
+
+        assertThat(jdbcTemplate.queryForObject("SELECT display_name FROM teams WHERE team_key='france'", String.class)).isEqualTo("France Team");
+        assertThat(jdbcTemplate.queryForObject("SELECT fifa_code FROM teams WHERE team_key='france'", String.class)).isEqualTo("FRA");
+        assertThat(jdbcTemplate.queryForObject("SELECT attack_profile FROM teams WHERE team_key='france'", String.class)).isEqualTo("attack");
+        assertThat(jdbcTemplate.queryForObject("SELECT shirt_number FROM players WHERE player_key='france-10'", Integer.class)).isEqualTo(10);
+        assertThat(jdbcTemplate.queryForObject("SELECT position FROM players WHERE player_key='france-10'", String.class)).isEqualTo("FW");
+        assertThat(jdbcTemplate.queryForObject("SELECT team_id IS NOT NULL FROM players WHERE player_key='france-10'", Boolean.class)).isTrue();
+        assertThat(jdbcTemplate.queryForObject("SELECT competition FROM matches WHERE match_key='20260626-france-brazil'", String.class)).isEqualTo("World Cup");
+        assertThat(jdbcTemplate.queryForObject("SELECT venue FROM matches WHERE match_key='20260626-france-brazil'", String.class)).isEqualTo("Lusail");
+        assertThat(jdbcTemplate.queryForObject("SELECT home_team_id IS NOT NULL FROM matches WHERE match_key='20260626-france-brazil'", Boolean.class)).isTrue();
+        assertThat(jdbcTemplate.queryForObject("SELECT away_team_id IS NOT NULL FROM matches WHERE match_key='20260626-france-brazil'", Boolean.class)).isTrue();
+    }
+
+    @Test
+    void duplicateApprovedItemsWithSameBusinessKeysReuseExistingRows() {
+        ImportItem team = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France"}}
+                """);
+        ImportItem match = saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"France vs Brazil","matchday":"2026-06-26","home_team_key":"france"}}
+                """);
+        service.importItem(team.getId(), "admin");
+        service.importItem(match.getId(), "admin");
+
+        String planJson = """
+                {"type":"BET_PLAN","payload":{"match_key":"20260626-france-brazil","plan_key":"plan-france-brazil","title":"France plan","items":[{"market_type":"HAD","selection":"HOME","stake_suggestion":"100","odds":"1.95"}]}}
+                """;
+        String betJson = """
+                {"type":"BET","payload":{"bet_id":"ticket-001-1","ticket_no":"TICKET-001","match_key":"20260626-france-brazil","match":"France vs Brazil","matchday":"2026-06-26","market_type":"HAD","selection":"HOME","stake":"100","odds":"1.95"}}
+                """;
+        String reviewJson = """
+                {"type":"POST_REVIEW","payload":{"match_key":"20260626-france-brazil","review_key":"review-france-brazil","title":"France review","overall_summary":"ok"}}
+                """;
+
+        ImportItem plan1 = saveItem(ImportItemType.BET_PLAN, ImportItemStatus.APPROVED, true, planJson);
+        ImportItem plan2 = saveItem(ImportItemType.BET_PLAN, ImportItemStatus.APPROVED, true, planJson);
+        ImportItem bet1 = saveItem(ImportItemType.BET, ImportItemStatus.APPROVED, true, betJson);
+        ImportItem bet2 = saveItem(ImportItemType.BET, ImportItemStatus.APPROVED, true, betJson);
+        ImportItem review1 = saveItem(ImportItemType.POST_REVIEW, ImportItemStatus.APPROVED, true, reviewJson);
+        ImportItem review2 = saveItem(ImportItemType.POST_REVIEW, ImportItemStatus.APPROVED, true, reviewJson);
+
+        service.importItem(plan1.getId(), "admin");
+        service.importItem(plan2.getId(), "admin");
+        service.importItem(bet1.getId(), "admin");
+        service.importItem(bet2.getId(), "admin");
+        service.importItem(review1.getId(), "admin");
+        service.importItem(review2.getId(), "admin");
+
+        assertThat(count("bet_plans")).isEqualTo(1);
+        assertThat(count("bet_plan_items")).isEqualTo(1);
+        assertThat(count("bets")).isEqualTo(1);
+        assertThat(count("post_match_reviews")).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM import_item_mappings WHERE target_type IN ('BET_PLAN','BET_PLAN_ITEM','BET','POST_MATCH_REVIEW')", Integer.class)).isEqualTo(8);
+    }
+
+    @Test
+    void successfulCoreImportMovesPendingFileToImportedDateAndAvoidsRescan() throws Exception {
+        Path inboxRoot = tempDir.resolve("data-inbox");
+        Path pending = inboxRoot.resolve("pending");
+        Files.createDirectories(pending);
+        Path source = pending.resolve("team.json");
+        Files.writeString(source, """
+                {"type":"TEAM","idempotency_key":"team-france","source":{"name":"test"},"payload":{"team_key":"france","display_name":"France"}}
+                """);
+
+        reviewService.scanAndPersist(pending);
+        ImportItem item = itemRepository.findAll().get(0);
+        reviewService.approve(item.getId(), "admin");
+        CoreDataImportResponse response = service.importItem(item.getId(), "admin");
+
+        Path archived = inboxRoot.resolve("imported").resolve(LocalDate.now().toString()).resolve("team.json");
+        assertThat(response.message()).contains("Source JSON archived to");
+        assertThat(Files.exists(source)).isFalse();
+        assertThat(Files.exists(archived)).isTrue();
+        assertThat(reviewService.dryRun(pending).totalItems()).isZero();
+    }
+
+    @Test
+    void rejectedImportItemMovesPendingFileToRejectedDateAndKeepsReason() throws Exception {
+        Path inboxRoot = tempDir.resolve("data-inbox");
+        Path pending = inboxRoot.resolve("pending");
+        Files.createDirectories(pending);
+        Path source = pending.resolve("reject-team.json");
+        Files.writeString(source, """
+                {"type":"TEAM","idempotency_key":"team-reject","source":{"name":"test"},"payload":{"team_key":"reject","display_name":"Rejected Team"}}
+                """);
+
+        reviewService.scanAndPersist(pending);
+        ImportItem item = itemRepository.findAll().get(0);
+        reviewService.reject(item.getId(), "source not enough", "admin");
+
+        Path archived = inboxRoot.resolve("rejected").resolve(LocalDate.now().toString()).resolve("reject-team.json");
+        ImportItem rejected = itemRepository.findById(item.getId()).orElseThrow();
+        assertThat(Files.exists(source)).isFalse();
+        assertThat(Files.exists(archived)).isTrue();
+        assertThat(rejected.getStatus()).isEqualTo(ImportItemStatus.REJECTED);
+        assertThat(rejected.getRejectionReason()).isEqualTo("source not enough");
     }
 
     @Test

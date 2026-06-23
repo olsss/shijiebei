@@ -1,7 +1,21 @@
 import { createAuthHeaders, http } from './http';
 import type { ApiResponse } from './system';
 
-export type ImportItemType = 'BETS' | 'ANALYSIS' | 'ODDS' | 'SOURCE';
+export type ImportItemType =
+  | 'TEAM'
+  | 'PLAYER'
+  | 'MATCH'
+  | 'MATCH_LINEUP'
+  | 'MATCH_EVENT'
+  | 'MATCH_STATS'
+  | 'BETS'
+  | 'BET'
+  | 'BET_PLAN'
+  | 'ANALYSIS'
+  | 'ODDS'
+  | 'SOURCE'
+  | 'POST_REVIEW'
+  | 'REVIEW_LESSON';
 export type ImportItemStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
 
 export interface ImportJobResponse {

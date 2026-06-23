@@ -9,7 +9,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
     @NotBlank
-    private String archivePath = "../skill/archive";
+    private String archivePath = "../data-inbox/pending";
     @Valid
     private Admin admin = new Admin();
 

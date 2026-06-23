@@ -13,6 +13,8 @@ import com.worldcup.importreview.repo.ImportJobRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -27,17 +29,20 @@ public class JsonImportReviewService {
     private final ImportItemRepository itemRepository;
     private final JdbcTemplate jdbcTemplate;
     private final AppProperties appProperties;
+    private final ImportFileArchiveService archiveService;
 
     public JsonImportReviewService(JsonArchiveScanner scanner,
                                    ImportJobRepository jobRepository,
                                    ImportItemRepository itemRepository,
                                    JdbcTemplate jdbcTemplate,
-                                   AppProperties appProperties) {
+                                   AppProperties appProperties,
+                                   ImportFileArchiveService archiveService) {
         this.scanner = scanner;
         this.jobRepository = jobRepository;
         this.itemRepository = itemRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.appProperties = appProperties;
+        this.archiveService = archiveService;
     }
 
     @Transactional
@@ -100,7 +105,17 @@ public class JsonImportReviewService {
         item.setReviewedAt(LocalDateTime.now());
         item.setRejectionReason(reason == null || reason.isBlank() ? "未填写原因" : reason);
         writeAudit(actor, "REJECT_IMPORT_ITEM", "import_item", String.valueOf(itemId), item.getRejectionReason());
-        return toItemResponse(itemRepository.save(item));
+        ImportItem saved = itemRepository.save(item);
+        String archivePath = saved.getJob().getArchivePath();
+        String relativePath = saved.getRelativePath();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                ImportFileArchiveResult archive = archiveService.archiveRejected(archivePath, relativePath);
+                writeAudit(actor, "ARCHIVE_REJECTED_IMPORT_FILE", "import_item", String.valueOf(itemId), archive.message());
+            }
+        });
+        return toItemResponse(saved);
     }
 
     @Transactional(readOnly = true)

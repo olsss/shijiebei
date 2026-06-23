@@ -14,10 +14,10 @@ spring:
   flyway:
     enabled: true
 app:
-  archive-path: ../skill/archive
+  archive-path: ../data-inbox/pending
   admin:
     username: ${APP_ADMIN_USERNAME:admin}
-    password: ${APP_ADMIN_PASSWORD:}
+    password: ${APP_ADMIN_PASSWORD:123123}
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

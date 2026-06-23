@@ -1,0 +1,27 @@
+{
+  "type": "POST_REVIEW",
+  "idempotency_key": "post-review-20260626-france-brazil",
+  "source": {
+    "name": "manual-review",
+    "url": "local://post-review",
+    "captured_at": "2026-06-27T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "review_key": "post-review-20260626-france-brazil",
+    "title": "法国 vs 巴西赛后复盘",
+    "math_review": "可替换：盈亏、赔率、CLV、资金曲线复盘",
+    "football_review": "可替换：比赛过程与战术复盘",
+    "handicap_review": "可替换：盘口变化复盘",
+    "tournament_temperament_review": "可替换：大赛气质与动机复盘",
+    "odds_value_review": "可替换：赔率价值复盘",
+    "overall_summary": "可替换：最终结论",
+    "lessons": [
+      {
+        "lesson_type": "CLV",
+        "lesson_text": "可替换：沉淀为下次分析要检查的规则",
+        "severity": "INFO"
+      }
+    ]
+  }
+}

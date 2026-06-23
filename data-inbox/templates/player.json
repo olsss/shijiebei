@@ -1,0 +1,20 @@
+{
+  "type": "PLAYER",
+  "idempotency_key": "player-france-mbappe",
+  "source": {
+    "name": "manual-input",
+    "url": "https://example.test/source",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "player_key": "france-mbappe",
+    "team_key": "france",
+    "display_name": "姆巴佩",
+    "shirt_number": 10,
+    "position": "FW",
+    "status": "AVAILABLE",
+    "injury_status": "无",
+    "card_status": "无",
+    "locker_room_status": "可替换：更衣室状态"
+  }
+}
