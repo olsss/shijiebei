@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import {
   getPublicMatchSentiment,
   listPublicSentimentCategories,
@@ -14,6 +13,8 @@ import {
 
 const loading = ref(false);
 const detailLoading = ref(false);
+const error = ref('');
+const detailError = ref('');
 const overview = ref<PublicSentimentFactorSummary[]>([]);
 const categories = ref<string[]>([]);
 const riskTypes = ref<string[]>([]);
@@ -22,7 +23,6 @@ const selectedRiskLevel = ref('');
 const staleOnly = ref(false);
 const selectedMatch = ref<PublicSentimentMatchDetail | null>(null);
 const selectedFactorId = ref<number | null>(null);
-const error = ref('');
 
 const riskLevels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'];
 
@@ -34,7 +34,7 @@ const filteredOverview = computed(() => overview.value.filter((item) => {
 }));
 
 const stats = computed(() => ({
-  matches: new Set(overview.value.map((item) => item.matchId).filter(Boolean)).size,
+  matches: new Set(overview.value.map((item) => item.matchId).filter((id) => id != null)).size,
   factors: overview.value.length,
   risks: Math.max(
     overview.value.reduce((sum, item) => sum + item.riskCount, 0),
@@ -70,30 +70,24 @@ const matchLevelRisks = computed<PublicSentimentRisk[]>(() => {
 });
 
 function formatDateTime(value?: string): string {
-  if (!value) {
-    return '-';
-  }
-  return value.replace('T', ' ').slice(0, 16);
+  return value ? value.replace('T', ' ').slice(0, 16) : '待同步';
 }
 
 function scoreText(value?: number): string {
-  if (value == null) {
-    return '-';
-  }
-  return Number(value).toFixed(1).replace(/\.0$/, '');
+  return value == null ? '-' : Number(value).toFixed(1).replace(/\.0$/, '');
 }
 
-function riskTagType(level?: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' {
+function riskClass(level?: string): string {
   switch (level) {
     case 'CRITICAL':
     case 'HIGH':
-      return 'danger';
+      return 'risk-pill--danger';
     case 'MEDIUM':
-      return 'warning';
+      return 'risk-pill--warning';
     case 'LOW':
-      return 'success';
+      return 'risk-pill--success';
     default:
-      return 'info';
+      return 'risk-pill--info';
   }
 }
 
@@ -116,8 +110,9 @@ async function load() {
     overview.value = overviewResponse.data;
     categories.value = categoryResponse.data;
     riskTypes.value = riskTypeResponse.data;
-    if (overview.value.length > 0) {
-      await openFactor(overview.value[0]);
+    const first = filteredOverview.value[0] ?? overview.value[0];
+    if (first) {
+      await openFactor(first);
     } else {
       selectedMatch.value = null;
       selectedFactorId.value = null;
@@ -128,251 +123,356 @@ async function load() {
     riskTypes.value = [];
     selectedMatch.value = null;
     selectedFactorId.value = null;
-    error.value = cause instanceof Error ? cause.message : '无法读取舆情与外部因素数据。';
+    error.value = cause instanceof Error ? cause.message : '无法读取公开舆情与外部因素数据。';
   } finally {
     loading.value = false;
   }
 }
 
 async function openFactor(row: PublicSentimentFactorSummary) {
-  if (!row.matchId) {
-    ElMessage.warning('该因素未绑定比赛，无法查看比赛维度详情。');
+  const matchId = row.matchId;
+  if (matchId == null) {
+    detailError.value = '该因素暂未绑定比赛，无法查看比赛维度详情。';
     return;
   }
   detailLoading.value = true;
+  detailError.value = '';
   try {
-    const response = await getPublicMatchSentiment(row.matchId);
+    const response = await getPublicMatchSentiment(matchId);
     selectedMatch.value = response.data;
     selectedFactorId.value = row.id;
   } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取比赛舆情详情。');
+    selectedMatch.value = null;
+    detailError.value = cause instanceof Error ? cause.message : '无法读取公开舆情详情。';
   } finally {
     detailLoading.value = false;
   }
+}
+
+function selectFactor(factor: PublicSentimentFactorDetail) {
+  selectedFactorId.value = factor.id;
 }
 
 onMounted(load);
 </script>
 
 <template>
-  <section class="page-shell sentiment-page">
-    <section class="page-content">
-      <el-page-header content="舆情与外部因素中心" @back="$router.push('/')" />
+  <section class="page-shell evidence-page sentiment-page" aria-labelledby="sentiment-center-title">
+    <section class="page-content sentiment-page__content">
+      <header class="evidence-hero">
+        <div>
+          <p class="eyebrow">Evidence · Sentiment</p>
+          <h1 id="sentiment-center-title">舆情与外部因素中心</h1>
+          <p>聚合天气、公众热度、伤停与环境因素，只展示已入库的事实摘要、来源可信度和风险评分，不展示采集底稿。</p>
+        </div>
+        <button class="action-button" type="button" :disabled="loading" @click="load">
+          {{ loading ? '刷新中' : '刷新公开数据' }}
+        </button>
+      </header>
 
-      <el-alert
-        class="boundary-alert"
-        title="仅展示已批准 JSON 的事实记录、来源与风险评分，不生成方向或金额结论。"
-        type="info"
-        show-icon
-        :closable="false"
-      />
-      <el-alert v-if="error" :title="error" type="warning" show-icon class="top-alert" />
+      <section class="stat-grid" aria-label="舆情统计">
+        <article class="stat-card"><span>比赛</span><strong>{{ stats.matches }}</strong><small>公开因素覆盖</small></article>
+        <article class="stat-card"><span>因素</span><strong>{{ stats.factors }}</strong><small>A1 事实记录</small></article>
+        <article class="stat-card"><span>风险</span><strong>{{ stats.risks }}</strong><small>A2 评分项</small></article>
+        <article class="stat-card"><span>过期</span><strong>{{ stats.stale }}</strong><small>需关注时效</small></article>
+      </section>
 
-      <el-row :gutter="16" class="stat-row">
-        <el-col :span="6"><el-card><strong>{{ stats.matches }}</strong><span>比赛</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.factors }}</strong><span>因素记录</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.risks }}</strong><span>风险评分</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.stale }}</strong><span>过期提醒</span></el-card></el-col>
-      </el-row>
+      <div v-if="error" class="alert-panel" role="alert">{{ error }}</div>
 
-      <el-card class="panel-card filter-card">
-        <template #header>
-          <div class="card-header">
-            <span>A1 事实记录 + A2 风险评分筛选</span>
-            <el-button size="small" :loading="loading" @click="load">刷新</el-button>
+      <section class="filter-panel" aria-label="舆情筛选">
+        <label>
+          因素分类
+          <select v-model="selectedCategory">
+            <option value="">全部分类</option>
+            <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+          </select>
+        </label>
+        <label>
+          风险等级
+          <select v-model="selectedRiskLevel">
+            <option value="">全部等级</option>
+            <option v-for="level in riskLevels" :key="level" :value="level">{{ level }}</option>
+          </select>
+        </label>
+        <label class="check-row">
+          <input v-model="staleOnly" type="checkbox">
+          只看过期提醒
+        </label>
+        <div class="risk-type-row" aria-label="风险类型">
+          <span v-for="riskType in riskTypes" :key="riskType" class="type-chip">{{ riskType }}</span>
+          <span v-if="riskTypes.length === 0" class="muted-text">暂无风险类型</span>
+        </div>
+      </section>
+
+      <section class="evidence-grid">
+        <aside class="side-panel" aria-label="外部因素列表">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Factors</p><h2>因素记录</h2></div>
+            <span class="count-pill">{{ filteredOverview.length }}</span>
           </div>
-        </template>
-        <el-form inline>
-          <el-form-item label="因素分类">
-            <el-select v-model="selectedCategory" clearable placeholder="全部分类" style="width: 180px">
-              <el-option v-for="category in categories" :key="category" :label="category" :value="category" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="最高风险">
-            <el-select v-model="selectedRiskLevel" clearable placeholder="全部等级" style="width: 160px">
-              <el-option v-for="level in riskLevels" :key="level" :label="level" :value="level" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="时效">
-            <el-switch v-model="staleOnly" active-text="只看过期" inactive-text="全部" />
-          </el-form-item>
-          <el-form-item label="风险类型">
-            <el-tag v-for="riskType in riskTypes" :key="riskType" class="risk-chip" type="info" effect="plain">
-              {{ riskType }}
-            </el-tag>
-            <span v-if="riskTypes.length === 0" class="muted-text">暂无</span>
-          </el-form-item>
-        </el-form>
-      </el-card>
+          <p v-if="loading && !overview.length" class="empty-copy">正在加载公开舆情...</p>
+          <p v-else-if="!filteredOverview.length" class="empty-copy">暂无符合筛选条件的因素。</p>
+          <button
+            v-for="item in filteredOverview"
+            v-else
+            :key="item.id"
+            class="list-card"
+            :class="{ 'list-card--active': item.id === selectedFactorId }"
+            type="button"
+            @click="openFactor(item)"
+          >
+            <span>{{ item.matchName || '比赛待同步' }} · {{ item.factorCategory }}</span>
+            <strong>{{ item.title }}</strong>
+            <small>{{ item.summary || '暂无摘要' }}</small>
+            <small>{{ item.sourceName || '来源待同步' }} · {{ item.stale ? '已过期' : '有效' }}</small>
+            <span class="risk-pill" :class="riskClass(item.highestRiskLevel)">{{ item.highestRiskLevel || 'UNKNOWN' }}</span>
+          </button>
+        </aside>
 
-      <el-row :gutter="16" class="content-row">
-        <el-col :span="11">
-          <el-card class="panel-card">
-            <template #header>外部因素与舆情记录</template>
-            <el-table :data="filteredOverview" v-loading="loading" height="640" @row-click="openFactor">
-              <el-table-column prop="matchName" label="比赛" min-width="150" />
-              <el-table-column label="分类" width="120">
-                <template #default="{ row }">
-                  <strong>{{ row.factorCategory }}</strong>
-                  <small>{{ row.factorType || '-' }}</small>
-                </template>
-              </el-table-column>
-              <el-table-column prop="title" label="标题" min-width="150" show-overflow-tooltip />
-              <el-table-column label="风险" width="110">
-                <template #default="{ row }">
-                  <el-tag :type="riskTagType(row.highestRiskLevel)" effect="dark">
-                    {{ row.highestRiskLevel || 'UNKNOWN' }}
-                  </el-tag>
-                  <small>{{ row.riskCount }} 条</small>
-                </template>
-              </el-table-column>
-              <el-table-column label="时效" width="92">
-                <template #default="{ row }">
-                  <el-tag :type="row.stale ? 'danger' : 'success'" effect="plain">
-                    {{ row.stale ? '已过期' : '有效' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+        <article class="detail-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Match Detail</p>
+              <h2>{{ selectedMatch?.matchName || '舆情详情' }}</h2>
+            </div>
+            <span v-if="selectedMatch" class="status-pill">JC {{ selectedMatch.jcCode || '待定' }}</span>
+          </div>
 
-        <el-col :span="13">
-          <el-card class="panel-card" v-loading="detailLoading">
-            <template #header>
-              <div class="card-header">
-                <span>{{ selectedMatch?.matchName || '比赛舆情详情' }}</span>
-                <el-tag type="info">{{ selectedMatch?.jcCode || '无编号' }}</el-tag>
-              </div>
-            </template>
+          <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
+          <p v-else-if="detailLoading && !selectedMatch" class="empty-copy">正在加载舆情详情...</p>
+          <p v-else-if="!selectedMatch" class="empty-copy">请选择左侧因素。</p>
 
-            <el-empty v-if="!selectedMatch" description="请选择左侧记录" />
-            <template v-else>
-              <el-table
-                :data="selectedMatch.factors"
-                border
-                height="230"
-                highlight-current-row
-                @row-click="(row: PublicSentimentFactorDetail) => selectedFactorId = row.id"
+          <template v-else>
+            <section class="factor-card-grid" aria-label="比赛因素">
+              <button
+                v-for="factor in selectedMatch.factors"
+                :key="factor.id"
+                class="factor-card"
+                :class="{ 'factor-card--active': factor.id === currentFactor?.id }"
+                type="button"
+                @click="selectFactor(factor)"
               >
-                <el-table-column prop="factorCategory" label="分类" width="110" />
-                <el-table-column prop="factorType" label="类型" width="110" />
-                <el-table-column prop="title" label="标题" min-width="140" show-overflow-tooltip />
-                <el-table-column label="来源" min-width="130" show-overflow-tooltip>
-                  <template #default="{ row }">{{ row.sourceName || row.sourceRef || '-' }}</template>
-                </el-table-column>
-                <el-table-column label="可信度" width="92">
-                  <template #default="{ row }">{{ scoreText(row.reliabilityScore) }}</template>
-                </el-table-column>
-                <el-table-column label="风险数" width="80">
-                  <template #default="{ row }">{{ factorRiskCount(row) }}</template>
-                </el-table-column>
-              </el-table>
+                <span>{{ factor.factorCategory }} · {{ factor.factorType || '类型待定' }}</span>
+                <strong>{{ factor.title }}</strong>
+                <small>{{ factor.sourceName || factor.sourceRef || '来源待同步' }} · 风险 {{ factorRiskCount(factor) }}</small>
+              </button>
+            </section>
 
-              <div class="detail-grid">
-                <div>
-                  <h3>当前因素摘要</h3>
-                  <el-descriptions v-if="currentFactor" :column="2" border size="small">
-                    <el-descriptions-item label="影响方向">{{ currentFactor.impactDirection || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="对象">{{ currentFactor.entityType || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="证据等级">{{ currentFactor.evidenceLevel || '-' }}</el-descriptions-item>
-                    <el-descriptions-item label="置信分">{{ scoreText(currentFactor.confidenceScore) }}</el-descriptions-item>
-                    <el-descriptions-item label="观测时间">{{ formatDateTime(currentFactor.observedAt) }}</el-descriptions-item>
-                    <el-descriptions-item label="过期时间">
-                      <el-tag v-if="currentFactor.stale" type="danger" effect="plain">已过期</el-tag>
-                      {{ formatDateTime(currentFactor.expiresAt) }}
-                    </el-descriptions-item>
-                    <el-descriptions-item label="摘要" :span="2">{{ currentFactor.summary || '-' }}</el-descriptions-item>
-                  </el-descriptions>
+            <section class="detail-card-grid">
+              <article class="info-card">
+                <p class="eyebrow">Current Factor</p>
+                <h3>当前因素摘要</h3>
+                <template v-if="currentFactor">
+                  <div class="summary-grid">
+                    <div><span>影响方向</span><strong>{{ currentFactor.impactDirection || '-' }}</strong></div>
+                    <div><span>证据等级</span><strong>{{ currentFactor.evidenceLevel || '-' }}</strong></div>
+                    <div><span>置信分</span><strong>{{ scoreText(currentFactor.confidenceScore) }}</strong></div>
+                    <div><span>可信度</span><strong>{{ scoreText(currentFactor.reliabilityScore) }}</strong></div>
+                  </div>
+                  <p>{{ currentFactor.summary || '暂无摘要' }}</p>
+                  <small>{{ formatDateTime(currentFactor.observedAt) }} · 过期时间 {{ formatDateTime(currentFactor.expiresAt) }}</small>
+                </template>
+                <p v-else class="empty-copy">暂无当前因素。</p>
+              </article>
+
+              <article class="info-card">
+                <p class="eyebrow">Factor Risks</p>
+                <h3>关联风险评分</h3>
+                <div v-if="currentFactorRisks.length" class="risk-grid">
+                  <article v-for="risk in currentFactorRisks" :key="risk.id" class="risk-card">
+                    <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ risk.riskLevel }}</span>
+                    <strong>{{ risk.title }}</strong>
+                    <small>{{ risk.riskType }} · 分数 {{ scoreText(risk.riskScore) }}</small>
+                    <p>{{ risk.rationale || risk.suggestedAction || '保持观察' }}</p>
+                  </article>
                 </div>
+                <p v-else class="empty-copy">当前因素暂无风险评分。</p>
+              </article>
+            </section>
 
-                <div>
-                  <h3>关联风险评分</h3>
-                  <el-table :data="currentFactorRisks" border empty-text="当前因素暂无风险评分">
-                    <el-table-column prop="riskType" label="类型" min-width="130" />
-                    <el-table-column label="等级" width="92">
-                      <template #default="{ row }">
-                        <el-tag :type="riskTagType(row.riskLevel)" effect="dark">{{ row.riskLevel }}</el-tag>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="分数" width="80">
-                      <template #default="{ row }">{{ scoreText(row.riskScore) }}</template>
-                    </el-table-column>
-                    <el-table-column prop="title" label="标题" min-width="120" />
-                    <el-table-column prop="suggestedAction" label="动作代码" min-width="120" show-overflow-tooltip />
-                  </el-table>
-                </div>
-              </div>
-
+            <section class="info-card">
+              <p class="eyebrow">Match Risks</p>
               <h3>比赛级风险评分</h3>
-              <el-table :data="matchLevelRisks" border empty-text="暂无比赛级风险评分">
-                <el-table-column prop="riskType" label="类型" min-width="130" />
-                <el-table-column label="等级" width="92">
-                  <template #default="{ row }">
-                    <el-tag :type="riskTagType(row.riskLevel)" effect="dark">{{ row.riskLevel }}</el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="分数" width="80">
-                  <template #default="{ row }">{{ scoreText(row.riskScore) }}</template>
-                </el-table-column>
-                <el-table-column prop="title" label="标题" min-width="120" />
-                <el-table-column prop="suggestedAction" label="动作代码" min-width="120" show-overflow-tooltip />
-              </el-table>
-
-            </template>
-          </el-card>
-        </el-col>
-      </el-row>
+              <div v-if="matchLevelRisks.length" class="risk-grid">
+                <article v-for="risk in matchLevelRisks" :key="risk.id" class="risk-card">
+                  <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ risk.riskLevel }}</span>
+                  <strong>{{ risk.title }}</strong>
+                  <small>{{ risk.riskType }} · 分数 {{ scoreText(risk.riskScore) }}</small>
+                  <p>{{ risk.rationale || risk.suggestedAction || '保持观察' }}</p>
+                </article>
+              </div>
+              <p v-else class="empty-copy">暂无比赛级风险评分。</p>
+            </section>
+          </template>
+        </article>
+      </section>
     </section>
   </section>
 </template>
 
 <style scoped>
-.sentiment-page {
-  background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.18), transparent 32rem), #f5f7fb;
+.evidence-page { max-width: 100%; overflow-x: hidden; }
+.sentiment-page__content { display: grid; gap: 18px; min-width: 0; }
+.evidence-hero, .stat-card, .filter-panel, .side-panel, .detail-panel, .info-card, .alert-panel {
+  background: var(--wc-glass);
+  border: 1px solid var(--wc-border);
+  border-radius: var(--wc-radius-lg);
+  color: var(--wc-text);
 }
-.boundary-alert,
-.top-alert,
-.stat-row,
-.filter-card,
-.content-row {
-  margin-top: 16px;
-}
-.stat-row :deep(.el-card__body) {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.stat-row strong {
-  color: #0369a1;
-  font-size: 30px;
-}
-.stat-row span,
-small,
-.muted-text {
-  color: #6b7280;
-}
-.panel-card {
-  border-radius: 14px;
-}
-.card-header {
+.evidence-hero {
   align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(20px, 4vw, 38px);
+}
+.evidence-hero h1 {
+  font-family: var(--wc-font-display);
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 1;
+  margin: 0 0 12px;
+}
+.evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .factor-card span, .factor-card small, .summary-grid span, .risk-card small, .risk-card p, .muted-text {
+  color: var(--wc-text-muted);
+}
+.eyebrow {
+  color: var(--wc-warning);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+.action-button {
+  background: var(--wc-accent);
+  border: 0;
+  border-radius: 999px;
+  color: var(--wc-on-accent);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.stat-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.stat-card, .side-panel, .detail-panel, .info-card, .alert-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+}
+.stat-card strong {
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 36px;
+}
+.filter-panel {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
+  padding: 16px;
+}
+.filter-panel label {
+  color: var(--wc-text-muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+}
+.filter-panel select {
+  background: rgba(15, 23, 42, .66);
+  border: 1px solid rgba(147, 197, 253, .22);
+  border-radius: 14px;
+  color: var(--wc-text);
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 12px;
+}
+.check-row {
+  align-items: center;
+  display: flex !important;
+  min-height: 44px;
+}
+.check-row input { min-height: 20px; min-width: 20px; }
+.risk-type-row {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
 }
-.risk-chip {
-  margin-right: 6px;
+.type-chip, .risk-pill, .count-pill, .status-pill {
+  border-radius: 999px;
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
 }
-h3 {
-  margin-top: 22px;
+.type-chip, .count-pill, .status-pill {
+  background: rgba(147, 197, 253, .12);
+  color: var(--wc-primary);
 }
-small {
-  display: block;
-  margin-top: 4px;
-}
-.detail-grid {
+.evidence-grid {
   display: grid;
   gap: 16px;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  min-width: 0;
+}
+.panel-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.panel-heading h2, .info-card h3 { margin: 0; }
+.list-card, .factor-card, .risk-card, .summary-grid div {
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(147, 197, 253, .18);
+  border-radius: var(--wc-radius-md);
+  color: var(--wc-text);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  text-align: left;
+}
+.list-card, .factor-card {
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+.list-card--active, .factor-card--active { border-color: rgba(217, 119, 6, .62); }
+.factor-card-grid, .detail-card-grid, .risk-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+.summary-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
+}
+.risk-pill--danger { background: rgba(239, 68, 68, .16); color: #fecaca; }
+.risk-pill--warning { background: rgba(245, 158, 11, .18); color: #fde68a; }
+.risk-pill--success { background: rgba(34, 197, 94, .16); color: #bbf7d0; }
+.risk-pill--info { background: rgba(147, 197, 253, .12); color: var(--wc-primary); }
+@media (max-width: 1024px) {
+  .evidence-hero, .evidence-grid { grid-template-columns: 1fr; }
+  .stat-grid, .filter-panel, .factor-card-grid, .detail-card-grid, .risk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .evidence-hero, .stat-grid, .filter-panel, .evidence-grid, .factor-card-grid, .detail-card-grid, .risk-grid, .summary-grid { grid-template-columns: 1fr; }
+  .panel-heading { align-items: stretch; flex-direction: column; }
+  .action-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .list-card, .factor-card { transition: none; }
 }
 </style>

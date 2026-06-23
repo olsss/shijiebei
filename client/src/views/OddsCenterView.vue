@@ -1,30 +1,28 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import {
-  getMatchOdds,
-  listBookmakers,
-  listOddsMarkets,
-  listOddsOverview,
-  type OddsMarketDetail,
-  type OddsMarketDictionaryItem,
-  type OddsMarketSummary,
-  type OddsMatchDetail,
+  getPublicMatchOdds,
+  listPublicBookmakers,
+  listPublicOddsMarkets,
+  listPublicOddsOverview,
+  type PublicOddsMarketDetail,
+  type PublicOddsMarketDictionaryItem,
+  type PublicOddsMarketSummary,
+  type PublicOddsMatchDetail,
 } from '@/api/odds';
-import { useAuthStore } from '@/stores/auth';
 import { formatMarketLine } from '@/utils/odds-format';
 
-const authStore = useAuthStore();
 const loading = ref(false);
 const detailLoading = ref(false);
-const overview = ref<OddsMarketSummary[]>([]);
+const error = ref('');
+const detailError = ref('');
+const overview = ref<PublicOddsMarketSummary[]>([]);
 const bookmakers = ref<string[]>([]);
-const markets = ref<OddsMarketDictionaryItem[]>([]);
-const selectedMatch = ref<OddsMatchDetail | null>(null);
-const selectedMarketId = ref<number | null>(null);
+const markets = ref<PublicOddsMarketDictionaryItem[]>([]);
 const selectedBookmaker = ref('');
 const selectedMarketCode = ref('');
-const error = ref('');
+const selectedMatch = ref<PublicOddsMatchDetail | null>(null);
+const selectedMarketId = ref<number | null>(null);
 
 const filteredOverview = computed(() => overview.value.filter((item) => {
   const bookmakerOk = !selectedBookmaker.value || item.bookmaker === selectedBookmaker.value;
@@ -33,31 +31,26 @@ const filteredOverview = computed(() => overview.value.filter((item) => {
 }));
 
 const stats = computed(() => ({
-  matches: new Set(overview.value.map((item) => item.matchId).filter(Boolean)).size,
+  matches: new Set(overview.value.map((item) => item.matchId).filter((id) => id != null)).size,
   bookmakers: bookmakers.value.length,
   markets: markets.value.length,
   selections: overview.value.reduce((sum, item) => sum + item.selectionCount, 0),
 }));
 
-const currentMarket = computed<OddsMarketDetail | null>(() => {
-  if (!selectedMatch.value || selectedMarketId.value == null) {
-    return selectedMatch.value?.markets[0] ?? null;
+const currentMarket = computed<PublicOddsMarketDetail | null>(() => {
+  if (!selectedMatch.value) {
+    return null;
   }
-  return selectedMatch.value.markets.find((market) => market.id === selectedMarketId.value) ?? selectedMatch.value.markets[0] ?? null;
+  if (selectedMarketId.value == null) {
+    return selectedMatch.value.markets[0] ?? null;
+  }
+  return selectedMatch.value.markets.find((market) => market.id === selectedMarketId.value)
+    ?? selectedMatch.value.markets[0]
+    ?? null;
 });
 
-function requireAuthHeader(): string {
-  if (!authStore.basicAuthHeader) {
-    throw new Error('请先登录后查看赔率中心。');
-  }
-  return authStore.basicAuthHeader;
-}
-
 function formatDateTime(value?: string): string {
-  if (!value) {
-    return '-';
-  }
-  return value.replace('T', ' ').slice(0, 16);
+  return value ? value.replace('T', ' ').slice(0, 16) : '待同步';
 }
 
 function oddsText(value?: number): string {
@@ -68,17 +61,17 @@ async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const authHeader = requireAuthHeader();
     const [overviewResponse, bookmakerResponse, marketResponse] = await Promise.all([
-      listOddsOverview(authHeader),
-      listBookmakers(authHeader),
-      listOddsMarkets(authHeader),
+      listPublicOddsOverview(),
+      listPublicBookmakers(),
+      listPublicOddsMarkets(),
     ]);
     overview.value = overviewResponse.data;
     bookmakers.value = bookmakerResponse.data;
     markets.value = marketResponse.data;
-    if (overview.value.length > 0) {
-      await openMarket(overview.value[0]);
+    const first = filteredOverview.value[0] ?? overview.value[0];
+    if (first) {
+      await openMarket(first);
     } else {
       selectedMatch.value = null;
       selectedMarketId.value = null;
@@ -89,150 +82,296 @@ async function load() {
     markets.value = [];
     selectedMatch.value = null;
     selectedMarketId.value = null;
-    error.value = cause instanceof Error ? cause.message : '无法读取赔率中心数据。';
+    error.value = cause instanceof Error ? cause.message : '无法读取公开赔率中心数据。';
   } finally {
     loading.value = false;
   }
 }
 
-async function openMarket(row: OddsMarketSummary) {
-  if (!row.matchId) {
-    ElMessage.warning('该赔率快照未绑定比赛，无法查看比赛详情。');
+async function openMarket(row: PublicOddsMarketSummary) {
+  const matchId = row.matchId;
+  if (matchId == null) {
+    detailError.value = '该赔率快照暂未绑定比赛，无法查看比赛维度详情。';
     return;
   }
   detailLoading.value = true;
+  detailError.value = '';
   try {
-    const response = await getMatchOdds(requireAuthHeader(), row.matchId);
+    const response = await getPublicMatchOdds(matchId);
     selectedMatch.value = response.data;
     selectedMarketId.value = row.id;
   } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取赔率详情。');
+    selectedMatch.value = null;
+    detailError.value = cause instanceof Error ? cause.message : '无法读取公开赔率详情。';
   } finally {
     detailLoading.value = false;
   }
+}
+
+function selectMarket(market: PublicOddsMarketDetail) {
+  selectedMarketId.value = market.id;
 }
 
 onMounted(load);
 </script>
 
 <template>
-  <section class="page-shell odds-page">
-    <section class="page-content">
-      <el-page-header content="赔率中心" @back="$router.push('/')" />
+  <section class="page-shell evidence-page odds-page" aria-labelledby="odds-center-title">
+    <section class="page-content odds-page__content">
+      <header class="evidence-hero">
+        <div>
+          <p class="eyebrow">Evidence · Odds</p>
+          <h1 id="odds-center-title">赔率中心</h1>
+          <p>公开展示已入库的公司、玩法、盘口与选项赔率；只保留分析所需的汇总字段，不展示采集原文或后台审核信息。</p>
+        </div>
+        <button class="action-button" type="button" :disabled="loading" @click="load">
+          {{ loading ? '刷新中' : '刷新公开数据' }}
+        </button>
+      </header>
 
-      <el-alert v-if="error" :title="error" type="warning" show-icon class="top-alert" />
+      <section class="stat-grid" aria-label="赔率中心统计">
+        <article class="stat-card"><span>比赛</span><strong>{{ stats.matches }}</strong><small>已关联公开赔率</small></article>
+        <article class="stat-card"><span>公司</span><strong>{{ stats.bookmakers }}</strong><small>公开来源数量</small></article>
+        <article class="stat-card"><span>玩法</span><strong>{{ stats.markets }}</strong><small>盘口字典</small></article>
+        <article class="stat-card"><span>选项</span><strong>{{ stats.selections }}</strong><small>可读赔率点</small></article>
+      </section>
 
-      <el-row :gutter="16" class="stat-row">
-        <el-col :span="6"><el-card><strong>{{ stats.matches }}</strong><span>比赛</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.bookmakers }}</strong><span>公司</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.markets }}</strong><span>玩法</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.selections }}</strong><span>选项赔率</span></el-card></el-col>
-      </el-row>
+      <div v-if="error" class="alert-panel" role="alert">{{ error }}</div>
 
-      <el-card class="panel-card filter-card">
-        <template #header>
-          <div class="card-header">
-            <span>盘口快照筛选</span>
-            <el-button size="small" :loading="loading" @click="load">刷新</el-button>
+      <section class="filter-panel" aria-label="赔率筛选">
+        <label>
+          公司
+          <select v-model="selectedBookmaker">
+            <option value="">全部公司</option>
+            <option v-for="bookmaker in bookmakers" :key="bookmaker" :value="bookmaker">{{ bookmaker }}</option>
+          </select>
+        </label>
+        <label>
+          玩法
+          <select v-model="selectedMarketCode">
+            <option value="">全部玩法</option>
+            <option v-for="market in markets" :key="market.marketCode" :value="market.marketCode">
+              {{ market.marketCode }} {{ market.marketName || '' }}
+            </option>
+          </select>
+        </label>
+      </section>
+
+      <section class="evidence-grid">
+        <aside class="side-panel" aria-label="盘口快照">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Markets</p><h2>盘口快照</h2></div>
+            <span class="count-pill">{{ filteredOverview.length }}</span>
           </div>
-        </template>
-        <el-form inline>
-          <el-form-item label="公司">
-            <el-select v-model="selectedBookmaker" clearable placeholder="全部公司" style="width: 180px">
-              <el-option v-for="bookmaker in bookmakers" :key="bookmaker" :label="bookmaker" :value="bookmaker" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="玩法">
-            <el-select v-model="selectedMarketCode" clearable placeholder="全部玩法" style="width: 200px">
-              <el-option
-                v-for="market in markets"
-                :key="market.marketCode"
-                :label="`${market.marketCode} ${market.marketName || ''}`"
-                :value="market.marketCode"
-              />
-            </el-select>
-          </el-form-item>
-        </el-form>
-      </el-card>
+          <p v-if="loading && !overview.length" class="empty-copy">正在加载公开盘口...</p>
+          <p v-else-if="!filteredOverview.length" class="empty-copy">暂无符合筛选条件的盘口。</p>
+          <button
+            v-for="item in filteredOverview"
+            v-else
+            :key="item.id"
+            class="list-card"
+            :class="{ 'list-card--active': item.id === selectedMarketId }"
+            type="button"
+            @click="openMarket(item)"
+          >
+            <span>{{ item.bookmaker }} · {{ item.snapshotType }}</span>
+            <strong>{{ item.matchName || '比赛待同步' }}</strong>
+            <small>{{ item.marketCode }} {{ item.marketName || '' }} · {{ formatMarketLine(item.lineValue, item.handicapLine) }}</small>
+            <small>{{ formatDateTime(item.capturedAt) }} · {{ item.selectionCount }} 项</small>
+          </button>
+        </aside>
 
-      <el-row :gutter="16" class="content-row">
-        <el-col :span="11">
-          <el-card class="panel-card">
-            <template #header>玩法市场快照</template>
-            <el-table :data="filteredOverview" v-loading="loading" height="620" @row-click="openMarket">
-              <el-table-column prop="matchName" label="比赛" min-width="150" />
-              <el-table-column prop="bookmaker" label="公司" width="110" />
-              <el-table-column label="玩法" min-width="120">
-                <template #default="{ row }">
-                  <strong>{{ row.marketCode }}</strong>
-                  <small>{{ row.marketName || '-' }}</small>
-                </template>
-              </el-table-column>
-              <el-table-column label="盘口" width="92">
-                <template #default="{ row }">{{ formatMarketLine(row.lineValue, row.handicapLine) }}</template>
-              </el-table-column>
-              <el-table-column prop="snapshotType" label="快照" width="82" />
-              <el-table-column label="选项" width="70">
-                <template #default="{ row }">{{ row.selectionCount }}</template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+        <article class="detail-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Match Odds</p>
+              <h2>{{ selectedMatch?.matchName || '赔率详情' }}</h2>
+            </div>
+            <span v-if="selectedMatch" class="status-pill">JC {{ selectedMatch.jcCode || '待定' }}</span>
+          </div>
 
-        <el-col :span="13">
-          <el-card class="panel-card" v-loading="detailLoading">
-            <template #header>
-              <div class="card-header">
-                <span>{{ selectedMatch?.matchName || '赔率详情' }}</span>
-                <el-tag type="info">{{ selectedMatch?.jcCode || '无编号' }}</el-tag>
-              </div>
-            </template>
+          <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
+          <p v-else-if="detailLoading && !selectedMatch" class="empty-copy">正在加载赔率详情...</p>
+          <p v-else-if="!selectedMatch" class="empty-copy">请选择左侧盘口。</p>
 
-            <el-empty v-if="!selectedMatch" description="请选择盘口快照" />
-            <template v-else>
-              <el-table :data="selectedMatch.markets" border height="220" highlight-current-row @row-click="(row: OddsMarketDetail) => selectedMarketId = row.id">
-                <el-table-column prop="bookmaker" label="公司" width="110" />
-                <el-table-column prop="marketCode" label="玩法" width="100" />
-                <el-table-column prop="marketName" label="名称" min-width="120" />
-                <el-table-column label="盘口" width="90">
-                  <template #default="{ row }">{{ formatMarketLine(row.lineValue, row.handicapLine) }}</template>
-                </el-table-column>
-                <el-table-column prop="snapshotType" label="快照" width="88" />
-                <el-table-column label="抓取时间" min-width="130">
-                  <template #default="{ row }">{{ formatDateTime(row.capturedAt) }}</template>
-                </el-table-column>
-              </el-table>
+          <template v-else>
+            <section class="market-card-grid" aria-label="比赛盘口">
+              <button
+                v-for="market in selectedMatch.markets"
+                :key="market.id"
+                class="market-card"
+                :class="{ 'market-card--active': market.id === currentMarket?.id }"
+                type="button"
+                @click="selectMarket(market)"
+              >
+                <span>{{ market.bookmaker }} · {{ market.snapshotType }}</span>
+                <strong>{{ market.marketCode }} {{ market.marketName || '' }}</strong>
+                <small>{{ formatMarketLine(market.lineValue, market.handicapLine) }} · {{ formatDateTime(market.capturedAt) }}</small>
+              </button>
+            </section>
 
+            <section class="info-card">
+              <p class="eyebrow">Selections</p>
               <h3>当前玩法选项赔率</h3>
-              <el-table :data="currentMarket?.selections || []" border empty-text="暂无选项赔率">
-                <el-table-column prop="selectionCode" label="选项代码" width="120" />
-                <el-table-column prop="selectionName" label="选项" min-width="120" />
-                <el-table-column label="赔率" width="100">
-                  <template #default="{ row }">{{ oddsText(row.oddsValue) }}</template>
-                </el-table-column>
-                <el-table-column prop="selectionStatus" label="状态" width="100" />
-                <el-table-column prop="rawPayload" label="原始字段" min-width="180" show-overflow-tooltip />
-              </el-table>
-
-              <h3>市场原始 JSON</h3>
-              <pre class="raw-payload">{{ currentMarket?.rawPayload || '无原始字段' }}</pre>
-            </template>
-          </el-card>
-        </el-col>
-      </el-row>
+              <div v-if="currentMarket?.selections.length" class="selection-grid">
+                <article v-for="selection in currentMarket.selections" :key="selection.id" class="selection-card">
+                  <span>{{ selection.selectionCode }}</span>
+                  <strong>{{ selection.selectionName }}</strong>
+                  <b>{{ oddsText(selection.oddsValue) }}</b>
+                  <small>{{ selection.selectionStatus }} · 隐含概率 {{ oddsText(selection.impliedProbability) }}</small>
+                </article>
+              </div>
+              <p v-else class="empty-copy">当前玩法暂无选项赔率。</p>
+            </section>
+          </template>
+        </article>
+      </section>
     </section>
   </section>
 </template>
 
 <style scoped>
-.odds-page { background: radial-gradient(circle at top right, rgba(245, 158, 11, 0.16), transparent 30rem), #f5f7fb; }
-.top-alert, .stat-row, .filter-card, .content-row { margin-top: 16px; }
-.stat-row :deep(.el-card__body) { display: flex; flex-direction: column; gap: 6px; }
-.stat-row strong { color: #b45309; font-size: 30px; }
-.stat-row span, small { color: #6b7280; }
-.panel-card { border-radius: 14px; }
-.card-header { align-items: center; display: flex; justify-content: space-between; }
-h3 { margin-top: 22px; }
-small { display: block; margin-top: 4px; }
-.raw-payload { background: #111827; border-radius: 10px; color: #e5e7eb; max-height: 220px; overflow: auto; padding: 14px; white-space: pre-wrap; }
+.evidence-page { max-width: 100%; overflow-x: hidden; }
+.odds-page__content { display: grid; gap: 18px; min-width: 0; }
+.evidence-hero, .stat-card, .filter-panel, .side-panel, .detail-panel, .info-card, .alert-panel {
+  background: var(--wc-glass);
+  border: 1px solid var(--wc-border);
+  border-radius: var(--wc-radius-lg);
+  color: var(--wc-text);
+}
+.evidence-hero {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(20px, 4vw, 38px);
+}
+.evidence-hero h1 {
+  font-family: var(--wc-font-display);
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 1;
+  margin: 0 0 12px;
+}
+.evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .market-card span, .market-card small, .selection-card small {
+  color: var(--wc-text-muted);
+}
+.eyebrow {
+  color: var(--wc-warning);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+.action-button {
+  background: var(--wc-accent);
+  border: 0;
+  border-radius: 999px;
+  color: var(--wc-on-accent);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.stat-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.stat-card, .side-panel, .detail-panel, .info-card, .alert-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+}
+.stat-card strong {
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 36px;
+}
+.filter-panel {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  padding: 16px;
+}
+.filter-panel label {
+  color: var(--wc-text-muted);
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+}
+.filter-panel select {
+  background: rgba(15, 23, 42, .66);
+  border: 1px solid rgba(147, 197, 253, .22);
+  border-radius: 14px;
+  color: var(--wc-text);
+  min-height: 44px;
+  min-width: 0;
+  padding: 0 12px;
+}
+.evidence-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 350px) minmax(0, 1fr);
+  min-width: 0;
+}
+.panel-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.panel-heading h2, .info-card h3 { margin: 0; }
+.list-card, .market-card, .selection-card {
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(147, 197, 253, .18);
+  border-radius: var(--wc-radius-md);
+  color: var(--wc-text);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  text-align: left;
+}
+.list-card, .market-card {
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+.list-card--active, .market-card--active { border-color: rgba(217, 119, 6, .62); }
+.count-pill, .status-pill {
+  background: rgba(147, 197, 253, .12);
+  border-radius: 999px;
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+.market-card-grid, .selection-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+.selection-card b {
+  color: var(--wc-accent);
+  font-family: var(--wc-font-mono);
+  font-size: 26px;
+}
+@media (max-width: 1024px) {
+  .evidence-hero, .evidence-grid { grid-template-columns: 1fr; }
+  .stat-grid, .market-card-grid, .selection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .evidence-hero, .stat-grid, .filter-panel, .evidence-grid, .market-card-grid, .selection-grid { grid-template-columns: 1fr; }
+  .panel-heading { align-items: stretch; flex-direction: column; }
+  .action-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .list-card, .market-card { transition: none; }
+}
 </style>

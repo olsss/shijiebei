@@ -64,10 +64,10 @@
 - Possibly create: `client/src/components/evidence/*`
 - Test: per-domain view tests and API tests.
 
-- [ ] Migrate evidence pages to new public route groups and responsive page layout.
-- [ ] Keep all previous read functionality through public sanitized DTOs.
-- [ ] Ensure raw payload / ticket / stake / approval metadata never renders in public UI.
-- [ ] Commit and request subagent review.
+- [x] Migrate evidence pages to new public route groups and responsive page layout.
+- [x] Keep all previous read functionality through public sanitized DTOs.
+- [x] Ensure raw payload / ticket / stake / approval metadata never renders in public UI.
+- [x] Commit and request subagent review.
 
 ## Stage 5: Decisions and review page
 

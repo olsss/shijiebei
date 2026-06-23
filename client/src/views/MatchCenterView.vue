@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
-import { getMatchDetail, listMatches, type MatchDetail, type MatchSummary } from '@/api/matches';
-import { useAuthStore } from '@/stores/auth';
+import {
+  getPublicMatchDetail,
+  listPublicMatches,
+  type PublicMatchDetail,
+  type PublicMatchSummary,
+} from '@/api/matches';
 
-const authStore = useAuthStore();
 const loading = ref(false);
 const detailLoading = ref(false);
-const matches = ref<MatchSummary[]>([]);
-const selected = ref<MatchDetail | null>(null);
 const error = ref('');
+const detailError = ref('');
+const matches = ref<PublicMatchSummary[]>([]);
+const selected = ref<PublicMatchDetail | null>(null);
+const selectedMatchId = ref<number | null>(null);
 
 const stats = computed(() => ({
   matches: matches.value.length,
@@ -18,14 +22,10 @@ const stats = computed(() => ({
   conflicts: matches.value.reduce((sum, match) => sum + match.conflictCount, 0),
 }));
 
-function requireAuthHeader(): string {
-  if (!authStore.basicAuthHeader) {
-    throw new Error('请先登录后查看比赛中心。');
+function matchTitle(match?: PublicMatchSummary | null): string {
+  if (!match) {
+    return '比赛中心';
   }
-  return authStore.basicAuthHeader;
-}
-
-function matchTitle(match: MatchSummary): string {
   if (match.homeTeamName || match.awayTeamName) {
     return `${match.homeTeamName || '主队待定'} vs ${match.awayTeamName || '客队待定'}`;
   }
@@ -33,43 +33,48 @@ function matchTitle(match: MatchSummary): string {
 }
 
 function formatDateTime(value?: string): string {
-  if (!value) {
-    return '-';
-  }
-  return value.replace('T', ' ').slice(0, 16);
+  return value ? value.replace('T', ' ').slice(0, 16) : '待同步';
 }
 
-function reliabilityLabel(value?: number): string {
-  return value == null ? '未评分' : `${Number(value).toFixed(1)} / 10`;
+function scoreText(value?: number): string {
+  return value == null ? '-' : Number(value).toFixed(1).replace(/\.0$/, '');
 }
 
 async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const response = await listMatches(requireAuthHeader());
+    const response = await listPublicMatches();
     matches.value = response.data;
-    if (matches.value.length > 0) {
-      await openMatch(matches.value[0]);
+    const nextMatch = selectedMatchId.value
+      ? matches.value.find((match) => match.id === selectedMatchId.value) ?? matches.value[0]
+      : matches.value[0];
+    if (nextMatch) {
+      await openMatch(nextMatch);
     } else {
       selected.value = null;
+      selectedMatchId.value = null;
     }
   } catch (cause) {
     matches.value = [];
     selected.value = null;
-    error.value = cause instanceof Error ? cause.message : '无法读取比赛中心数据。';
+    selectedMatchId.value = null;
+    error.value = cause instanceof Error ? cause.message : '无法读取公开比赛中心数据。';
   } finally {
     loading.value = false;
   }
 }
 
-async function openMatch(match: MatchSummary) {
+async function openMatch(match: PublicMatchSummary) {
+  selectedMatchId.value = match.id;
   detailLoading.value = true;
+  detailError.value = '';
   try {
-    const response = await getMatchDetail(requireAuthHeader(), match.id);
+    const response = await getPublicMatchDetail(match.id);
     selected.value = response.data;
   } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取比赛详情。');
+    selected.value = null;
+    detailError.value = cause instanceof Error ? cause.message : '无法读取公开比赛详情。';
   } finally {
     detailLoading.value = false;
   }
@@ -79,160 +84,163 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="page-shell match-page">
-    <section class="page-content">
-      <el-page-header content="比赛中心" @back="$router.push('/')" />
+  <section class="page-shell evidence-page" aria-labelledby="match-center-title">
+    <section class="page-content evidence-page__content">
+      <header class="evidence-hero">
+        <div>
+          <p class="eyebrow">Evidence · Matches</p>
+          <h1 id="match-center-title">比赛中心</h1>
+          <p>公开展示已入库的赛程、阵容、事件、统计、证据链与冲突状态；采集底稿和冲突明细值不在公开页渲染。</p>
+        </div>
+        <button class="action-button" type="button" :disabled="loading" @click="load">
+          {{ loading ? '刷新中' : '刷新公开数据' }}
+        </button>
+      </header>
 
-      <el-alert v-if="error" :title="error" type="warning" show-icon class="top-alert" />
+      <section class="stat-grid" aria-label="比赛中心统计">
+        <article class="stat-card"><span>比赛</span><strong>{{ stats.matches }}</strong><small>公开赛程</small></article>
+        <article class="stat-card"><span>事件</span><strong>{{ stats.events }}</strong><small>进球 / 红黄牌等</small></article>
+        <article class="stat-card"><span>阵容</span><strong>{{ stats.lineups }}</strong><small>首发与角色</small></article>
+        <article class="stat-card"><span>冲突</span><strong>{{ stats.conflicts }}</strong><small>仅显示状态</small></article>
+      </section>
 
-      <el-row :gutter="16" class="stat-row">
-        <el-col :span="6"><el-card><strong>{{ stats.matches }}</strong><span>比赛</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.events }}</strong><span>事件</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.lineups }}</strong><span>阵容条目</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.conflicts }}</strong><span>数据冲突</span></el-card></el-col>
-      </el-row>
+      <div v-if="error" class="alert-panel" role="alert">{{ error }}</div>
 
-      <el-row :gutter="16" class="content-row">
-        <el-col :span="8">
-          <el-card class="panel-card">
-            <template #header>
-              <div class="card-header">
-                <span>赛程列表</span>
-                <el-button size="small" :loading="loading" @click="load">刷新</el-button>
-              </div>
-            </template>
-            <el-table :data="matches" v-loading="loading" height="590" @row-click="openMatch">
-              <el-table-column label="比赛" min-width="180">
-                <template #default="{ row }">
-                  <strong>{{ matchTitle(row) }}</strong>
-                  <small>{{ row.matchday || '-' }} ｜ {{ row.jcCode || '无编号' }}</small>
-                </template>
-              </el-table-column>
-              <el-table-column prop="stage" label="阶段" width="90" />
-              <el-table-column label="状态" width="92">
-                <template #default="{ row }">
-                  <el-tag size="small">{{ row.status }}</el-tag>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-card>
-        </el-col>
+      <section class="evidence-grid">
+        <aside class="side-panel" aria-label="赛程列表">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Schedule</p><h2>赛程列表</h2></div>
+          </div>
+          <p v-if="loading && !matches.length" class="empty-copy">正在加载公开赛程...</p>
+          <p v-else-if="!matches.length" class="empty-copy">暂无公开比赛。</p>
+          <button
+            v-for="match in matches"
+            v-else
+            :key="match.id"
+            class="list-card"
+            :class="{ 'list-card--active': match.id === selectedMatchId }"
+            type="button"
+            @click="openMatch(match)"
+          >
+            <span>{{ match.competition || '世界杯' }} · {{ match.stage || '待定阶段' }}</span>
+            <strong>{{ matchTitle(match) }}</strong>
+            <small>{{ formatDateTime(match.kickoffTime || match.matchday) }} · JC {{ match.jcCode || '待定' }}</small>
+          </button>
+        </aside>
 
-        <el-col :span="16">
-          <el-card class="panel-card" v-loading="detailLoading">
-            <template #header>
-              <div class="card-header">
-                <span>{{ selected?.summary.matchName || '比赛详情' }}</span>
-                <el-space>
-                  <el-tag type="success">证据 {{ selected?.summary.evidenceCount ?? 0 }}</el-tag>
-                  <el-tag type="warning">冲突 {{ selected?.summary.conflictCount ?? 0 }}</el-tag>
-                </el-space>
-              </div>
-            </template>
+        <article class="detail-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Match Detail</p><h2>{{ matchTitle(selected?.summary) }}</h2></div>
+            <span v-if="selected" class="status-pill">证据 {{ selected.summary.evidenceCount }} · 冲突 {{ selected.summary.conflictCount }}</span>
+          </div>
 
-            <el-empty v-if="!selected" description="请选择比赛" />
-            <template v-else>
-              <el-descriptions :column="2" border>
-                <el-descriptions-item label="比赛">{{ matchTitle(selected.summary) }}</el-descriptions-item>
-                <el-descriptions-item label="竞彩编号">{{ selected.summary.jcCode || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="比赛日">{{ selected.summary.matchday || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="开球时间">{{ formatDateTime(selected.summary.kickoffTime) }}</el-descriptions-item>
-                <el-descriptions-item label="赛事">{{ selected.summary.competition || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="阶段">{{ selected.summary.stage || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="场地">{{ selected.summary.venue || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="状态">{{ selected.summary.status }} / {{ selected.summary.resultStatus }}</el-descriptions-item>
-              </el-descriptions>
+          <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
+          <p v-else-if="detailLoading && !selected" class="empty-copy">正在加载比赛详情...</p>
+          <p v-else-if="!selected" class="empty-copy">请选择一场比赛。</p>
 
-              <el-alert
-                v-if="selected.externalFactors"
-                class="external-alert"
-                title="外部因素"
-                :description="selected.externalFactors"
-                type="info"
-                show-icon
-                :closable="false"
-              />
+          <template v-else>
+            <section class="summary-grid" aria-label="比赛摘要">
+              <div><span>赛事</span><strong>{{ selected.summary.competition || '世界杯' }}</strong></div>
+              <div><span>阶段</span><strong>{{ selected.summary.stage || '待定阶段' }}</strong></div>
+              <div><span>场地</span><strong>{{ selected.summary.venue || '待同步' }}</strong></div>
+              <div><span>开球</span><strong>{{ formatDateTime(selected.summary.kickoffTime) }}</strong></div>
+            </section>
 
-              <h3>阵容 / 首发</h3>
-              <el-table :data="selected.lineups" border empty-text="暂无阵容数据">
-                <el-table-column prop="teamName" label="球队" min-width="110" />
-                <el-table-column prop="playerName" label="球员" min-width="120" />
-                <el-table-column prop="position" label="位置" width="80" />
-                <el-table-column prop="role" label="角色" width="100" />
-                <el-table-column label="首发" width="86">
-                  <template #default="{ row }">
-                    <el-tag :type="row.starter ? 'success' : 'info'" size="small">{{ row.starter ? '首发' : '替补' }}</el-tag>
-                  </template>
-                </el-table-column>
-              </el-table>
+            <section v-if="selected.externalFactors" class="info-card">
+              <p class="eyebrow">External</p>
+              <h3>外部因素</h3>
+              <p>{{ selected.externalFactors }}</p>
+            </section>
 
-              <h3>比赛事件</h3>
-              <el-table :data="selected.events" border empty-text="暂无事件数据">
-                <el-table-column prop="eventMinute" label="分钟" width="80" />
-                <el-table-column prop="eventType" label="事件" width="110" />
-                <el-table-column prop="teamName" label="球队" min-width="110" />
-                <el-table-column prop="playerName" label="球员" min-width="120" />
-                <el-table-column prop="payload" label="原始字段" min-width="180" show-overflow-tooltip />
-              </el-table>
+            <section class="card-grid" aria-label="比赛证据卡片">
+              <article class="info-card">
+                <p class="eyebrow">Lineup</p>
+                <h3>阵容 / 首发</h3>
+                <div v-for="lineup in selected.lineups" :key="lineup.id" class="stack-item">
+                  <strong>{{ lineup.playerName || '球员待定' }} <small>{{ lineup.teamName || '' }}</small></strong>
+                  <span>{{ lineup.position || '位置待定' }} · {{ lineup.role || '角色待定' }} · {{ lineup.starter ? '首发' : '替补' }}</span>
+                </div>
+              </article>
 
-              <h3>球队统计 / 进球时间点</h3>
-              <el-table :data="selected.teamStats" border empty-text="暂无球队统计">
-                <el-table-column prop="teamName" label="球队" min-width="110" />
-                <el-table-column prop="statsType" label="类型" width="110" />
-                <el-table-column prop="goalsFor" label="进球" width="70" />
-                <el-table-column prop="goalsAgainst" label="失球" width="70" />
-                <el-table-column prop="firstGoalMinute" label="首球" width="80" />
-                <el-table-column prop="scoringMinutes" label="进球分钟" min-width="120" />
-                <el-table-column prop="payload" label="统计扩展" min-width="180" show-overflow-tooltip />
-              </el-table>
+              <article class="info-card">
+                <p class="eyebrow">Events</p>
+                <h3>比赛事件</h3>
+                <div v-for="event in selected.events" :key="event.id" class="stack-item">
+                  <strong>{{ event.eventType }} <small>{{ event.eventMinute ?? '-' }}'</small></strong>
+                  <span>{{ event.teamName || '球队待定' }} · {{ event.playerName || '球员待定' }}</span>
+                </div>
+              </article>
 
-              <h3>球员统计</h3>
-              <el-table :data="selected.playerStats" border empty-text="暂无球员统计">
-                <el-table-column prop="playerName" label="球员" min-width="120" />
-                <el-table-column prop="teamName" label="球队" min-width="110" />
-                <el-table-column prop="minutesPlayed" label="分钟" width="70" />
-                <el-table-column prop="goals" label="进球" width="70" />
-                <el-table-column prop="assists" label="助攻" width="70" />
-                <el-table-column prop="yellowCards" label="黄牌" width="70" />
-                <el-table-column prop="redCards" label="红牌" width="70" />
-              </el-table>
+              <article class="info-card">
+                <p class="eyebrow">Team Stats</p>
+                <h3>球队统计 / 进球时间点</h3>
+                <div v-for="stat in selected.teamStats" :key="stat.id" class="stack-item">
+                  <strong>{{ stat.teamName || '球队待定' }} <small>{{ stat.statsType }}</small></strong>
+                  <span>进 {{ stat.goalsFor ?? '-' }} / 失 {{ stat.goalsAgainst ?? '-' }} · {{ stat.scoringMinutes || '进球分钟待同步' }}</span>
+                </div>
+              </article>
 
-              <h3>证据链</h3>
-              <el-table :data="selected.evidence" border empty-text="暂无证据链">
-                <el-table-column prop="sourceName" label="来源" width="120" />
-                <el-table-column prop="sourceType" label="类型" width="100" />
-                <el-table-column prop="summary" label="摘要" min-width="220" show-overflow-tooltip />
-                <el-table-column label="可信度" width="110">
-                  <template #default="{ row }">{{ reliabilityLabel(row.reliabilityScore) }}</template>
-                </el-table-column>
-                <el-table-column prop="sourceUrl" label="链接" min-width="180" show-overflow-tooltip />
-              </el-table>
+              <article class="info-card">
+                <p class="eyebrow">Player Stats</p>
+                <h3>球员统计</h3>
+                <div v-for="stat in selected.playerStats" :key="stat.id" class="stack-item">
+                  <strong>{{ stat.playerName || '球员待定' }} <small>{{ stat.teamName || '' }}</small></strong>
+                  <span>{{ stat.minutesPlayed ?? '-' }} 分钟 · 进球 {{ stat.goals ?? 0 }} · 助攻 {{ stat.assists ?? 0 }}</span>
+                </div>
+              </article>
 
-              <h3>数据冲突</h3>
-              <el-table :data="selected.conflicts" border empty-text="暂无数据冲突">
-                <el-table-column prop="conflictType" label="类型" width="110" />
-                <el-table-column prop="fieldName" label="字段" width="110" />
-                <el-table-column prop="currentValue" label="当前值" min-width="160" show-overflow-tooltip />
-                <el-table-column prop="incomingValue" label="新值" min-width="160" show-overflow-tooltip />
-                <el-table-column prop="resolutionStatus" label="状态" width="110" />
-              </el-table>
-            </template>
-          </el-card>
-        </el-col>
-      </el-row>
+              <article class="info-card">
+                <p class="eyebrow">Evidence</p>
+                <h3>证据链</h3>
+                <div v-for="item in selected.evidence" :key="item.id" class="stack-item">
+                  <strong>{{ item.sourceName }} <small>{{ item.sourceType }}</small></strong>
+                  <span>{{ item.summary || '暂无摘要' }}</span>
+                  <small>可信度 {{ scoreText(item.reliabilityScore) }} · {{ formatDateTime(item.evidenceTime) }}</small>
+                </div>
+              </article>
+
+              <article class="info-card">
+                <p class="eyebrow">Conflicts</p>
+                <h3>数据冲突</h3>
+                <div v-for="conflict in selected.conflicts" :key="conflict.id" class="stack-item">
+                  <strong>{{ conflict.conflictType }} <small>{{ conflict.fieldName || '字段待定' }}</small></strong>
+                  <span>状态：{{ conflict.resolutionStatus }}</span>
+                </div>
+                <p v-if="!selected.conflicts.length" class="empty-copy">暂无公开冲突状态。</p>
+              </article>
+            </section>
+          </template>
+        </article>
+      </section>
     </section>
   </section>
 </template>
 
 <style scoped>
-.match-page { background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 30rem), #f5f7fb; }
-.top-alert, .stat-row, .content-row { margin-top: 16px; }
-.stat-row :deep(.el-card__body) { display: flex; flex-direction: column; gap: 6px; }
-.stat-row strong { color: #1d4ed8; font-size: 30px; }
-.stat-row span, small { color: #6b7280; }
-.panel-card { border-radius: 14px; }
-.card-header { align-items: center; display: flex; justify-content: space-between; }
-.external-alert { margin-top: 16px; }
-h3 { margin-top: 22px; }
-small { display: block; margin-top: 4px; }
+.evidence-page { max-width: 100%; overflow-x: hidden; }
+.evidence-page__content { display: grid; gap: 18px; min-width: 0; }
+.evidence-hero, .stat-card, .side-panel, .detail-panel, .info-card, .summary-grid div, .alert-panel {
+  background: var(--wc-glass); border: 1px solid var(--wc-border); border-radius: var(--wc-radius-lg); color: var(--wc-text);
+}
+.evidence-hero { align-items: center; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) auto; padding: clamp(20px, 4vw, 38px); }
+.evidence-hero h1 { font-family: var(--wc-font-display); font-size: clamp(34px, 6vw, 68px); line-height: 1; margin: 0 0 12px; }
+.evidence-hero p:not(.eyebrow), .empty-copy, .stack-item span, .summary-grid span, small { color: var(--wc-text-muted); }
+.eyebrow { color: var(--wc-warning); font-family: var(--wc-font-mono); font-size: 12px; font-weight: 800; letter-spacing: .08em; margin: 0 0 8px; text-transform: uppercase; }
+.action-button { background: var(--wc-accent); border: 0; border-radius: 999px; color: var(--wc-on-accent); cursor: pointer; font-weight: 800; min-height: 44px; padding: 0 16px; }
+.stat-grid, .summary-grid { display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.stat-card, .side-panel, .detail-panel, .info-card, .alert-panel { display: grid; gap: 12px; min-width: 0; padding: 18px; }
+.stat-card strong { color: var(--wc-primary); font-family: var(--wc-font-mono); font-size: 36px; }
+.evidence-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); min-width: 0; }
+.panel-heading { align-items: center; display: flex; gap: 12px; justify-content: space-between; }
+.panel-heading h2, .info-card h3 { margin: 0; }
+.list-card, .stack-item { background: rgba(15, 23, 42, .5); border: 1px solid rgba(147, 197, 253, .18); border-radius: var(--wc-radius-md); color: var(--wc-text); display: grid; gap: 6px; min-width: 0; padding: 14px; text-align: left; }
+.list-card { cursor: pointer; transition: border-color 180ms ease, transform 180ms ease; }
+.list-card--active { border-color: rgba(217, 119, 6, .56); }
+.status-pill { background: rgba(147, 197, 253, .12); border-radius: 999px; color: var(--wc-primary); font-family: var(--wc-font-mono); font-size: 12px; font-weight: 800; padding: 6px 9px; }
+.summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.summary-grid div { display: grid; gap: 5px; min-width: 0; padding: 14px; }
+.card-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: 0; }
+@media (max-width: 1024px) { .evidence-hero, .evidence-grid, .summary-grid { grid-template-columns: 1fr; } .stat-grid, .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .evidence-hero, .stat-grid, .evidence-grid, .summary-grid, .card-grid { grid-template-columns: 1fr; } .panel-heading { align-items: stretch; flex-direction: column; } .action-button { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .list-card { transition: none; } }
 </style>

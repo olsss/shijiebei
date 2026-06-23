@@ -1,99 +1,72 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import {
-  approveCollectionItem,
-  getPlayerProfile,
-  listCollectionItems,
-  listPlayerProfiles,
-  rejectCollectionItem,
-  type CollectionItem,
-  type PlayerProfileDetail,
-  type PlayerProfileSummary,
+  getPublicPlayerProfile,
+  listPublicPlayerProfiles,
+  type PublicPlayerProfileDetail,
+  type PublicPlayerProfileSummary,
 } from '@/api/profiles';
-import { useAuthStore } from '@/stores/auth';
 
-const authStore = useAuthStore();
 const loading = ref(false);
-const reviewingId = ref<number | null>(null);
-const players = ref<PlayerProfileSummary[]>([]);
-const selected = ref<PlayerProfileDetail | null>(null);
-const pendingItems = ref<CollectionItem[]>([]);
+const detailLoading = ref(false);
 const error = ref('');
+const detailError = ref('');
+const players = ref<PublicPlayerProfileSummary[]>([]);
+const selected = ref<PublicPlayerProfileDetail | null>(null);
+const selectedPlayerId = ref<number | null>(null);
 
 const stats = computed(() => ({
   players: players.value.length,
   facts: players.value.reduce((sum, player) => sum + player.factCount, 0),
-  injured: players.value.filter((player) => player.injuryStatus && player.injuryStatus !== '无').length,
-  pending: pendingItems.value.length,
+  teams: new Set(players.value.map((player) => player.teamName).filter(Boolean)).size,
+  watch: players.value.filter((player) => player.injuryStatus && !['无', '健康'].includes(player.injuryStatus)).length,
 }));
 
-function requireAuthHeader(): string {
-  if (!authStore.basicAuthHeader) {
-    throw new Error('请先登录后查看球员画像。');
-  }
-  return authStore.basicAuthHeader;
+function reliabilityLabel(value?: number): string {
+  return value == null ? '未评分' : `${Number(value).toFixed(1).replace(/\.0$/, '')} / 10`;
 }
 
-function reliabilityLabel(value?: number): string {
-  return value == null ? '未评分' : `${value.toFixed(1)} / 10`;
+function formatDateTime(value?: string): string {
+  return value ? value.replace('T', ' ').slice(0, 16) : '待同步';
 }
 
 async function load() {
   loading.value = true;
   error.value = '';
   try {
-    const authHeader = requireAuthHeader();
-    const [playerResponse, itemResponse] = await Promise.all([
-      listPlayerProfiles(authHeader),
-      listCollectionItems(authHeader, 'PENDING_REVIEW'),
-    ]);
-    players.value = playerResponse.data;
-    pendingItems.value = itemResponse.data.filter((item) => item.entityType === 'PLAYER');
-    if (players.value.length > 0) {
-      await openPlayer(players.value[0]);
+    const response = await listPublicPlayerProfiles();
+    players.value = response.data;
+    const nextPlayer = selectedPlayerId.value
+      ? players.value.find((player) => player.id === selectedPlayerId.value) ?? players.value[0]
+      : players.value[0];
+    if (nextPlayer) {
+      await openPlayer(nextPlayer);
     } else {
       selected.value = null;
+      selectedPlayerId.value = null;
     }
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '无法读取球员画像。';
+    players.value = [];
+    selected.value = null;
+    selectedPlayerId.value = null;
+    error.value = cause instanceof Error ? cause.message : '无法读取公开球员画像数据。';
   } finally {
     loading.value = false;
   }
 }
 
-async function openPlayer(player: PlayerProfileSummary) {
+async function openPlayer(player: PublicPlayerProfileSummary) {
+  selectedPlayerId.value = player.id;
+  detailLoading.value = true;
+  detailError.value = '';
   try {
-    const response = await getPlayerProfile(requireAuthHeader(), player.id);
+    const response = await getPublicPlayerProfile(player.id);
     selected.value = response.data;
   } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '无法读取球员详情。');
-  }
-}
-
-async function approve(item: CollectionItem) {
-  reviewingId.value = item.id;
-  try {
-    await approveCollectionItem(requireAuthHeader(), item.id);
-    ElMessage.success('球员画像采集项已批准。');
-    await load();
-  } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '批准球员画像采集项失败。');
+    selected.value = null;
+    detailError.value = cause instanceof Error ? cause.message : '无法读取公开球员详情。';
   } finally {
-    reviewingId.value = null;
-  }
-}
-
-async function reject(item: CollectionItem) {
-  reviewingId.value = item.id;
-  try {
-    await rejectCollectionItem(requireAuthHeader(), item.id, '页面快速驳回：来源或内容待补充');
-    ElMessage.success('球员画像采集项已驳回。');
-    await load();
-  } catch (cause) {
-    ElMessage.error(cause instanceof Error ? cause.message : '驳回球员画像采集项失败。');
-  } finally {
-    reviewingId.value = null;
+    detailLoading.value = false;
   }
 }
 
@@ -101,99 +74,219 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="page-shell profile-page">
-    <section class="page-content">
-      <el-page-header content="球员画像中心" @back="$router.push('/')" />
+  <section class="page-shell evidence-page profile-page" aria-labelledby="player-profile-title">
+    <section class="page-content profile-page__content">
+      <header class="evidence-hero">
+        <div>
+          <p class="eyebrow">Evidence · Players</p>
+          <h1 id="player-profile-title">球员画像中心</h1>
+          <p>公开展示球员基础状态、球队归属、伤停牌面、训练与表现事实，帮助移动端快速读取关键证据。</p>
+        </div>
+        <button class="action-button" type="button" :disabled="loading" @click="load">
+          {{ loading ? '刷新中' : '刷新公开数据' }}
+        </button>
+      </header>
 
-      <el-alert v-if="error" :title="error" type="warning" show-icon class="top-alert" />
+      <section class="stat-grid" aria-label="球员画像统计">
+        <article class="stat-card"><span>球员</span><strong>{{ stats.players }}</strong><small>公开画像</small></article>
+        <article class="stat-card"><span>球队</span><strong>{{ stats.teams }}</strong><small>所属队伍</small></article>
+        <article class="stat-card"><span>事实</span><strong>{{ stats.facts }}</strong><small>画像事实</small></article>
+        <article class="stat-card"><span>关注</span><strong>{{ stats.watch }}</strong><small>伤停或状态提示</small></article>
+      </section>
 
-      <el-row :gutter="16" class="stat-row">
-        <el-col :span="6"><el-card><strong>{{ stats.players }}</strong><span>球员</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.facts }}</strong><span>画像事实</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.injured }}</strong><span>伤病关注</span></el-card></el-col>
-        <el-col :span="6"><el-card><strong>{{ stats.pending }}</strong><span>待审核采集</span></el-card></el-col>
-      </el-row>
+      <div v-if="error" class="alert-panel" role="alert">{{ error }}</div>
 
-      <el-row :gutter="16" class="content-row">
-        <el-col :span="9">
-          <el-card class="panel-card">
-            <template #header>
-              <div class="card-header">
-                <span>球员列表</span>
-                <el-button size="small" :loading="loading" @click="load">刷新</el-button>
-              </div>
-            </template>
-            <el-table :data="players" v-loading="loading" height="560" @row-click="openPlayer">
-              <el-table-column prop="displayName" label="球员" min-width="110" />
-              <el-table-column prop="teamName" label="球队" min-width="100" />
-              <el-table-column prop="position" label="位置" width="72" />
-              <el-table-column prop="factCount" label="事实" width="72" />
-            </el-table>
-          </el-card>
-        </el-col>
+      <section class="evidence-grid">
+        <aside class="side-panel" aria-label="球员列表">
+          <div class="panel-heading">
+            <div><p class="eyebrow">Players</p><h2>球员列表</h2></div>
+            <span class="count-pill">{{ players.length }}</span>
+          </div>
+          <p v-if="loading && !players.length" class="empty-copy">正在加载公开球员...</p>
+          <p v-else-if="!players.length" class="empty-copy">暂无公开球员画像。</p>
+          <button
+            v-for="player in players"
+            v-else
+            :key="player.id"
+            class="list-card"
+            :class="{ 'list-card--active': player.id === selectedPlayerId }"
+            type="button"
+            @click="openPlayer(player)"
+          >
+            <span>{{ player.teamName || '球队待同步' }} · #{{ player.shirtNumber ?? '-' }}</span>
+            <strong>{{ player.displayName }}</strong>
+            <small>{{ player.position || '位置待定' }} · {{ player.status || '状态待同步' }}</small>
+            <small>{{ player.factCount }} 条事实 · {{ formatDateTime(player.latestProfileUpdate) }}</small>
+          </button>
+        </aside>
 
-        <el-col :span="15">
-          <el-card class="panel-card">
-            <template #header>
-              <div class="card-header">
-                <span>{{ selected?.player.displayName || '球员详情' }}</span>
-                <el-tag type="info">{{ selected?.player.teamName || '未绑定球队' }}</el-tag>
-              </div>
-            </template>
+        <article class="detail-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Player Detail</p>
+              <h2>{{ selected?.player.displayName || '球员详情' }}</h2>
+            </div>
+            <span v-if="selected" class="status-pill">{{ selected.player.teamName || '球队待同步' }}</span>
+          </div>
 
-            <el-empty v-if="!selected" description="请选择球员" />
-            <template v-else>
-              <el-descriptions :column="2" border>
-                <el-descriptions-item label="号码">{{ selected.player.shirtNumber ?? '-' }}</el-descriptions-item>
-                <el-descriptions-item label="位置">{{ selected.player.position || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="状态">{{ selected.player.status || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="伤病">{{ selected.player.injuryStatus || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="红黄牌">{{ selected.player.cardStatus || '-' }}</el-descriptions-item>
-                <el-descriptions-item label="更衣室">{{ selected.player.lockerRoomStatus || '-' }}</el-descriptions-item>
-              </el-descriptions>
+          <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
+          <p v-else-if="detailLoading && !selected" class="empty-copy">正在加载球员详情...</p>
+          <p v-else-if="!selected" class="empty-copy">请选择左侧球员。</p>
 
-              <h3>画像事实</h3>
-              <el-timeline>
-                <el-timeline-item v-for="fact in selected.facts" :key="fact.id" :timestamp="fact.capturedAt || '未标注时间'">
-                  <h4>{{ fact.title }} <el-tag size="small">{{ fact.factType }}</el-tag></h4>
-                  <p>{{ fact.summary }}</p>
-                  <small>来源：{{ fact.sourceName }} ｜ 可信度：{{ reliabilityLabel(fact.reliabilityScore) }}</small>
-                </el-timeline-item>
-              </el-timeline>
-              <el-empty v-if="selected.facts.length === 0" description="暂无正式画像事实" />
-            </template>
-          </el-card>
-        </el-col>
-      </el-row>
+          <template v-else>
+            <section class="summary-grid" aria-label="球员摘要">
+              <div><span>号码</span><strong>{{ selected.player.shirtNumber ?? '-' }}</strong></div>
+              <div><span>位置</span><strong>{{ selected.player.position || '-' }}</strong></div>
+              <div><span>状态</span><strong>{{ selected.player.status || '-' }}</strong></div>
+              <div><span>更衣室</span><strong>{{ selected.player.lockerRoomStatus || '-' }}</strong></div>
+            </section>
 
-      <el-card class="panel-card pending-card">
-        <template #header>球员画像待审核采集项</template>
-        <el-table :data="pendingItems" border empty-text="暂无待审核球员画像采集项">
-          <el-table-column prop="entityKey" label="球员Key" width="140" />
-          <el-table-column prop="factType" label="事实类型" width="140" />
-          <el-table-column prop="title" label="标题" min-width="160" />
-          <el-table-column prop="summary" label="摘要" min-width="260" show-overflow-tooltip />
-          <el-table-column prop="sourceName" label="来源" width="140" />
-          <el-table-column label="操作" width="180">
-            <template #default="{ row }">
-              <el-button size="small" type="success" :loading="reviewingId === row.id" @click="approve(row)">批准</el-button>
-              <el-button size="small" type="danger" :loading="reviewingId === row.id" @click="reject(row)">驳回</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-card>
+            <section class="card-grid" aria-label="球员画像内容">
+              <article class="info-card">
+                <p class="eyebrow">Availability</p>
+                <h3>可用性与牌面</h3>
+                <div class="stack-item">
+                  <strong>伤病状态</strong>
+                  <span>{{ selected.player.injuryStatus || '待同步' }}</span>
+                </div>
+                <div class="stack-item">
+                  <strong>红黄牌状态</strong>
+                  <span>{{ selected.player.cardStatus || '待同步' }}</span>
+                </div>
+              </article>
+
+              <article class="info-card">
+                <p class="eyebrow">Facts</p>
+                <h3>画像事实</h3>
+                <div v-for="fact in selected.facts" :key="fact.id" class="stack-item">
+                  <strong>{{ fact.title }} <small>{{ fact.factType }}</small></strong>
+                  <span>{{ fact.summary }}</span>
+                  <small>{{ fact.sourceName }} · 可信度 {{ reliabilityLabel(fact.reliabilityScore) }} · {{ formatDateTime(fact.capturedAt) }}</small>
+                </div>
+                <p v-if="!selected.facts.length" class="empty-copy">暂无画像事实。</p>
+              </article>
+            </section>
+          </template>
+        </article>
+      </section>
     </section>
   </section>
 </template>
 
 <style scoped>
-.profile-page { background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 30rem), #f5f7fb; }
-.top-alert, .stat-row, .content-row, .pending-card { margin-top: 16px; }
-.stat-row :deep(.el-card__body) { display: flex; flex-direction: column; gap: 6px; }
-.stat-row strong { color: #047857; font-size: 30px; }
-.stat-row span, small { color: #6b7280; }
-.panel-card { border-radius: 14px; }
-.card-header { align-items: center; display: flex; justify-content: space-between; }
-h3 { margin-top: 22px; }
-p { color: #374151; line-height: 1.7; }
+.evidence-page { max-width: 100%; overflow-x: hidden; }
+.profile-page__content { display: grid; gap: 18px; min-width: 0; }
+.evidence-hero, .stat-card, .side-panel, .detail-panel, .info-card, .summary-grid div, .alert-panel {
+  background: var(--wc-glass);
+  border: 1px solid var(--wc-border);
+  border-radius: var(--wc-radius-lg);
+  color: var(--wc-text);
+}
+.evidence-hero {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: clamp(20px, 4vw, 38px);
+}
+.evidence-hero h1 {
+  font-family: var(--wc-font-display);
+  font-size: clamp(34px, 6vw, 68px);
+  line-height: 1;
+  margin: 0 0 12px;
+}
+.evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .stack-item span, .stack-item small, .summary-grid span {
+  color: var(--wc-text-muted);
+}
+.eyebrow {
+  color: var(--wc-warning);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+.action-button {
+  background: var(--wc-accent);
+  border: 0;
+  border-radius: 999px;
+  color: var(--wc-on-accent);
+  cursor: pointer;
+  font-weight: 800;
+  min-height: 44px;
+  padding: 0 16px;
+}
+.stat-grid, .summary-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.stat-card, .side-panel, .detail-panel, .info-card, .alert-panel, .summary-grid div {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+}
+.stat-card strong {
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 36px;
+}
+.evidence-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+  min-width: 0;
+}
+.panel-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+.panel-heading h2, .info-card h3 { margin: 0; }
+.list-card, .stack-item {
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(147, 197, 253, .18);
+  border-radius: var(--wc-radius-md);
+  color: var(--wc-text);
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  text-align: left;
+}
+.list-card {
+  cursor: pointer;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+.list-card--active { border-color: rgba(217, 119, 6, .62); }
+.count-pill, .status-pill {
+  background: rgba(147, 197, 253, .12);
+  border-radius: 999px;
+  color: var(--wc-primary);
+  font-family: var(--wc-font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+.card-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+@media (max-width: 1024px) {
+  .evidence-hero, .evidence-grid, .summary-grid { grid-template-columns: 1fr; }
+  .stat-grid, .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .evidence-hero, .stat-grid, .evidence-grid, .summary-grid, .card-grid { grid-template-columns: 1fr; }
+  .panel-heading { align-items: stretch; flex-direction: column; }
+  .action-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .list-card { transition: none; }
+}
 </style>
