@@ -62,14 +62,16 @@ async function submit() {
 
 <style scoped>
 .login-page {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
   display: grid;
   min-height: 100vh;
+  padding: 16px;
   place-items: center;
-  background: linear-gradient(135deg, #0f172a, #1d4ed8);
 }
 .login-card {
-  width: 440px;
   border-radius: 20px;
+  max-width: 440px;
+  width: 100%;
 }
 .login-card h1 {
   margin: 0 0 8px;

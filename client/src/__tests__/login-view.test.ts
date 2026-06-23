@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginView from '@/views/LoginView.vue';
+import loginViewSource from '@/views/LoginView.vue?raw';
 import { login } from '@/api/system';
 
 const pushSpy = vi.fn();
@@ -87,5 +88,11 @@ describe('LoginView', () => {
     await wrapper.get('.login-button').trigger('click');
 
     expect(pushSpy).toHaveBeenCalledWith('/');
+  });
+
+  it('uses a fluid card width for H5 screens', () => {
+    expect(loginViewSource).not.toMatch(/^\s*width:\s*440px;/m);
+    expect(loginViewSource).toContain('max-width: 440px');
+    expect(loginViewSource).toContain('width: 100%');
   });
 });
