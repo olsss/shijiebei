@@ -49,6 +49,18 @@ describe('DashboardView', () => {
     expect(wrapper.find('a[href="/admin/import-review"]').exists()).toBe(false);
   });
 
+  it('renders readable Chinese labels for public modules', () => {
+    const wrapper = mountDashboard();
+
+    const pageText = wrapper.text();
+
+    expect(pageText).not.toContain('????');
+    expect(pageText).toContain('比赛中心');
+    expect(pageText).toContain('赔率中心');
+    expect(pageText).toContain('舆情与外部因素中心');
+    expect(pageText).toContain('更多入口');
+  });
+
   it('shows the JSON review entry only for writable admins', () => {
     const auth = useAuthStore();
     auth.setAdmin({ username: 'operator', displayName: 'Operator', authType: 'BASIC' }, 'secret');
@@ -56,5 +68,6 @@ describe('DashboardView', () => {
     const wrapper = mountDashboard();
 
     expect(wrapper.find('a[href="/admin/import-review"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('JSON 审核中心');
   });
 });
