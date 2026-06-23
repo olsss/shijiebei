@@ -1,6 +1,13 @@
 <template>
-  <nav class="mobile-tabbar" aria-label="移动端主导航" data-test="mobile-tabbar">
-    <RouterLink v-for="item in items" :key="item.label" class="mobile-tabbar__item" :to="item.to">
+  <nav class="mobile-tabbar" role="navigation" aria-label="移动端主导航" data-test="mobile-tabbar">
+    <RouterLink
+      v-for="item in items"
+      :key="item.section"
+      class="mobile-tabbar__item"
+      :data-section="item.section"
+      :to="item.to"
+      :aria-current="isActive(item.to) ? 'page' : undefined"
+    >
       <span class="mobile-tabbar__mark" aria-hidden="true">{{ item.mark }}</span>
       <span>{{ item.label }}</span>
     </RouterLink>
@@ -8,13 +15,31 @@
 </template>
 
 <script setup lang="ts">
+import { useRoute } from 'vue-router';
+
+type MobileSection = 'overview' | 'workbench' | 'evidence' | 'decisions' | 'more';
+
 defineProps<{
   items: Array<{
+    section: MobileSection;
     label: string;
     to: string;
     mark: string;
   }>;
 }>();
+
+const route = useRoute();
+
+function isActive(to: string): boolean {
+  const currentPath = route.path ?? route.fullPath ?? '/';
+  if (to === '/') {
+    return currentPath === '/';
+  }
+  if (to === '/evidence/matches') {
+    return currentPath.startsWith('/evidence');
+  }
+  return currentPath === to;
+}
 </script>
 
 <style scoped>
@@ -78,7 +103,7 @@ defineProps<{
   width: 20px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mobile-tabbar {
     display: flex;
   }

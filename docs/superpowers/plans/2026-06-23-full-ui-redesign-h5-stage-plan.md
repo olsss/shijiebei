@@ -98,7 +98,7 @@
 **Files:**
 - Cross-cutting CSS/tests/docs.
 
-- [ ] Verify 375, 768, 1024, 1440 layouts.
-- [ ] Verify keyboard focus, landmarks, aria-current, skip link, form labels, and visible focus states.
-- [ ] Run full frontend tests, frontend build, backend tests, and route smoke checks.
-- [ ] Request final subagent review before merge.
+- [x] Verify 375, 768, 1024, 1440 layouts.
+- [x] Verify keyboard focus, landmarks, aria-current, skip link, form labels, and visible focus states.
+- [x] Run full frontend tests, frontend build, backend tests, and route smoke checks.
+- [x] Request final subagent review before merge.

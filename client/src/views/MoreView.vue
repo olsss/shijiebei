@@ -47,6 +47,7 @@ const authStore = useAuthStore();
 .more-page__content {
   display: grid;
   gap: 18px;
+  min-width: 0;
 }
 
 .more-page__hero,
@@ -92,6 +93,7 @@ const authStore = useAuthStore();
   display: grid;
   gap: 8px;
   min-height: 112px;
+  min-width: 0;
   padding: 18px;
   text-decoration: none;
   transition: border-color 180ms ease, transform 180ms ease;

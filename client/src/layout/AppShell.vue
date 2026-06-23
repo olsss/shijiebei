@@ -11,8 +11,14 @@
         </span>
       </RouterLink>
 
-      <nav class="side-nav" aria-label="主导航">
-        <RouterLink v-for="item in primaryNav" :key="item.to" class="side-nav__item" :to="item.to">
+      <nav class="side-nav" role="navigation" aria-label="主导航">
+        <RouterLink
+          v-for="item in primaryNav"
+          :key="item.to"
+          class="side-nav__item"
+          :to="item.to"
+          :aria-current="isNavActive(item.to) ? 'page' : undefined"
+        >
           <span class="side-nav__mark" aria-hidden="true">{{ item.mark }}</span>
           <span>
             <strong>{{ item.label }}</strong>
@@ -24,6 +30,7 @@
       <section v-if="authStore.canWrite" class="admin-panel" aria-label="管理后台导航">
         <p>管理后台</p>
         <RouterLink class="admin-panel__link" to="/admin/import-review">JSON 审核中心</RouterLink>
+        <RouterLink class="admin-panel__link" to="/admin/collection-review">采集审核中心</RouterLink>
         <RouterLink class="admin-panel__link" to="/admin/settings">系统设置</RouterLink>
       </section>
     </aside>
@@ -69,13 +76,29 @@ const primaryNav = [
   { label: '决策复盘', description: '分析报告与复盘经验', to: '/decisions', mark: '04' },
 ];
 
-const mobileNav = [
-  { label: '总览', to: '/', mark: '01' },
-  { label: '赛前', to: '/workbench', mark: '02' },
-  { label: '证据', to: '/evidence/matches', mark: '03' },
-  { label: '决策', to: '/decisions', mark: '04' },
-  { label: '更多', to: '/more', mark: '05' },
+const mobileNav: Array<{
+  section: 'overview' | 'workbench' | 'evidence' | 'decisions' | 'more';
+  label: string;
+  to: string;
+  mark: string;
+}> = [
+  { section: 'overview', label: '总览', to: '/', mark: '01' },
+  { section: 'workbench', label: '赛前', to: '/workbench', mark: '02' },
+  { section: 'evidence', label: '证据', to: '/evidence/matches', mark: '03' },
+  { section: 'decisions', label: '决策', to: '/decisions', mark: '04' },
+  { section: 'more', label: '更多', to: '/more', mark: '05' },
 ];
+
+function isNavActive(to: string): boolean {
+  const currentPath = route.path ?? route.fullPath ?? '/';
+  if (to === '/') {
+    return currentPath === '/';
+  }
+  if (to === '/evidence/matches') {
+    return currentPath.startsWith('/evidence');
+  }
+  return currentPath === to;
+}
 
 async function handleLogout() {
   const redirect = route.fullPath;
@@ -332,6 +355,10 @@ async function handleLogout() {
 
   .app-shell__sidebar {
     display: none;
+  }
+
+  .app-shell__workspace {
+    padding-bottom: calc(var(--mobile-tabbar-height) + env(safe-area-inset-bottom) + 24px);
   }
 }
 
