@@ -52,10 +52,10 @@
 - Possibly create: `client/src/components/workbench/*`
 - Test: existing and new prematch view tests.
 
-- [ ] Convert workbench page to responsive decision-flow layout using public prematch APIs by default.
-- [ ] Keep admin-only actions gated behind Basic admin auth.
-- [ ] Render tables as cards on H5 where appropriate.
-- [ ] Commit and request subagent review.
+- [x] Convert workbench page to responsive decision-flow layout using public prematch APIs by default.
+- [x] Keep admin-only actions gated behind Basic admin auth.
+- [x] Render tables as cards on H5 where appropriate.
+- [x] Commit and request subagent review.
 
 ## Stage 4: Evidence center pages
 
