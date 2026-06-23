@@ -16,18 +16,28 @@
           <strong>球员画像</strong>
           <span>查看已批准的球员状态、伤停和纪律信息。</span>
         </RouterLink>
-        <RouterLink class="more-card more-card--admin" to="/admin/import-review">
+        <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/import-review">
           <strong>JSON 审核中心</strong>
           <span>管理员登录后进行扫描、批准、驳回和入库。</span>
         </RouterLink>
-        <RouterLink class="more-card more-card--admin" to="/admin/settings">
+        <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/settings">
           <strong>系统设置</strong>
           <span>管理员维护系统配置与归档路径。</span>
         </RouterLink>
+        <div v-else class="more-card more-card--readonly" role="note">
+          <strong>管理员入口已隐藏</strong>
+          <span>JSON 审核、系统设置和入库操作仅 Basic 管理员登录后显示。</span>
+        </div>
       </div>
     </section>
   </section>
 </template>
+
+<script setup lang="ts">
+import { useAuthStore } from '@/stores/auth';
+
+const authStore = useAuthStore();
+</script>
 
 <style scoped>
 .more-page__content {
@@ -104,6 +114,10 @@
 
 .more-card--admin {
   border-color: rgba(217, 119, 6, 0.34);
+}
+
+.more-card--readonly {
+  border-color: rgba(147, 197, 253, 0.24);
 }
 
 @media (max-width: 767px) {

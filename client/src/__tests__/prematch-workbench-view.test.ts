@@ -188,10 +188,16 @@ describe('PrematchWorkbenchView', () => {
     expect(wrapper.find('[data-test="odds-card"]').text()).toContain('Pinnacle');
     expect(wrapper.find('[data-test="sentiment-card"]').text()).toContain('降雨影响传控');
     expect(wrapper.find('[data-test="analysis-card"]').text()).toContain('谨慎观察');
+    expect(wrapper.text()).toContain('阵容线索');
+    expect(wrapper.text()).toContain('官方训练公开信息');
+    expect(wrapper.text()).toContain('LINEUP');
     expect(wrapper.text()).not.toContain('AI 下注方案');
     expect(wrapper.text()).not.toContain('实际出票');
     expect(wrapper.text()).not.toContain('票号');
     expect(wrapper.text()).not.toContain('建议金额');
+    expect(wrapper.text()).not.toContain('投入');
+    expect(wrapper.text()).not.toContain('预算');
+    expect(wrapper.text()).not.toMatch(/profit|loss|stake|budget/i);
   });
 
   it('shows admin-only actions only after Basic admin login', async () => {
