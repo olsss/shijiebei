@@ -22,7 +22,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="page-shell">
+  <section class="page-shell">
     <section class="page-content">
       <el-card>
         <h1>系统设置</h1>
@@ -36,5 +36,5 @@ onMounted(async () => {
         <el-empty v-else description="暂无系统设置" />
       </el-card>
     </section>
-  </main>
+  </section>
 </template>

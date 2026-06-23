@@ -10,6 +10,7 @@ import SentimentCenterView from '@/views/SentimentCenterView.vue';
 import PlayerProfilesView from '@/views/PlayerProfilesView.vue';
 import SystemSettingsView from '@/views/SystemSettingsView.vue';
 import TeamProfilesView from '@/views/TeamProfilesView.vue';
+import MoreView from '@/views/MoreView.vue';
 import { useAuthStore } from '@/stores/auth';
 
 export const router = createRouter({
@@ -25,6 +26,7 @@ export const router = createRouter({
     { path: '/evidence/teams', name: 'evidence-teams', component: TeamProfilesView },
     { path: '/evidence/players', name: 'evidence-players', component: PlayerProfilesView },
     { path: '/decisions', name: 'decisions', component: AnalysisReviewCenterView },
+    { path: '/more', name: 'more', component: MoreView },
     {
       path: '/admin/import-review',
       name: 'admin-import-review',

@@ -155,7 +155,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell sentiment-page">
+  <section class="page-shell sentiment-page">
     <section class="page-content">
       <el-page-header content="舆情与外部因素中心" @back="$router.push('/')" />
 
@@ -324,7 +324,7 @@ onMounted(load);
         </el-col>
       </el-row>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

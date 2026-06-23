@@ -1,5 +1,5 @@
 <template>
-  <main class="page-shell">
+  <section class="page-shell">
     <section class="page-content">
       <el-row :gutter="16">
         <el-col :span="24">
@@ -46,7 +46,7 @@
         </el-col>
       </el-row>
     </section>
-  </main>
+  </section>
 </template>
 
 <script setup lang="ts">

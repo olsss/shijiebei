@@ -79,7 +79,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell match-page">
+  <section class="page-shell match-page">
     <section class="page-content">
       <el-page-header content="比赛中心" @back="$router.push('/')" />
 
@@ -221,7 +221,7 @@ onMounted(load);
         </el-col>
       </el-row>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

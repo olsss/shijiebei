@@ -116,7 +116,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell odds-page">
+  <section class="page-shell odds-page">
     <section class="page-content">
       <el-page-header content="赔率中心" @back="$router.push('/')" />
 
@@ -221,7 +221,7 @@ onMounted(load);
         </el-col>
       </el-row>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

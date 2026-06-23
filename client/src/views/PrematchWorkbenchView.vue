@@ -136,7 +136,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell prematch-page">
+  <section class="page-shell prematch-page">
     <section class="page-content">
       <el-page-header content="赛前分析作战室与数据完整性中心" @back="$router.push('/')" />
 
@@ -382,7 +382,7 @@ onMounted(load);
         </el-col>
       </el-row>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

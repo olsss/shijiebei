@@ -162,7 +162,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell analysis-review-page">
+  <section class="page-shell analysis-review-page">
     <section class="page-content">
       <el-page-header content="分析报告下注记录与赛后复盘中心" @back="$router.push('/')" />
 
@@ -325,7 +325,7 @@ onMounted(load);
         </el-tabs>
       </el-card>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

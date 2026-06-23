@@ -32,12 +32,12 @@
       <header class="topbar">
         <div>
           <p class="topbar__eyebrow">Public read model · Beijing time</p>
-          <h1>赛事总览与赛前决策流</h1>
+          <p class="topbar__title">赛事总览与赛前决策流</p>
         </div>
         <div class="topbar__actions">
           <span class="identity-pill">{{ authStore.admin?.displayName ?? '访客' }}</span>
           <RouterLink v-if="!authStore.isAuthenticated" class="shell-button" to="/login">管理员登录</RouterLink>
-          <button v-else class="shell-button shell-button--ghost" type="button" @click="authStore.logout()">退出</button>
+          <button v-else class="shell-button shell-button--ghost" type="button" @click="handleLogout">退出</button>
         </div>
       </header>
 
@@ -56,8 +56,11 @@
 import MobileTabbar from '@/layout/MobileTabbar.vue';
 import ReadonlyNotice from '@/components/common/ReadonlyNotice.vue';
 import { useAuthStore } from '@/stores/auth';
+import { useRoute, useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
 
 const primaryNav = [
   { label: '赛事总览', description: '公开态势与入口', to: '/', mark: '01' },
@@ -71,8 +74,17 @@ const mobileNav = [
   { label: '赛前', to: '/workbench', mark: '02' },
   { label: '证据', to: '/evidence/matches', mark: '03' },
   { label: '决策', to: '/decisions', mark: '04' },
-  { label: '更多', to: '/admin/import-review', mark: '05' },
+  { label: '更多', to: '/more', mark: '05' },
 ];
+
+async function handleLogout() {
+  const redirect = route.fullPath;
+  const wasAdminRoute = route.meta.requiresAdmin === true;
+  authStore.logout();
+  if (wasAdminRoute) {
+    await router.replace({ path: '/login', query: { redirect } });
+  }
+}
 </script>
 
 <style scoped>
@@ -245,7 +257,7 @@ const mobileNav = [
   max-width: 1480px;
 }
 
-.topbar h1 {
+.topbar__title {
   font-family: var(--wc-font-display);
   font-size: clamp(24px, 3vw, 42px);
   line-height: 1.05;

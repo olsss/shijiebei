@@ -101,7 +101,7 @@ onMounted(load);
 </script>
 
 <template>
-  <main class="page-shell profile-page">
+  <section class="page-shell profile-page">
     <section class="page-content">
       <el-page-header content="球员画像中心" @back="$router.push('/')" />
 
@@ -183,7 +183,7 @@ onMounted(load);
         </el-table>
       </el-card>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>

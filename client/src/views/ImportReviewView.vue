@@ -231,7 +231,7 @@ onMounted(loadItems);
 </script>
 
 <template>
-  <main class="page-shell import-review-page">
+  <section class="page-shell import-review-page">
     <section class="page-content">
       <el-page-header content="JSON 审核中心" @back="$router.push('/')" />
 
@@ -382,7 +382,7 @@ onMounted(loadItems);
         <el-empty v-else description="请选择一条 JSON 查看" />
       </el-drawer>
     </section>
-  </main>
+  </section>
 </template>
 
 <style scoped>
