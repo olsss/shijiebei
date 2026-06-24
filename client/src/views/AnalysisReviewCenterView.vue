@@ -7,6 +7,7 @@ import {
   type PublicDecisionReport,
   type PublicDecisionReview,
 } from '@/api/analysisReview';
+import { enumLabel, readablePublicText } from '@/utils/display-labels';
 
 const loading = ref(false);
 const error = ref('');
@@ -58,7 +59,7 @@ function publicText(value?: string, fallback = '暂无公开摘要。'): string 
   if (!text) {
     return fallback;
   }
-  return text.replace(publicSensitivePattern, '已脱敏指标');
+  return readablePublicText(text.replace(publicSensitivePattern, '已脱敏指标'), fallback);
 }
 
 function severityClass(severity?: string): string {
@@ -108,7 +109,7 @@ onMounted(load);
     <section class="page-content decisions-page__content">
       <header class="decisions-hero">
         <div>
-          <p class="eyebrow">Decisions · Reviews</p>
+          <p class="eyebrow">决策 · 复盘</p>
           <h1 id="decisions-title">决策复盘中心</h1>
           <p>公开展示分析结论、风险摘要、赛后复盘和规则沉淀；涉及后台执行、票据、资金和收益的明细保留在管理员区域。</p>
         </div>
@@ -129,7 +130,7 @@ onMounted(load);
       <section class="decisions-grid">
         <aside class="side-panel" aria-label="公开分析报告">
           <div class="panel-heading">
-            <div><p class="eyebrow">Reports</p><h2>分析报告</h2></div>
+            <div><p class="eyebrow">报告</p><h2>分析报告</h2></div>
             <span class="count-pill">{{ reports.length }}</span>
           </div>
           <p v-if="loading && !reports.length" class="empty-copy">正在加载公开报告...</p>
@@ -143,9 +144,9 @@ onMounted(load);
             type="button"
             @click="selectReport(report)"
           >
-            <span>{{ report.jcCode || 'JC 待定' }} · {{ formatDate(report.matchday) }}</span>
+            <span>{{ report.jcCode ? `竞彩 ${report.jcCode}` : '竞彩待定' }} · {{ formatDate(report.matchday) }}</span>
             <strong>{{ report.matchName || '比赛待同步' }}</strong>
-            <small>{{ report.conclusionType || '结论待同步' }} · 置信度 {{ report.confidence || '-' }}</small>
+            <small>{{ enumLabel('conclusionType', report.conclusionType, '结论待同步') }} · 置信度 {{ report.confidence || '-' }}</small>
             <small>{{ publicText(report.riskSummary, '暂无风险摘要') }}</small>
           </button>
         </aside>
@@ -153,10 +154,10 @@ onMounted(load);
         <article class="detail-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Decision Detail</p>
+              <p class="eyebrow">决策详情</p>
               <h2>{{ selectedReport?.matchName || '公开决策详情' }}</h2>
             </div>
-            <span v-if="selectedReport" class="status-pill">{{ selectedReport.conclusionType || '结论待定' }}</span>
+            <span v-if="selectedReport" class="status-pill">{{ enumLabel('conclusionType', selectedReport.conclusionType, '结论待定') }}</span>
           </div>
 
           <p v-if="!selectedReport && !loading" class="empty-copy">请选择左侧公开报告。</p>
@@ -164,23 +165,23 @@ onMounted(load);
             <section class="summary-grid" aria-label="报告摘要">
               <div><span>比赛编号</span><strong>{{ selectedReport.jcCode || '-' }}</strong></div>
               <div><span>比赛日期</span><strong>{{ formatDate(selectedReport.matchday) }}</strong></div>
-              <div><span>结论类型</span><strong>{{ selectedReport.conclusionType || '-' }}</strong></div>
+              <div><span>结论类型</span><strong>{{ enumLabel('conclusionType', selectedReport.conclusionType, '-') }}</strong></div>
               <div><span>置信度</span><strong>{{ selectedReport.confidence || '-' }}</strong></div>
             </section>
 
             <section class="card-grid">
               <article class="info-card">
-                <p class="eyebrow">Risk</p>
+                <p class="eyebrow">风险</p>
                 <h3>风险摘要</h3>
                 <p>{{ publicText(selectedReport.riskSummary) }}</p>
               </article>
               <article class="info-card">
-                <p class="eyebrow">Review</p>
+                <p class="eyebrow">复盘</p>
                 <h3>复盘摘要</h3>
                 <p>{{ publicText(selectedReport.reviewSummary) }}</p>
               </article>
               <article class="info-card info-card--wide">
-                <p class="eyebrow">Lesson Summary</p>
+                <p class="eyebrow">规则摘要</p>
                 <h3>规则沉淀摘要</h3>
                 <p>{{ publicText(selectedReport.lessonSummary) }}</p>
               </article>
@@ -188,7 +189,7 @@ onMounted(load);
 
             <section class="info-card">
               <div class="panel-heading">
-                <div><p class="eyebrow">Post-match Reviews</p><h3>相关赛后复盘</h3></div>
+                <div><p class="eyebrow">赛后复盘</p><h3>相关赛后复盘</h3></div>
                 <span class="count-pill">{{ relatedReviews.length }}</span>
               </div>
               <div v-if="relatedReviews.length" class="review-grid">
@@ -210,13 +211,13 @@ onMounted(load);
 
             <section class="info-card">
               <div class="panel-heading">
-                <div><p class="eyebrow">Lessons</p><h3>规则沉淀</h3></div>
+                <div><p class="eyebrow">规则</p><h3>规则沉淀</h3></div>
                 <span class="count-pill">{{ lessons.length }}</span>
               </div>
               <div v-if="lessons.length" class="lesson-grid">
                 <article v-for="lesson in lessons" :key="lesson.id" class="lesson-card">
-                  <span class="severity-pill" :class="severityClass(lesson.severity)">{{ lesson.severity }}</span>
-                  <strong>{{ lesson.lessonType }}</strong>
+                  <span class="severity-pill" :class="severityClass(lesson.severity)">{{ enumLabel('severity', lesson.severity) }}</span>
+                  <strong>{{ enumLabel('lessonType', lesson.lessonType) }}</strong>
                   <p>{{ publicText(lesson.lessonText, '暂无规则描述。') }}</p>
                 </article>
               </div>

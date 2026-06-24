@@ -9,6 +9,16 @@ import {
   type PublicWorkbenchSentimentRisk,
 } from '@/api/prematchWorkbench';
 import { useAuthStore } from '@/stores/auth';
+import {
+  enumLabel,
+  fieldNameLabel,
+  lineupRoleLabel,
+  marketLabel,
+  matchStatusLabel,
+  positionLabel,
+  readablePublicText,
+  sourceTypeLabel,
+} from '@/utils/display-labels';
 
 const authStore = useAuthStore();
 const loading = ref(false);
@@ -34,7 +44,7 @@ const decisionSteps = computed(() => {
     {
       label: '证据完整性',
       value: summary ? `${summary.integrityScore}%` : '-',
-      meta: summary ? `缺 ${summary.missingCount} · 旧 ${summary.staleCount} · 冲 ${summary.conflictCount}` : '等待选择比赛',
+      meta: summary ? `缺失 ${summary.missingCount} · 过期 ${summary.staleCount} · 冲突 ${summary.conflictCount}` : '等待选择比赛',
     },
     {
       label: '阵容与状态',
@@ -67,7 +77,7 @@ function publicText(value?: string, fallback = '暂无公开摘要。'): string 
   if (!text) {
     return fallback;
   }
-  return text.replace(publicSensitivePattern, '已脱敏指标');
+  return readablePublicText(text.replace(publicSensitivePattern, '已脱敏指标'), fallback);
 }
 
 function matchTitle(match?: PublicWorkbenchMatchSummary | null): string {
@@ -183,10 +193,10 @@ onMounted(load);
     <section class="page-content prematch-page__content">
       <header class="prematch-hero">
         <div>
-          <p class="eyebrow">Prematch Decision Flow</p>
+          <p class="eyebrow">赛前决策流</p>
           <h1 id="prematch-title">赛前分析作战室</h1>
           <p>
-            以公开赛前 API 聚合完整性、阵容、赔率、舆情、证据与分析摘要。访客可只读查看；管理类动作只在 Basic 管理员登录后显示。
+            以公开赛前数据聚合完整性、阵容、赔率、舆情、证据与分析摘要。访客可只读查看；管理类动作只在管理员登录后显示。
           </p>
         </div>
         <div class="hero-actions">
@@ -230,7 +240,7 @@ onMounted(load);
         <aside class="match-rail" aria-label="比赛准备队列">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Queue</p>
+              <p class="eyebrow">队列</p>
               <h2>比赛准备清单</h2>
             </div>
             <button class="refresh-button" type="button" :disabled="loading" @click="load">
@@ -252,16 +262,16 @@ onMounted(load);
           >
             <span>{{ match.competition || '世界杯' }} · {{ match.stage || '待定阶段' }}</span>
             <strong>{{ matchTitle(match) }}</strong>
-            <small>{{ formatDateTime(match.kickoffTime || match.matchday) }} · JC {{ match.jcCode || '待定' }}</small>
+            <small>{{ formatDateTime(match.kickoffTime || match.matchday) }} · 竞彩 {{ match.jcCode || '待定' }}</small>
             <em :class="scoreTone(match.integrityScore)">完整性 {{ match.integrityScore }}%</em>
-            <small>缺 {{ match.missingCount }} · 旧 {{ match.staleCount }} · 冲 {{ match.conflictCount }}</small>
+            <small>缺失 {{ match.missingCount }} · 过期 {{ match.staleCount }} · 冲突 {{ match.conflictCount }}</small>
           </button>
         </aside>
 
         <article class="decision-board">
           <div class="panel-heading decision-board__heading">
             <div>
-              <p class="eyebrow">Selected Match</p>
+              <p class="eyebrow">当前比赛</p>
               <h2>{{ matchTitle(selected?.summary) }}</h2>
             </div>
             <span v-if="selected" class="status-pill" :class="scoreTone(selected.summary.integrityScore)">
@@ -292,7 +302,7 @@ onMounted(load);
               </div>
               <div>
                 <span>状态</span>
-                <strong>{{ selected.summary.status || '待同步' }}</strong>
+                <strong>{{ matchStatusLabel(selected.summary.status) }}</strong>
               </div>
             </section>
 
@@ -306,17 +316,17 @@ onMounted(load);
 
             <section class="section-block" aria-labelledby="integrity-title">
               <div class="section-title">
-                <p class="eyebrow">Integrity</p>
+                <p class="eyebrow">完整性</p>
                 <h3 id="integrity-title">完整性检查</h3>
               </div>
               <div class="card-grid card-grid--checks">
                 <article v-for="check in selected.integrityChecks" :key="check.code" class="info-card">
                   <div class="info-card__title">
                     <strong>{{ check.label }}</strong>
-                    <span class="status-pill" :class="statusTone(check.status)">{{ check.status }}</span>
+                    <span class="status-pill" :class="statusTone(check.status)">{{ enumLabel('integrityStatus', check.status) }}</span>
                   </div>
                   <p>{{ check.message }}</p>
-                  <small>证据 {{ check.evidenceCount }} · {{ check.severity }} · {{ formatDateTime(check.lastUpdatedAt) }}</small>
+                  <small>证据 {{ check.evidenceCount }} · {{ enumLabel('severity', check.severity) }} · {{ formatDateTime(check.lastUpdatedAt) }}</small>
                 </article>
               </div>
             </section>
@@ -324,7 +334,7 @@ onMounted(load);
             <section class="evidence-grid" aria-label="赛前公开证据卡片">
               <article class="info-card" data-test="team-card">
                 <div class="section-title">
-                  <p class="eyebrow">Teams</p>
+                  <p class="eyebrow">球队</p>
                   <h3>球队画像</h3>
                 </div>
                 <div v-for="team in selected.teams" :key="team.teamId" class="stack-item">
@@ -336,35 +346,35 @@ onMounted(load);
 
               <article class="info-card" data-test="player-card">
                 <div class="section-title">
-                  <p class="eyebrow">Players</p>
+                  <p class="eyebrow">球员</p>
                   <h3>球员状态</h3>
                 </div>
                 <div v-for="player in selected.players" :key="player.playerId" class="stack-item">
-                  <strong>{{ player.playerName }} <small>{{ player.teamName || '' }} · {{ player.position || '位置待定' }}</small></strong>
-                  <p>{{ player.injuryStatus || player.status || '状态待同步' }} · {{ player.cardStatus || '纪律待同步' }}</p>
+                  <strong>{{ player.playerName }} <small>{{ player.teamName || '' }} · {{ positionLabel(player.position) }}</small></strong>
+                  <p>{{ player.injuryStatus || enumLabel('playerStatus', player.status, '状态待同步') }} · {{ player.cardStatus || '纪律待同步' }}</p>
                   <span v-for="fact in player.facts" :key="fact.factId" class="fact-chip">{{ fact.title }}</span>
                 </div>
               </article>
 
               <article class="info-card">
                 <div class="section-title">
-                  <p class="eyebrow">Lineup</p>
+                  <p class="eyebrow">阵容</p>
                   <h3>阵容线索</h3>
                 </div>
                 <div v-for="lineup in selected.lineups" :key="lineup.id" class="stack-item">
                   <strong>{{ lineup.playerName || '球员待定' }} <small>{{ lineup.teamName || '' }}</small></strong>
-                  <p>{{ lineup.position || '位置待定' }} · {{ lineup.role || '角色待定' }} · {{ lineup.starter ? '首发' : '替补' }}</p>
+                  <p>{{ positionLabel(lineup.position) }} · {{ lineupRoleLabel(lineup.role) }} · {{ lineup.starter ? '首发' : '替补' }}</p>
                 </div>
               </article>
 
               <article class="info-card" data-test="odds-card">
                 <div class="section-title">
-                  <p class="eyebrow">Odds</p>
+                  <p class="eyebrow">赔率</p>
                   <h3>赔率与盘口</h3>
                 </div>
                 <div v-for="market in selected.oddsMarkets" :key="market.marketId" class="stack-item">
-                  <strong>{{ market.bookmaker }} <small>{{ market.marketCode }} · {{ market.snapshotType || '快照' }}</small></strong>
-                  <p>{{ market.marketName || '玩法待定' }} · {{ market.lineValue || '无盘口线' }} · {{ formatDateTime(market.capturedAt) }}</p>
+                  <strong>{{ market.bookmaker }} <small>{{ marketLabel(market.marketCode, market.marketName) }} · {{ enumLabel('oddsSnapshot', market.snapshotType, '快照') }}</small></strong>
+                  <p>{{ marketLabel(market.marketCode, market.marketName) }} · {{ market.lineValue || '无盘口线' }} · {{ formatDateTime(market.capturedAt) }}</p>
                   <span v-for="selection in market.selections" :key="selection.selectionId" class="fact-chip">
                     {{ selection.selectionName }} {{ numberText(selection.oddsValue) }} / {{ percentText(selection.impliedProbability) }}
                   </span>
@@ -373,49 +383,49 @@ onMounted(load);
 
               <article class="info-card" data-test="sentiment-card">
                 <div class="section-title">
-                  <p class="eyebrow">Sentiment</p>
+                  <p class="eyebrow">舆情</p>
                   <h3>舆情与外部因素</h3>
                 </div>
                 <div v-for="factor in selected.sentimentFactors" :key="factor.factorId" class="stack-item">
-                  <strong>{{ factor.title }} <small>{{ factor.factorCategory }} · {{ factor.impactDirection || '影响待定' }}</small></strong>
-                  <p>{{ factor.summary || '暂无摘要' }}</p>
+                  <strong>{{ factor.title }} <small>{{ enumLabel('factorCategory', factor.factorCategory) }} · {{ enumLabel('impactDirection', factor.impactDirection, '影响待定') }}</small></strong>
+                  <p>{{ readablePublicText(factor.summary, '暂无摘要') }}</p>
                   <span v-for="risk in factor.risks" :key="risk.riskId" class="fact-chip" :class="riskTone(risk)">
-                    {{ risk.title }} {{ risk.riskLevel || '' }}
+                    {{ risk.title }} {{ enumLabel('riskLevel', risk.riskLevel, '') }}
                   </span>
                 </div>
               </article>
 
               <article class="info-card">
                 <div class="section-title">
-                  <p class="eyebrow">Evidence</p>
+                  <p class="eyebrow">证据</p>
                   <h3>多源证据</h3>
                 </div>
                 <div v-for="item in selected.evidence" :key="item.evidenceId" class="stack-item">
-                  <strong>{{ item.sourceName }} <small>{{ item.sourceType }}</small></strong>
-                  <p>{{ item.summary || '暂无摘要' }}</p>
+                  <strong>{{ item.sourceName }} <small>{{ sourceTypeLabel(item.sourceType) }}</small></strong>
+                  <p>{{ readablePublicText(item.summary, '暂无摘要') }}</p>
                   <small>可信度 {{ numberText(item.reliabilityScore) }} · {{ formatDateTime(item.evidenceTime) }}</small>
                 </div>
               </article>
 
               <article class="info-card">
                 <div class="section-title">
-                  <p class="eyebrow">Conflicts</p>
+                  <p class="eyebrow">冲突</p>
                   <h3>数据冲突</h3>
                 </div>
                 <div v-for="conflict in selected.conflicts" :key="conflict.conflictId" class="stack-item">
-                  <strong>{{ conflict.conflictType }} <small>{{ conflict.fieldName || '字段待定' }}</small></strong>
-                  <p>状态：{{ conflict.resolutionStatus }}</p>
+                  <strong>{{ enumLabel('conflictType', conflict.conflictType) }} <small>{{ fieldNameLabel(conflict.fieldName) }}</small></strong>
+                  <p>状态：{{ enumLabel('resolutionStatus', conflict.resolutionStatus) }}</p>
                 </div>
                 <p v-if="!selected.conflicts.length" class="empty-copy">暂无公开冲突项。</p>
               </article>
 
               <article class="info-card" data-test="analysis-card">
                 <div class="section-title">
-                  <p class="eyebrow">Reports</p>
+                  <p class="eyebrow">报告</p>
                   <h3>分析摘要</h3>
                 </div>
                 <div v-for="report in selected.analysisReports" :key="report.reportId" class="stack-item">
-                  <strong>{{ report.conclusionType || '结论待定' }} <small>{{ report.confidence || '置信度待定' }}</small></strong>
+                  <strong>{{ enumLabel('conclusionType', report.conclusionType, '结论待定') }} <small>{{ report.confidence || '置信度待定' }}</small></strong>
                   <p>{{ publicText(report.riskSummary, '暂无风险摘要') }}</p>
                   <small>{{ publicText(report.recommendedMarkets, '推荐玩法待定') }} &middot; {{ publicText(report.dimensions, '维度待定') }}</small>
                 </div>

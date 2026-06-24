@@ -69,9 +69,9 @@ vi.mock('@/api/publicOverview', () => ({
         blockedCount: 7,
       },
       oddsFreshness: {
-        marketCount: 8,
+        marketCount: 18,
         liveMarketCount: 9,
-        staleLiveMarketCount: 10,
+        staleLiveMarketCount: 1,
       },
       decisionSummary: {
         reportCount: 11,
@@ -114,12 +114,13 @@ describe('DashboardView', () => {
     expect(fetchCoreDataOverview).not.toHaveBeenCalled();
 
     expect(wrapper.find('[data-test="public-kpi-upcoming"]').text()).toContain('2');
-    expect(wrapper.find('[data-test="public-kpi-high-risk"]').text()).toContain('1');
-    expect(wrapper.find('[data-test="public-kpi-live-odds"]').text()).toContain('9');
+    expect(wrapper.find('[data-test="public-kpi-conflicts"]').text()).toContain('4');
+    expect(wrapper.find('[data-test="public-kpi-odds-market"]').text()).toContain('18');
     expect(wrapper.find('[data-test="public-kpi-reports"]').text()).toContain('11');
+    expect(wrapper.find('[data-test="odds-freshness-non-live"]').text()).toContain('8');
     expect(wrapper.text()).toContain('France vs Brazil');
-    expect(wrapper.text()).toContain('JC 001');
-    expect(wrapper.text()).toContain('完整度 88');
+    expect(wrapper.text()).toContain('竞彩 001');
+    expect(wrapper.text()).toContain('完整度 88%');
     expect(wrapper.text()).toContain('风险 2');
     expect(wrapper.text()).toContain('2026-06-22 00:00');
   });

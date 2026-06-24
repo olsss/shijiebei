@@ -6,6 +6,14 @@ import {
   type PublicMatchDetail,
   type PublicMatchSummary,
 } from '@/api/matches';
+import {
+  enumLabel,
+  fieldNameLabel,
+  lineupRoleLabel,
+  positionLabel,
+  readablePublicText,
+  sourceTypeLabel,
+} from '@/utils/display-labels';
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -88,7 +96,7 @@ onMounted(load);
     <section class="page-content evidence-page__content">
       <header class="evidence-hero">
         <div>
-          <p class="eyebrow">Evidence · Matches</p>
+          <p class="eyebrow">证据 · 比赛</p>
           <h1 id="match-center-title">比赛中心</h1>
           <p>公开展示已入库的赛程、阵容、事件、统计、证据链与冲突状态；采集底稿和冲突明细值不在公开页渲染。</p>
         </div>
@@ -109,7 +117,7 @@ onMounted(load);
       <section class="evidence-grid">
         <aside class="side-panel" aria-label="赛程列表">
           <div class="panel-heading">
-            <div><p class="eyebrow">Schedule</p><h2>赛程列表</h2></div>
+            <div><p class="eyebrow">赛程</p><h2>赛程列表</h2></div>
           </div>
           <p v-if="loading && !matches.length" class="empty-copy">正在加载公开赛程...</p>
           <p v-else-if="!matches.length" class="empty-copy">暂无公开比赛。</p>
@@ -124,13 +132,13 @@ onMounted(load);
           >
             <span>{{ match.competition || '世界杯' }} · {{ match.stage || '待定阶段' }}</span>
             <strong>{{ matchTitle(match) }}</strong>
-            <small>{{ formatDateTime(match.kickoffTime || match.matchday) }} · JC {{ match.jcCode || '待定' }}</small>
+            <small>{{ formatDateTime(match.kickoffTime || match.matchday) }} · 竞彩 {{ match.jcCode || '待定' }}</small>
           </button>
         </aside>
 
         <article class="detail-panel">
           <div class="panel-heading">
-            <div><p class="eyebrow">Match Detail</p><h2>{{ matchTitle(selected?.summary) }}</h2></div>
+            <div><p class="eyebrow">比赛详情</p><h2>{{ matchTitle(selected?.summary) }}</h2></div>
             <span v-if="selected" class="status-pill">证据 {{ selected.summary.evidenceCount }} · 冲突 {{ selected.summary.conflictCount }}</span>
           </div>
 
@@ -147,41 +155,41 @@ onMounted(load);
             </section>
 
             <section v-if="selected.externalFactors" class="info-card">
-              <p class="eyebrow">External</p>
+              <p class="eyebrow">外部因素</p>
               <h3>外部因素</h3>
-              <p>{{ selected.externalFactors }}</p>
+              <p>{{ readablePublicText(selected.externalFactors) }}</p>
             </section>
 
             <section class="card-grid" aria-label="比赛证据卡片">
               <article class="info-card">
-                <p class="eyebrow">Lineup</p>
+                <p class="eyebrow">阵容</p>
                 <h3>阵容 / 首发</h3>
                 <div v-for="lineup in selected.lineups" :key="lineup.id" class="stack-item">
                   <strong>{{ lineup.playerName || '球员待定' }} <small>{{ lineup.teamName || '' }}</small></strong>
-                  <span>{{ lineup.position || '位置待定' }} · {{ lineup.role || '角色待定' }} · {{ lineup.starter ? '首发' : '替补' }}</span>
+                  <span>{{ positionLabel(lineup.position) }} · {{ lineupRoleLabel(lineup.role) }} · {{ lineup.starter ? '首发' : '替补' }}</span>
                 </div>
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Events</p>
+                <p class="eyebrow">事件</p>
                 <h3>比赛事件</h3>
                 <div v-for="event in selected.events" :key="event.id" class="stack-item">
-                  <strong>{{ event.eventType }} <small>{{ event.eventMinute ?? '-' }}'</small></strong>
+                  <strong>{{ enumLabel('eventType', event.eventType) }} <small>{{ event.eventMinute ?? '-' }}'</small></strong>
                   <span>{{ event.teamName || '球队待定' }} · {{ event.playerName || '球员待定' }}</span>
                 </div>
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Team Stats</p>
+                <p class="eyebrow">球队统计</p>
                 <h3>球队统计 / 进球时间点</h3>
                 <div v-for="stat in selected.teamStats" :key="stat.id" class="stack-item">
-                  <strong>{{ stat.teamName || '球队待定' }} <small>{{ stat.statsType }}</small></strong>
+                  <strong>{{ stat.teamName || '球队待定' }} <small>{{ enumLabel('statsType', stat.statsType) }}</small></strong>
                   <span>进 {{ stat.goalsFor ?? '-' }} / 失 {{ stat.goalsAgainst ?? '-' }} · {{ stat.scoringMinutes || '进球分钟待同步' }}</span>
                 </div>
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Player Stats</p>
+                <p class="eyebrow">球员统计</p>
                 <h3>球员统计</h3>
                 <div v-for="stat in selected.playerStats" :key="stat.id" class="stack-item">
                   <strong>{{ stat.playerName || '球员待定' }} <small>{{ stat.teamName || '' }}</small></strong>
@@ -190,21 +198,21 @@ onMounted(load);
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Evidence</p>
+                <p class="eyebrow">证据链</p>
                 <h3>证据链</h3>
                 <div v-for="item in selected.evidence" :key="item.id" class="stack-item">
-                  <strong>{{ item.sourceName }} <small>{{ item.sourceType }}</small></strong>
-                  <span>{{ item.summary || '暂无摘要' }}</span>
+                  <strong>{{ item.sourceName }} <small>{{ sourceTypeLabel(item.sourceType) }}</small></strong>
+                  <span>{{ readablePublicText(item.summary, '暂无摘要') }}</span>
                   <small>可信度 {{ scoreText(item.reliabilityScore) }} · {{ formatDateTime(item.evidenceTime) }}</small>
                 </div>
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Conflicts</p>
+                <p class="eyebrow">冲突</p>
                 <h3>数据冲突</h3>
                 <div v-for="conflict in selected.conflicts" :key="conflict.id" class="stack-item">
-                  <strong>{{ conflict.conflictType }} <small>{{ conflict.fieldName || '字段待定' }}</small></strong>
-                  <span>状态：{{ conflict.resolutionStatus }}</span>
+                  <strong>{{ enumLabel('conflictType', conflict.conflictType) }} <small>{{ fieldNameLabel(conflict.fieldName) }}</small></strong>
+                  <span>状态：{{ enumLabel('resolutionStatus', conflict.resolutionStatus) }}</span>
                 </div>
                 <p v-if="!selected.conflicts.length" class="empty-copy">暂无公开冲突状态。</p>
               </article>

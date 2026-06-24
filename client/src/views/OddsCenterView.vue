@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import {
   getPublicMatchOdds,
   listPublicBookmakers,
@@ -10,6 +10,7 @@ import {
   type PublicOddsMarketSummary,
   type PublicOddsMatchDetail,
 } from '@/api/odds';
+import { enumLabel, marketLabel } from '@/utils/display-labels';
 import { formatMarketLine } from '@/utils/odds-format';
 
 const loading = ref(false);
@@ -37,6 +38,16 @@ const stats = computed(() => ({
   selections: overview.value.reduce((sum, item) => sum + item.selectionCount, 0),
 }));
 
+const filterSummary = computed(() => {
+  if (!overview.value.length) {
+    return '暂无盘口';
+  }
+  if (filteredOverview.value.length === overview.value.length) {
+    return `共 ${overview.value.length} 个盘口`;
+  }
+  return `已筛选 ${filteredOverview.value.length}/${overview.value.length} 个盘口`;
+});
+
 const currentMarket = computed<PublicOddsMarketDetail | null>(() => {
   if (!selectedMatch.value) {
     return null;
@@ -55,6 +66,35 @@ function formatDateTime(value?: string): string {
 
 function oddsText(value?: number): string {
   return value == null ? '-' : Number(value).toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function oddsValueText(value?: number): string {
+  if (value == null) {
+    return '-';
+  }
+  const numericValue = Number(value);
+  if (Math.abs(numericValue) >= 20) {
+    return numericValue > 0 ? `+${Math.round(numericValue)}` : `${Math.round(numericValue)}`;
+  }
+  return oddsText(numericValue);
+}
+
+function oddsFormatLabel(value?: number): string {
+  if (value == null) {
+    return '赔率';
+  }
+  return Math.abs(Number(value)) >= 20 ? '美式赔率' : '十进制赔率';
+}
+
+function percentText(value?: number): string {
+  if (value == null) {
+    return '-';
+  }
+  return `${(Number(value) * 100).toFixed(1).replace(/\.0$/, '')}%`;
+}
+
+function snapshotTypeText(value?: string): string {
+  return enumLabel('oddsSnapshot', value, '快照');
 }
 
 async function load() {
@@ -112,6 +152,22 @@ function selectMarket(market: PublicOddsMarketDetail) {
   selectedMarketId.value = market.id;
 }
 
+watch([selectedBookmaker, selectedMarketCode], async () => {
+  if (loading.value) {
+    return;
+  }
+  if (selectedMarketId.value != null && filteredOverview.value.some((item) => item.id === selectedMarketId.value)) {
+    return;
+  }
+  const first = filteredOverview.value[0];
+  if (first) {
+    await openMarket(first);
+  } else {
+    selectedMatch.value = null;
+    selectedMarketId.value = null;
+  }
+});
+
 onMounted(load);
 </script>
 
@@ -120,9 +176,9 @@ onMounted(load);
     <section class="page-content odds-page__content">
       <header class="evidence-hero">
         <div>
-          <p class="eyebrow">Evidence · Odds</p>
+          <p class="eyebrow">证据 · 赔率</p>
           <h1 id="odds-center-title">赔率中心</h1>
-          <p>公开展示已入库的公司、玩法、盘口与选项赔率；只保留分析所需的汇总字段，不展示采集原文或后台审核信息。</p>
+          <p>公开展示已入库的公司、玩法、盘口与选项赔率；实时盘口、赛前快照、赛后归档会分开标识。</p>
         </div>
         <button class="action-button" type="button" :disabled="loading" @click="load">
           {{ loading ? '刷新中' : '刷新公开数据' }}
@@ -151,7 +207,7 @@ onMounted(load);
           <select v-model="selectedMarketCode">
             <option value="">全部玩法</option>
             <option v-for="market in markets" :key="market.marketCode" :value="market.marketCode">
-              {{ market.marketCode }} {{ market.marketName || '' }}
+              {{ marketLabel(market.marketCode, market.marketName) }}
             </option>
           </select>
         </label>
@@ -160,8 +216,8 @@ onMounted(load);
       <section class="evidence-grid">
         <aside class="side-panel" aria-label="盘口快照">
           <div class="panel-heading">
-            <div><p class="eyebrow">Markets</p><h2>盘口快照</h2></div>
-            <span class="count-pill">{{ filteredOverview.length }}</span>
+            <div><p class="eyebrow">盘口</p><h2>盘口快照</h2></div>
+            <span class="count-pill">{{ filterSummary }}</span>
           </div>
           <p v-if="loading && !overview.length" class="empty-copy">正在加载公开盘口...</p>
           <p v-else-if="!filteredOverview.length" class="empty-copy">暂无符合筛选条件的盘口。</p>
@@ -174,9 +230,9 @@ onMounted(load);
             type="button"
             @click="openMarket(item)"
           >
-            <span>{{ item.bookmaker }} · {{ item.snapshotType }}</span>
+            <span>{{ item.bookmaker }} · {{ snapshotTypeText(item.snapshotType) }}</span>
             <strong>{{ item.matchName || '比赛待同步' }}</strong>
-            <small>{{ item.marketCode }} {{ item.marketName || '' }} · {{ formatMarketLine(item.lineValue, item.handicapLine) }}</small>
+            <small>{{ marketLabel(item.marketCode, item.marketName) }} · {{ formatMarketLine(item.lineValue, item.handicapLine) }}</small>
             <small>{{ formatDateTime(item.capturedAt) }} · {{ item.selectionCount }} 项</small>
           </button>
         </aside>
@@ -184,10 +240,10 @@ onMounted(load);
         <article class="detail-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Match Odds</p>
+              <p class="eyebrow">比赛赔率</p>
               <h2>{{ selectedMatch?.matchName || '赔率详情' }}</h2>
             </div>
-            <span v-if="selectedMatch" class="status-pill">JC {{ selectedMatch.jcCode || '待定' }}</span>
+            <span v-if="selectedMatch" class="status-pill">竞彩 {{ selectedMatch.jcCode || '待定' }}</span>
           </div>
 
           <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
@@ -204,21 +260,21 @@ onMounted(load);
                 type="button"
                 @click="selectMarket(market)"
               >
-                <span>{{ market.bookmaker }} · {{ market.snapshotType }}</span>
-                <strong>{{ market.marketCode }} {{ market.marketName || '' }}</strong>
+                <span>{{ market.bookmaker }} · {{ snapshotTypeText(market.snapshotType) }}</span>
+                <strong>{{ marketLabel(market.marketCode, market.marketName) }}</strong>
                 <small>{{ formatMarketLine(market.lineValue, market.handicapLine) }} · {{ formatDateTime(market.capturedAt) }}</small>
               </button>
             </section>
 
             <section class="info-card">
-              <p class="eyebrow">Selections</p>
+              <p class="eyebrow">选项</p>
               <h3>当前玩法选项赔率</h3>
               <div v-if="currentMarket?.selections.length" class="selection-grid">
                 <article v-for="selection in currentMarket.selections" :key="selection.id" class="selection-card">
                   <span>{{ selection.selectionCode }}</span>
                   <strong>{{ selection.selectionName }}</strong>
-                  <b>{{ oddsText(selection.oddsValue) }}</b>
-                  <small>{{ selection.selectionStatus }} · 隐含概率 {{ oddsText(selection.impliedProbability) }}</small>
+                  <b>{{ oddsValueText(selection.oddsValue) }}</b>
+                  <small>{{ enumLabel('oddsSelectionStatus', selection.selectionStatus) }} · {{ oddsFormatLabel(selection.oddsValue) }} · 隐含概率 {{ percentText(selection.impliedProbability) }}</small>
                 </article>
               </div>
               <p v-else class="empty-copy">当前玩法暂无选项赔率。</p>
@@ -246,14 +302,19 @@ onMounted(load);
   grid-template-columns: minmax(0, 1fr) auto;
   padding: clamp(20px, 4vw, 38px);
 }
+.evidence-hero > div {
+  min-width: 0;
+}
 .evidence-hero h1 {
   font-family: var(--wc-font-display);
   font-size: clamp(34px, 6vw, 68px);
   line-height: 1;
   margin: 0 0 12px;
+  overflow-wrap: anywhere;
 }
 .evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .market-card span, .market-card small, .selection-card small {
   color: var(--wc-text-muted);
+  overflow-wrap: anywhere;
 }
 .eyebrow {
   color: var(--wc-warning);
@@ -319,6 +380,13 @@ onMounted(load);
   grid-template-columns: minmax(0, 350px) minmax(0, 1fr);
   min-width: 0;
 }
+.side-panel {
+  align-self: start;
+  max-height: min(72vh, 900px);
+  overflow: auto;
+  position: sticky;
+  top: 18px;
+}
 .panel-heading {
   align-items: center;
   display: flex;
@@ -342,6 +410,14 @@ onMounted(load);
   transition: border-color 180ms ease, transform 180ms ease;
 }
 .list-card--active, .market-card--active { border-color: rgba(217, 119, 6, .62); }
+.list-card:hover, .market-card:hover {
+  border-color: rgba(147, 197, 253, .46);
+  transform: translateY(-1px);
+}
+.list-card:focus-visible, .market-card:focus-visible, .action-button:focus-visible, .filter-panel select:focus-visible {
+  box-shadow: var(--wc-focus-ring);
+  outline: none;
+}
 .count-pill, .status-pill {
   background: rgba(147, 197, 253, .12);
   border-radius: 999px;
@@ -350,6 +426,7 @@ onMounted(load);
   font-size: 12px;
   font-weight: 800;
   padding: 6px 9px;
+  white-space: nowrap;
 }
 .market-card-grid, .selection-grid {
   display: grid;
@@ -365,6 +442,7 @@ onMounted(load);
 @media (max-width: 1024px) {
   .evidence-hero, .evidence-grid { grid-template-columns: 1fr; }
   .stat-grid, .market-card-grid, .selection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .side-panel { max-height: none; position: static; }
 }
 @media (max-width: 640px) {
   .evidence-hero, .stat-grid, .filter-panel, .evidence-grid, .market-card-grid, .selection-grid { grid-template-columns: 1fr; }

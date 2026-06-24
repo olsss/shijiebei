@@ -50,6 +50,10 @@ const message = computed(() =>
   width: 10px;
 }
 
+.readonly-notice > div:last-child {
+  min-width: 0;
+}
+
 .readonly-notice--admin .readonly-notice__signal {
   background: var(--wc-accent);
   box-shadow: 0 0 20px rgba(217, 119, 6, 0.7);
@@ -66,5 +70,6 @@ const message = computed(() =>
   font-size: 13px;
   line-height: 1.55;
   margin: 3px 0 0;
+  overflow-wrap: anywhere;
 }
 </style>

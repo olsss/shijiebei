@@ -6,6 +6,7 @@ import {
   type PublicPlayerProfileDetail,
   type PublicPlayerProfileSummary,
 } from '@/api/profiles';
+import { enumLabel, factTypeLabel, positionLabel, readablePublicText } from '@/utils/display-labels';
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -78,7 +79,7 @@ onMounted(load);
     <section class="page-content profile-page__content">
       <header class="evidence-hero">
         <div>
-          <p class="eyebrow">Evidence · Players</p>
+          <p class="eyebrow">证据 · 球员</p>
           <h1 id="player-profile-title">球员画像中心</h1>
           <p>公开展示球员基础状态、球队归属、伤停牌面、训练与表现事实，帮助移动端快速读取关键证据。</p>
         </div>
@@ -99,7 +100,7 @@ onMounted(load);
       <section class="evidence-grid">
         <aside class="side-panel" aria-label="球员列表">
           <div class="panel-heading">
-            <div><p class="eyebrow">Players</p><h2>球员列表</h2></div>
+            <div><p class="eyebrow">球员</p><h2>球员列表</h2></div>
             <span class="count-pill">{{ players.length }}</span>
           </div>
           <p v-if="loading && !players.length" class="empty-copy">正在加载公开球员...</p>
@@ -115,7 +116,7 @@ onMounted(load);
           >
             <span>{{ player.teamName || '球队待同步' }} · #{{ player.shirtNumber ?? '-' }}</span>
             <strong>{{ player.displayName }}</strong>
-            <small>{{ player.position || '位置待定' }} · {{ player.status || '状态待同步' }}</small>
+            <small>{{ positionLabel(player.position) }} · {{ enumLabel('playerStatus', player.status, '状态待同步') }}</small>
             <small>{{ player.factCount }} 条事实 · {{ formatDateTime(player.latestProfileUpdate) }}</small>
           </button>
         </aside>
@@ -123,7 +124,7 @@ onMounted(load);
         <article class="detail-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Player Detail</p>
+              <p class="eyebrow">球员详情</p>
               <h2>{{ selected?.player.displayName || '球员详情' }}</h2>
             </div>
             <span v-if="selected" class="status-pill">{{ selected.player.teamName || '球队待同步' }}</span>
@@ -136,14 +137,14 @@ onMounted(load);
           <template v-else>
             <section class="summary-grid" aria-label="球员摘要">
               <div><span>号码</span><strong>{{ selected.player.shirtNumber ?? '-' }}</strong></div>
-              <div><span>位置</span><strong>{{ selected.player.position || '-' }}</strong></div>
-              <div><span>状态</span><strong>{{ selected.player.status || '-' }}</strong></div>
+              <div><span>位置</span><strong>{{ positionLabel(selected.player.position) }}</strong></div>
+              <div><span>状态</span><strong>{{ enumLabel('playerStatus', selected.player.status, '-') }}</strong></div>
               <div><span>更衣室</span><strong>{{ selected.player.lockerRoomStatus || '-' }}</strong></div>
             </section>
 
             <section class="card-grid" aria-label="球员画像内容">
               <article class="info-card">
-                <p class="eyebrow">Availability</p>
+                <p class="eyebrow">可用性</p>
                 <h3>可用性与牌面</h3>
                 <div class="stack-item">
                   <strong>伤病状态</strong>
@@ -156,11 +157,11 @@ onMounted(load);
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Facts</p>
+                <p class="eyebrow">事实</p>
                 <h3>画像事实</h3>
                 <div v-for="fact in selected.facts" :key="fact.id" class="stack-item">
-                  <strong>{{ fact.title }} <small>{{ fact.factType }}</small></strong>
-                  <span>{{ fact.summary }}</span>
+                  <strong>{{ fact.title }} <small>{{ factTypeLabel(fact.factType) }}</small></strong>
+                  <span>{{ readablePublicText(fact.summary) }}</span>
                   <small>{{ fact.sourceName }} · 可信度 {{ reliabilityLabel(fact.reliabilityScore) }} · {{ formatDateTime(fact.capturedAt) }}</small>
                 </div>
                 <p v-if="!selected.facts.length" class="empty-copy">暂无画像事实。</p>

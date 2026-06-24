@@ -87,7 +87,7 @@ describe('SentimentCenterView', () => {
 
     expect(wrapper.text()).toContain('比赛级风险评分');
     expect(wrapper.text()).toContain('热门过热');
-    expect(wrapper.text()).toContain('PUBLIC_OVERHEAT');
-    expect(wrapper.text()).toContain('MEDIUM');
+    expect(wrapper.text()).toContain('热度过高');
+    expect(wrapper.text()).toContain('中风险');
   });
 });

@@ -2,9 +2,9 @@
   <section class="page-shell more-page" aria-labelledby="more-title">
     <section class="page-content more-page__content">
       <div class="more-page__hero">
-        <p>More · Admin gateway</p>
+        <p>更多 · 管理入口</p>
         <h1 id="more-title">更多入口</h1>
-        <span>公开数据继续保持只读；管理后台需要 Basic 管理员登录。</span>
+        <span>公开数据继续保持只读；管理后台需要管理员登录。</span>
       </div>
 
       <div class="more-page__grid">
@@ -17,7 +17,7 @@
           <span>查看已批准的球员状态、伤停和纪律信息。</span>
         </RouterLink>
         <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/import-review">
-          <strong>JSON 审核中心</strong>
+          <strong>数据审核中心</strong>
           <span>管理员登录后进行扫描、批准、驳回和入库。</span>
         </RouterLink>
         <RouterLink v-if="authStore.canWrite" class="more-card more-card--admin" to="/admin/collection-review">
@@ -30,7 +30,7 @@
         </RouterLink>
         <div v-else class="more-card more-card--readonly" role="note">
           <strong>管理员入口已隐藏</strong>
-          <span>JSON 审核、系统设置和入库操作仅 Basic 管理员登录后显示。</span>
+          <span>数据审核、系统设置和入库操作仅管理员登录后显示。</span>
         </div>
       </div>
     </section>

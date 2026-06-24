@@ -11,7 +11,7 @@ spring:
   flyway:
     enabled: true
 app:
-  archive-path: ../skill/archive
+  archive-path: ../data-inbox/pending
   admin:
     username: admin
     password: admin123456

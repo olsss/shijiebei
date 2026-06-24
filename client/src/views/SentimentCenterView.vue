@@ -10,6 +10,7 @@ import {
   type PublicSentimentMatchDetail,
   type PublicSentimentRisk,
 } from '@/api/sentiment';
+import { enumLabel, readablePublicText } from '@/utils/display-labels';
 
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -25,6 +26,10 @@ const selectedMatch = ref<PublicSentimentMatchDetail | null>(null);
 const selectedFactorId = ref<number | null>(null);
 
 const riskLevels = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'UNKNOWN'];
+const riskLevelOptions = riskLevels.map((level) => ({
+  value: level,
+  label: enumLabel('riskLevel', level),
+}));
 
 const filteredOverview = computed(() => overview.value.filter((item) => {
   const categoryOk = !selectedCategory.value || item.factorCategory === selectedCategory.value;
@@ -161,7 +166,7 @@ onMounted(load);
     <section class="page-content sentiment-page__content">
       <header class="evidence-hero">
         <div>
-          <p class="eyebrow">Evidence · Sentiment</p>
+          <p class="eyebrow">证据 · 舆情</p>
           <h1 id="sentiment-center-title">舆情与外部因素中心</h1>
           <p>聚合天气、公众热度、伤停与环境因素，只展示已入库的事实摘要、来源可信度和风险评分，不展示采集底稿。</p>
         </div>
@@ -172,8 +177,8 @@ onMounted(load);
 
       <section class="stat-grid" aria-label="舆情统计">
         <article class="stat-card"><span>比赛</span><strong>{{ stats.matches }}</strong><small>公开因素覆盖</small></article>
-        <article class="stat-card"><span>因素</span><strong>{{ stats.factors }}</strong><small>A1 事实记录</small></article>
-        <article class="stat-card"><span>风险</span><strong>{{ stats.risks }}</strong><small>A2 评分项</small></article>
+        <article class="stat-card"><span>因素</span><strong>{{ stats.factors }}</strong><small>事实记录</small></article>
+        <article class="stat-card"><span>风险</span><strong>{{ stats.risks }}</strong><small>风险评分项</small></article>
         <article class="stat-card"><span>过期</span><strong>{{ stats.stale }}</strong><small>需关注时效</small></article>
       </section>
 
@@ -184,14 +189,16 @@ onMounted(load);
           因素分类
           <select v-model="selectedCategory">
             <option value="">全部分类</option>
-            <option v-for="category in categories" :key="category" :value="category">{{ category }}</option>
+            <option v-for="category in categories" :key="category" :value="category">
+              {{ enumLabel('factorCategory', category) }}
+            </option>
           </select>
         </label>
         <label>
           风险等级
           <select v-model="selectedRiskLevel">
             <option value="">全部等级</option>
-            <option v-for="level in riskLevels" :key="level" :value="level">{{ level }}</option>
+            <option v-for="level in riskLevelOptions" :key="level.value" :value="level.value">{{ level.label }}</option>
           </select>
         </label>
         <label class="check-row">
@@ -199,7 +206,7 @@ onMounted(load);
           只看过期提醒
         </label>
         <div class="risk-type-row" aria-label="风险类型">
-          <span v-for="riskType in riskTypes" :key="riskType" class="type-chip">{{ riskType }}</span>
+          <span v-for="riskType in riskTypes" :key="riskType" class="type-chip">{{ enumLabel('riskType', riskType) }}</span>
           <span v-if="riskTypes.length === 0" class="muted-text">暂无风险类型</span>
         </div>
       </section>
@@ -207,7 +214,7 @@ onMounted(load);
       <section class="evidence-grid">
         <aside class="side-panel" aria-label="外部因素列表">
           <div class="panel-heading">
-            <div><p class="eyebrow">Factors</p><h2>因素记录</h2></div>
+            <div><p class="eyebrow">因素</p><h2>因素记录</h2></div>
             <span class="count-pill">{{ filteredOverview.length }}</span>
           </div>
           <p v-if="loading && !overview.length" class="empty-copy">正在加载公开舆情...</p>
@@ -221,21 +228,21 @@ onMounted(load);
             type="button"
             @click="openFactor(item)"
           >
-            <span>{{ item.matchName || '比赛待同步' }} · {{ item.factorCategory }}</span>
+            <span>{{ item.matchName || '比赛待同步' }} · {{ enumLabel('factorCategory', item.factorCategory) }}</span>
             <strong>{{ item.title }}</strong>
-            <small>{{ item.summary || '暂无摘要' }}</small>
+            <small>{{ readablePublicText(item.summary, '暂无摘要') }}</small>
             <small>{{ item.sourceName || '来源待同步' }} · {{ item.stale ? '已过期' : '有效' }}</small>
-            <span class="risk-pill" :class="riskClass(item.highestRiskLevel)">{{ item.highestRiskLevel || 'UNKNOWN' }}</span>
+            <span class="risk-pill" :class="riskClass(item.highestRiskLevel)">{{ enumLabel('riskLevel', item.highestRiskLevel || 'UNKNOWN') }}</span>
           </button>
         </aside>
 
         <article class="detail-panel">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">Match Detail</p>
+              <p class="eyebrow">比赛详情</p>
               <h2>{{ selectedMatch?.matchName || '舆情详情' }}</h2>
             </div>
-            <span v-if="selectedMatch" class="status-pill">JC {{ selectedMatch.jcCode || '待定' }}</span>
+            <span v-if="selectedMatch" class="status-pill">竞彩 {{ selectedMatch.jcCode || '待定' }}</span>
           </div>
 
           <div v-if="detailError" class="alert-panel" role="alert">{{ detailError }}</div>
@@ -252,7 +259,7 @@ onMounted(load);
                 type="button"
                 @click="selectFactor(factor)"
               >
-                <span>{{ factor.factorCategory }} · {{ factor.factorType || '类型待定' }}</span>
+                <span>{{ enumLabel('factorCategory', factor.factorCategory) }} · {{ enumLabel('factorType', factor.factorType, '类型待定') }}</span>
                 <strong>{{ factor.title }}</strong>
                 <small>{{ factor.sourceName || factor.sourceRef || '来源待同步' }} · 风险 {{ factorRiskCount(factor) }}</small>
               </button>
@@ -260,30 +267,30 @@ onMounted(load);
 
             <section class="detail-card-grid">
               <article class="info-card">
-                <p class="eyebrow">Current Factor</p>
+                <p class="eyebrow">当前因素</p>
                 <h3>当前因素摘要</h3>
                 <template v-if="currentFactor">
                   <div class="summary-grid">
-                    <div><span>影响方向</span><strong>{{ currentFactor.impactDirection || '-' }}</strong></div>
-                    <div><span>证据等级</span><strong>{{ currentFactor.evidenceLevel || '-' }}</strong></div>
+                    <div><span>影响方向</span><strong>{{ enumLabel('impactDirection', currentFactor.impactDirection, '-') }}</strong></div>
+                    <div><span>证据等级</span><strong>{{ enumLabel('evidenceLevel', currentFactor.evidenceLevel, '-') }}</strong></div>
                     <div><span>置信分</span><strong>{{ scoreText(currentFactor.confidenceScore) }}</strong></div>
                     <div><span>可信度</span><strong>{{ scoreText(currentFactor.reliabilityScore) }}</strong></div>
                   </div>
-                  <p>{{ currentFactor.summary || '暂无摘要' }}</p>
+                  <p>{{ readablePublicText(currentFactor.summary, '暂无摘要') }}</p>
                   <small>{{ formatDateTime(currentFactor.observedAt) }} · 过期时间 {{ formatDateTime(currentFactor.expiresAt) }}</small>
                 </template>
                 <p v-else class="empty-copy">暂无当前因素。</p>
               </article>
 
               <article class="info-card">
-                <p class="eyebrow">Factor Risks</p>
+                <p class="eyebrow">因素风险</p>
                 <h3>关联风险评分</h3>
                 <div v-if="currentFactorRisks.length" class="risk-grid">
                   <article v-for="risk in currentFactorRisks" :key="risk.id" class="risk-card">
-                    <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ risk.riskLevel }}</span>
+                    <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ enumLabel('riskLevel', risk.riskLevel) }}</span>
                     <strong>{{ risk.title }}</strong>
-                    <small>{{ risk.riskType }} · 分数 {{ scoreText(risk.riskScore) }}</small>
-                    <p>{{ risk.rationale || risk.suggestedAction || '保持观察' }}</p>
+                    <small>{{ enumLabel('riskType', risk.riskType) }} · 分数 {{ scoreText(risk.riskScore) }}</small>
+                    <p>{{ readablePublicText(risk.rationale || risk.suggestedAction, '保持观察') }}</p>
                   </article>
                 </div>
                 <p v-else class="empty-copy">当前因素暂无风险评分。</p>
@@ -291,14 +298,14 @@ onMounted(load);
             </section>
 
             <section class="info-card">
-              <p class="eyebrow">Match Risks</p>
+              <p class="eyebrow">比赛风险</p>
               <h3>比赛级风险评分</h3>
               <div v-if="matchLevelRisks.length" class="risk-grid">
                 <article v-for="risk in matchLevelRisks" :key="risk.id" class="risk-card">
-                  <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ risk.riskLevel }}</span>
+                  <span class="risk-pill" :class="riskClass(risk.riskLevel)">{{ enumLabel('riskLevel', risk.riskLevel) }}</span>
                   <strong>{{ risk.title }}</strong>
-                  <small>{{ risk.riskType }} · 分数 {{ scoreText(risk.riskScore) }}</small>
-                  <p>{{ risk.rationale || risk.suggestedAction || '保持观察' }}</p>
+                  <small>{{ enumLabel('riskType', risk.riskType) }} · 分数 {{ scoreText(risk.riskScore) }}</small>
+                  <p>{{ readablePublicText(risk.rationale || risk.suggestedAction, '保持观察') }}</p>
                 </article>
               </div>
               <p v-else class="empty-copy">暂无比赛级风险评分。</p>
@@ -332,8 +339,9 @@ onMounted(load);
   line-height: 1;
   margin: 0 0 12px;
 }
-.evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .factor-card span, .factor-card small, .summary-grid span, .risk-card small, .risk-card p, .muted-text {
+.evidence-hero p:not(.eyebrow), .empty-copy, .list-card span, .list-card small, .factor-card span, .factor-card small, .summary-grid span, .summary-grid strong, .risk-card small, .risk-card p, .muted-text {
   color: var(--wc-text-muted);
+  overflow-wrap: anywhere;
 }
 .eyebrow {
   color: var(--wc-warning);
@@ -396,10 +404,23 @@ onMounted(load);
 }
 .check-row {
   align-items: center;
+  background: rgba(15, 23, 42, .5);
+  border: 1px solid rgba(147, 197, 253, .18);
+  border-radius: 14px;
+  cursor: pointer;
   display: flex !important;
+  gap: 8px;
   min-height: 44px;
+  padding: 0 12px;
 }
-.check-row input { min-height: 20px; min-width: 20px; }
+.check-row input {
+  accent-color: var(--wc-accent);
+  min-height: 24px;
+  min-width: 24px;
+}
+.check-row:focus-within {
+  box-shadow: var(--wc-focus-ring);
+}
 .risk-type-row {
   display: flex;
   flex-wrap: wrap;
@@ -411,6 +432,7 @@ onMounted(load);
   font-family: var(--wc-font-mono);
   font-size: 12px;
   font-weight: 800;
+  overflow-wrap: anywhere;
   padding: 6px 9px;
 }
 .type-chip, .count-pill, .status-pill {

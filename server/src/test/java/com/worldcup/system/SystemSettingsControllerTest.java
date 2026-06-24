@@ -30,7 +30,7 @@ class SystemSettingsControllerTest {
         mockMvc.perform(get("/api/system/settings").with(httpBasic("admin", "admin123456")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.archivePath").value("../skill/archive"))
+                .andExpect(jsonPath("$.data.archivePath").value("../data-inbox/pending"))
                 .andExpect(jsonPath("$.data.analysisSystemProtected").value(true));
     }
 }

@@ -19,7 +19,7 @@ git status --short
 ## 审查清单
 
 1. 本阶段只实现对应 OpenSpec change 的范围。
-2. `CLAUDE.md`、`skill/SKILL.md`、`skill/rules/` 和 `skill/archive/` 未被误改，除非用户明确要求。
+2. `CLAUDE.md` 未被误改；旧 `skill/` 流程不再作为当前数据入口。
 3. 后端测试覆盖新增 API、配置、数据库迁移和安全规则。
 4. 前端测试覆盖新增路由、状态管理和 API 封装。
 5. OpenSpec change 的 proposal、design、spec 和 tasks 与实现一致。

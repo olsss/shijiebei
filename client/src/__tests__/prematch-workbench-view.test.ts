@@ -190,7 +190,8 @@ describe('PrematchWorkbenchView', () => {
     expect(wrapper.find('[data-test="analysis-card"]').text()).toContain('谨慎观察');
     expect(wrapper.text()).toContain('阵容线索');
     expect(wrapper.text()).toContain('官方训练公开信息');
-    expect(wrapper.text()).toContain('LINEUP');
+    expect(wrapper.text()).toContain('阵容');
+    expect(wrapper.text()).toContain('待处理');
     expect(wrapper.text()).not.toContain('AI 下注方案');
     expect(wrapper.text()).not.toContain('实际出票');
     expect(wrapper.text()).not.toContain('票号');

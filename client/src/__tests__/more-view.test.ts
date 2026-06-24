@@ -23,7 +23,7 @@ describe('MoreView', () => {
     expect(wrapper.find('a[href="/evidence/players"]').exists()).toBe(true);
     expect(wrapper.find('a[href="/admin/import-review"]').exists()).toBe(false);
     expect(wrapper.find('a[href="/admin/settings"]').exists()).toBe(false);
-    expect(wrapper.text()).toContain('Basic');
+    expect(wrapper.text()).toContain('管理员登录');
   });
 
   it('shows admin gateways only for writable Basic admins', () => {
@@ -36,6 +36,6 @@ describe('MoreView', () => {
 
     expect(wrapper.find('a[href="/admin/import-review"]').exists()).toBe(true);
     expect(wrapper.find('a[href="/admin/settings"]').exists()).toBe(true);
-    expect(wrapper.text()).toContain('JSON 审核中心');
+    expect(wrapper.text()).toContain('数据审核中心');
   });
 });

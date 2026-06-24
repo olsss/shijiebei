@@ -3,10 +3,10 @@
     <section class="page-content overview-dashboard__content">
       <header class="overview-hero">
         <div class="overview-hero__copy">
-          <p class="eyebrow">Public Command Overview</p>
+          <p class="eyebrow">公开态势总览</p>
           <h1 id="overview-title">赛事指挥总览</h1>
           <p>
-            汇总已批准的公开赛程、风险、赔率鲜度与决策复盘信号。访客可只读查看，JSON 审核与入库继续留在管理员后台。
+            汇总已批准的公开赛程、风险、赔率快照与决策复盘信号。访客可只读查看，数据审核与入库继续留在管理员后台。
           </p>
         </div>
         <div class="overview-hero__status" aria-label="公开概览更新时间">
@@ -43,7 +43,7 @@
           <article class="command-panel command-panel--wide">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Upcoming</p>
+                <p class="eyebrow">近期赛程</p>
                 <h2>近期比赛</h2>
               </div>
               <RouterLink class="panel-link" to="/evidence/matches">查看赛程</RouterLink>
@@ -61,8 +61,8 @@
                 <strong>{{ match.matchName }}</strong>
                 <span>{{ formatDisplayTime(match.kickoffTime || match.matchday) }}</span>
                 <div class="match-card__badges" aria-label="比赛完整度与风险">
-                  <span>JC {{ match.jcCode || '待定' }}</span>
-                  <span>完整度 {{ match.integrityScore }}</span>
+                  <span>竞彩 {{ match.jcCode || '待定' }}</span>
+                  <span>完整度 {{ match.integrityScore }}%</span>
                   <span>风险 {{ match.riskCount }}</span>
                 </div>
               </RouterLink>
@@ -73,7 +73,7 @@
           <article class="command-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Risk</p>
+                <p class="eyebrow">风险</p>
                 <h2>风险雷达</h2>
               </div>
               <RouterLink class="panel-link" to="/evidence/sentiment">查看舆情</RouterLink>
@@ -101,7 +101,7 @@
           <article class="command-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Integrity</p>
+                <p class="eyebrow">证据</p>
                 <h2>证据完整度</h2>
               </div>
               <RouterLink class="panel-link" to="/workbench">进入作战室</RouterLink>
@@ -125,8 +125,8 @@
           <article class="command-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Odds</p>
-                <h2>赔率鲜度</h2>
+                <p class="eyebrow">赔率</p>
+                <h2>赔率快照</h2>
               </div>
               <RouterLink class="panel-link" to="/evidence/odds">查看赔率</RouterLink>
             </div>
@@ -135,8 +135,12 @@
                 <dt>市场总数</dt>
                 <dd>{{ publicOverview?.oddsFreshness.marketCount ?? 0 }}</dd>
               </div>
+              <div data-test="odds-freshness-non-live">
+                <dt>非实时快照</dt>
+                <dd>{{ nonLiveMarketCount }}</dd>
+              </div>
               <div data-test="odds-freshness-live">
-                <dt>实时市场</dt>
+                <dt>实时盘口</dt>
                 <dd>{{ publicOverview?.oddsFreshness.liveMarketCount ?? 0 }}</dd>
               </div>
               <div>
@@ -144,12 +148,13 @@
                 <dd>{{ publicOverview?.oddsFreshness.staleLiveMarketCount ?? 0 }}</dd>
               </div>
             </dl>
+            <p class="panel-note">实时为 0 不代表缺少赔率；当前已入库盘口主要是赛前或赛后归档快照。</p>
           </article>
 
           <article class="command-panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Decision</p>
+                <p class="eyebrow">决策</p>
                 <h2>决策复盘</h2>
               </div>
               <RouterLink class="panel-link" to="/decisions">查看复盘</RouterLink>
@@ -204,25 +209,32 @@ const publicModules = [
 
 const generatedAtLabel = computed(() => formatDisplayTime(publicOverview.value?.generatedAt));
 const upcomingMatches = computed<PublicOverviewMatch[]>(() => publicOverview.value?.upcomingMatches ?? []);
+const nonLiveMarketCount = computed(() => {
+  const freshness = publicOverview.value?.oddsFreshness;
+  if (!freshness) {
+    return 0;
+  }
+  return Math.max(0, freshness.marketCount - freshness.liveMarketCount - freshness.staleLiveMarketCount);
+});
 
 const publicKpis = computed(() => [
   {
-    label: '公开比赛',
+    label: '近期比赛',
     value: upcomingMatches.value.length,
-    caption: '近期可读赛程',
+    caption: '公开赛程窗口',
     testId: 'public-kpi-upcoming',
   },
   {
-    label: '风险警报',
-    value: publicOverview.value?.riskCounters.highRiskCount ?? 0,
-    caption: '高风险待关注',
-    testId: 'public-kpi-high-risk',
+    label: '未解冲突',
+    value: publicOverview.value?.riskCounters.unresolvedConflictCount ?? 0,
+    caption: '需审核确认',
+    testId: 'public-kpi-conflicts',
   },
   {
-    label: '实时赔率',
-    value: publicOverview.value?.oddsFreshness.liveMarketCount ?? 0,
-    caption: '仍在鲜度窗口',
-    testId: 'public-kpi-live-odds',
+    label: '赔率市场',
+    value: publicOverview.value?.oddsFreshness.marketCount ?? 0,
+    caption: '已入库盘口',
+    testId: 'public-kpi-odds-market',
   },
   {
     label: '分析报告',
@@ -308,6 +320,7 @@ onMounted(loadPublicOverview);
   font-size: clamp(36px, 7vw, 78px);
   line-height: 0.96;
   margin: 0 0 14px;
+  overflow-wrap: anywhere;
 }
 
 .overview-hero p:not(.eyebrow) {
@@ -315,6 +328,7 @@ onMounted(loadPublicOverview);
   font-size: clamp(16px, 2vw, 19px);
   line-height: 1.72;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .overview-hero__status {
@@ -333,7 +347,8 @@ onMounted(loadPublicOverview);
 .metric-list dt,
 .entry-card small,
 .match-card__meta,
-.empty-copy {
+.empty-copy,
+.panel-note {
   color: var(--wc-text-muted);
 }
 
@@ -520,6 +535,14 @@ onMounted(loadPublicOverview);
 .metric-list__time {
   font-size: 16px !important;
   line-height: 1.3;
+}
+
+.panel-note {
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  padding-top: 12px;
 }
 
 .entry-card {

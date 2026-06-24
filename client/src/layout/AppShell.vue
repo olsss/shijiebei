@@ -7,7 +7,7 @@
         <span class="brand__crest" aria-hidden="true">WC</span>
         <span>
           <strong>世界杯情报舰桥</strong>
-          <small>Decision Command</small>
+          <small>赛前决策中枢</small>
         </span>
       </RouterLink>
 
@@ -38,7 +38,7 @@
     <section class="app-shell__workspace">
       <header class="topbar">
         <div>
-          <p class="topbar__eyebrow">Public read model · Beijing time</p>
+          <p class="topbar__eyebrow">公开只读 · 北京时间</p>
           <p class="topbar__title">赛事总览与赛前决策流</p>
         </div>
         <div class="topbar__actions">
@@ -280,11 +280,16 @@ async function handleLogout() {
   max-width: 1480px;
 }
 
+.topbar > div:first-child {
+  min-width: 0;
+}
+
 .topbar__title {
   font-family: var(--wc-font-display);
   font-size: clamp(24px, 3vw, 42px);
   line-height: 1.05;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .topbar__eyebrow {
