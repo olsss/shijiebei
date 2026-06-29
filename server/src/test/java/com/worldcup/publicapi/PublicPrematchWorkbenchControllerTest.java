@@ -43,6 +43,9 @@ class PublicPrematchWorkbenchControllerTest {
     @BeforeEach
     @AfterEach
     void clean() {
+        jdbcTemplate.update("DELETE FROM match_market_signals");
+        jdbcTemplate.update("DELETE FROM player_metric_snapshots");
+        jdbcTemplate.update("DELETE FROM team_metric_snapshots");
         jdbcTemplate.update("DELETE FROM sentiment_risk_assessments");
         jdbcTemplate.update("DELETE FROM match_context_factors");
         jdbcTemplate.update("DELETE FROM odds_selection_snapshots");
@@ -75,7 +78,11 @@ class PublicPrematchWorkbenchControllerTest {
         expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/prematch-workbench/matches"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].matchId").value(fixture.matchId()))
-                .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away")));
+                .andExpect(jsonPath("$.data[0].matchName").value("Public Home vs Public Away"))
+                .andExpect(jsonPath("$.data[0].homeTeam.fifaCode").value("PRE"))
+                .andExpect(jsonPath("$.data[0].awayTeam.fifaCode").value("PRE"))
+                .andExpect(jsonPath("$.data[0].scoreboard.scoreDisplay").value("1 - 0"))
+                .andExpect(jsonPath("$.data[0].scoreboard.winnerSide").value("HOME")));
     }
 
     @Test
@@ -92,12 +99,42 @@ class PublicPrematchWorkbenchControllerTest {
     }
 
     @Test
+    void matchesFallbackToGoalEventsWhenTeamStatsAndEvidenceScoreAreMissing() throws Exception {
+        long homeTeamId = insertTeam("event-home", "Event Home");
+        long awayTeamId = insertTeam("event-away", "Event Away");
+        long matchId = insertMatch("event-home-away-20260624", "Event Home vs Event Away", homeTeamId, awayTeamId);
+        insertMatchEvent(matchId, homeTeamId, "GOAL");
+        insertMatchEvent(matchId, homeTeamId, "PENALTY_SCORED");
+        insertMatchEvent(matchId, awayTeamId, "GOAL_HEADER");
+        insertMatchEvent(matchId, awayTeamId, "YELLOW_CARD");
+
+        mockMvc.perform(get("/api/public/prematch-workbench/matches"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].matchId").value(matchId))
+                .andExpect(jsonPath("$.data[0].scoreboard.scoreDisplay").value("2 - 1"))
+                .andExpect(jsonPath("$.data[0].scoreboard.winnerSide").value("HOME"))
+                .andExpect(jsonPath("$.data[0].scoreboard.scoreSource").value("MATCH_EVENTS"));
+
+        mockMvc.perform(get("/api/public/prematch-workbench/matches/" + matchId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.summary.scoreboard.scoreDisplay").value("2 - 1"))
+                .andExpect(jsonPath("$.data.summary.scoreboard.scoreSource").value("MATCH_EVENTS"));
+    }
+
+    @Test
     void matchDetailIsPublicAndDropsBettingDetailsAndRawNarrative() throws Exception {
         PrematchFixture fixture = createPrematchFixture();
 
         expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/prematch-workbench/matches/" + fixture.matchId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.summary.matchId").value(fixture.matchId()))
+                .andExpect(jsonPath("$.data.summary.scoreboard.scoreDisplay").value("1 - 0"))
+                .andExpect(jsonPath("$.data.summary.scoreboard.scoreSource").value("TEAM_STATS"))
+                .andExpect(jsonPath("$.data.visualSummary.readinessText").exists())
+                .andExpect(jsonPath("$.data.visualSummary.metrics[0].key").value("integrity"))
+                .andExpect(jsonPath("$.data.teamComparison[0].team.teamName").value("Public Home"))
+                .andExpect(jsonPath("$.data.teamComparison[0].metrics[0].key").value("goals_for"))
+                .andExpect(jsonPath("$.data.teamComparison[0].metrics[3].key").value("xg"))
                 .andExpect(jsonPath("$.data.teams").isArray())
                 .andExpect(jsonPath("$.data.lineups").isArray())
                 .andExpect(jsonPath("$.data.players").isArray())
@@ -182,6 +219,8 @@ class PublicPrematchWorkbenchControllerTest {
         long awayTeamId = insertTeam("prematch-away", "Public Away");
         long playerId = insertPlayer("prematch-player", homeTeamId, "Public Player");
         long matchId = insertMatch(homeTeamId, awayTeamId);
+        insertMatchStats(matchId, homeTeamId, awayTeamId);
+        insertTeamMetric(importItemId, matchId, homeTeamId);
         insertTeamFact(homeTeamId);
         insertTeamFact(awayTeamId);
         insertPlayerFact(playerId);
@@ -255,10 +294,27 @@ class PublicPrematchWorkbenchControllerTest {
                 matchId, teamId, playerId, "STARTER", "FW", true);
     }
 
+    private void insertMatchStats(long matchId, long homeTeamId, long awayTeamId) {
+        jdbcTemplate.update("INSERT INTO match_team_stats(match_id, team_id, stats_type, goals_for, goals_against, first_goal_minute, scoring_minutes, payload) VALUES (?,?,?,?,?,?,?,?)",
+                matchId, homeTeamId, "FULL_TIME", 1, 0, 33, "33", "{\"payload\":\"SECRET\"}");
+        jdbcTemplate.update("INSERT INTO match_team_stats(match_id, team_id, stats_type, goals_for, goals_against, first_goal_minute, scoring_minutes, payload) VALUES (?,?,?,?,?,?,?,?)",
+                matchId, awayTeamId, "FULL_TIME", 0, 1, null, "", "{\"payload\":\"SECRET\"}");
+    }
+
+    private void insertMatchEvent(long matchId, long teamId, String eventType) {
+        jdbcTemplate.update("INSERT INTO match_events(match_id, team_id, event_minute, event_type, payload) VALUES (?,?,?,?,?)",
+                matchId, teamId, 12, eventType, "{\"event\":\"SECRET\"}");
+    }
+
+    private void insertTeamMetric(long importItemId, long matchId, long teamId) {
+        jdbcTemplate.update("INSERT INTO team_metric_snapshots(import_item_id, team_id, match_id, period_key, metric_type, xg, xga, ppda, form_score, source_name, source_ref, raw_payload) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                importItemId, teamId, matchId, "last_5", "RECENT_FORM", "1.8000", "0.7000", "9.5000", "82.0000", "Metric Vendor", "metric reviewedBy=SECRET", "{\"rawPayload\":\"SECRET\"}");
+    }
+
     private void insertEvidence(long matchId) {
         jdbcTemplate.update("INSERT INTO source_evidence(match_id, source_type, source_name, source_ref, source_url, evidence_time, summary, reliability_score, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
                 matchId, "OFFICIAL", "FIFA", "lineup", "https://example.test/fifa", Timestamp.valueOf(LocalDateTime.of(2026, 6, 23, 18, 0)),
-                "official source ticketNo=SECRET", "9.5", "{\"official\":\"SECRET\"}");
+                "官方比分=1-0；official source", "9.5", "{\"official\":\"SECRET\"}");
     }
 
     private void insertConflict(long matchId) {

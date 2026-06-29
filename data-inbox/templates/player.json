@@ -1,13 +1,13 @@
 {
   "type": "PLAYER",
-  "idempotency_key": "player-france-mbappe",
+  "idempotency_key": "player-france-10",
   "source": {
     "name": "manual-input",
     "url": "https://example.test/source",
     "captured_at": "2026-06-24T12:00:00"
   },
   "payload": {
-    "player_key": "france-mbappe",
+    "player_key": "france-10",
     "team_key": "france",
     "display_name": "姆巴佩",
     "shirt_number": 10,

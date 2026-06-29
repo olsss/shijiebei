@@ -5,6 +5,8 @@ import com.worldcup.publicapi.dto.PublicApiDtos.PublicOddsMarketDictionary;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicOddsMarketSummary;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicOddsMatchDetail;
 import com.worldcup.publicapi.dto.PublicApiDtos.PublicOddsSelection;
+import com.worldcup.publicapi.dto.PublicApiDtos.PublicScoreboard;
+import com.worldcup.publicapi.dto.PublicApiDtos.PublicTeamVisual;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -20,9 +22,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class PublicOddsService {
+    private static final Pattern SCORE_PATTERN = Pattern.compile("(?:比分\\s*[=：:]?\\s*)?(\\d{1,2})\\s*[-:：比]\\s*(\\d{1,2})");
+
     private final JdbcTemplate jdbcTemplate;
     private final PublicApiMapper mapper;
 
@@ -41,6 +47,15 @@ public class PublicOddsService {
                         mapper.sanitizeText(rs.getString("match_name")),
                         localDate(rs, "matchday"),
                         mapper.sanitizeText(rs.getString("jc_code")),
+                        teamVisual(rs, "home"),
+                        teamVisual(rs, "away"),
+                        scoreboard(
+                                nullableLong(rs, "match_id"),
+                                nullableInt(rs, "home_score"),
+                                nullableInt(rs, "away_score"),
+                                rs.getString("status"),
+                                rs.getString("result_status")
+                        ),
                         mapper.sanitizeText(rs.getString("bookmaker")),
                         mapper.sanitizeToken(rs.getString("market_code")),
                         mapper.sanitizeText(rs.getString("market_name")),
@@ -79,7 +94,16 @@ public class PublicOddsService {
                         selectionsByMarketId.getOrDefault(row.id(), List.of())
                 ))
                 .toList();
-        return new PublicOddsMatchDetail(match.id(), match.matchName(), match.matchday(), match.jcCode(), markets);
+        return new PublicOddsMatchDetail(
+                match.id(),
+                match.matchName(),
+                match.matchday(),
+                match.jcCode(),
+                match.homeTeam(),
+                match.awayTeam(),
+                match.scoreboard(),
+                markets
+        );
     }
 
     @Transactional(readOnly = true)
@@ -103,12 +127,33 @@ public class PublicOddsService {
 
     private MatchRow findMatch(long matchId) {
         return jdbcTemplate.query(
-                        "SELECT id, match_name, matchday, jc_code FROM matches WHERE id=?",
+                        """
+                        SELECT m.id, m.match_name, m.matchday, m.jc_code, m.status, m.result_status,
+                               ht.id AS home_team_id, ht.display_name AS home_team_name, ht.fifa_code AS home_fifa_code,
+                               ht.country_iso2 AS home_country_iso2, ht.flag_asset_key AS home_flag_asset_key, ht.country_region AS home_country_region,
+                               at.id AS away_team_id, at.display_name AS away_team_name, at.fifa_code AS away_fifa_code,
+                               at.country_iso2 AS away_country_iso2, at.flag_asset_key AS away_flag_asset_key, at.country_region AS away_country_region,
+                               (SELECT s.goals_for FROM match_team_stats s WHERE s.match_id=m.id AND s.team_id=m.home_team_id ORDER BY s.id DESC LIMIT 1) AS home_score,
+                               (SELECT s.goals_for FROM match_team_stats s WHERE s.match_id=m.id AND s.team_id=m.away_team_id ORDER BY s.id DESC LIMIT 1) AS away_score
+                        FROM matches m
+                        LEFT JOIN teams ht ON ht.id=m.home_team_id
+                        LEFT JOIN teams at ON at.id=m.away_team_id
+                        WHERE m.id=?
+                        """,
                         (rs, rowNum) -> new MatchRow(
                                 rs.getLong("id"),
                                 mapper.sanitizeText(rs.getString("match_name")),
                                 localDate(rs, "matchday"),
-                                mapper.sanitizeText(rs.getString("jc_code"))
+                                mapper.sanitizeText(rs.getString("jc_code")),
+                                teamVisual(rs, "home"),
+                                teamVisual(rs, "away"),
+                                scoreboard(
+                                        rs.getLong("id"),
+                                        nullableInt(rs, "home_score"),
+                                        nullableInt(rs, "away_score"),
+                                        rs.getString("status"),
+                                        rs.getString("result_status")
+                                )
                         ),
                         matchId
                 )
@@ -164,10 +209,19 @@ public class PublicOddsService {
     }
 
     private String marketSummarySelect() {
-        return "SELECT oms.id, oms.match_id, m.match_name, m.matchday, m.jc_code, oms.bookmaker, oms.market_code, oms.market_name, "
-                + "oms.snapshot_type, oms.handicap_line, oms.line_value, oms.captured_at, "
+        return "SELECT oms.id, oms.match_id, m.match_name, m.matchday, m.jc_code, m.status, m.result_status, "
+                + "ht.id AS home_team_id, ht.display_name AS home_team_name, ht.fifa_code AS home_fifa_code, "
+                + "ht.country_iso2 AS home_country_iso2, ht.flag_asset_key AS home_flag_asset_key, ht.country_region AS home_country_region, "
+                + "at.id AS away_team_id, at.display_name AS away_team_name, at.fifa_code AS away_fifa_code, "
+                + "at.country_iso2 AS away_country_iso2, at.flag_asset_key AS away_flag_asset_key, at.country_region AS away_country_region, "
+                + "(SELECT s.goals_for FROM match_team_stats s WHERE s.match_id=m.id AND s.team_id=m.home_team_id ORDER BY s.id DESC LIMIT 1) AS home_score, "
+                + "(SELECT s.goals_for FROM match_team_stats s WHERE s.match_id=m.id AND s.team_id=m.away_team_id ORDER BY s.id DESC LIMIT 1) AS away_score, "
+                + "oms.bookmaker, oms.market_code, oms.market_name, oms.snapshot_type, oms.handicap_line, oms.line_value, oms.captured_at, "
                 + "(SELECT COUNT(*) FROM odds_selection_snapshots oss WHERE oss.market_snapshot_id=oms.id) AS selection_count "
-                + "FROM odds_market_snapshots oms LEFT JOIN matches m ON m.id=oms.match_id";
+                + "FROM odds_market_snapshots oms "
+                + "LEFT JOIN matches m ON m.id=oms.match_id "
+                + "LEFT JOIN teams ht ON ht.id=m.home_team_id "
+                + "LEFT JOIN teams at ON at.id=m.away_team_id";
     }
 
     private String marketDetailSelect() {
@@ -197,7 +251,110 @@ public class PublicOddsService {
         return rs.wasNull() ? null : value;
     }
 
-    private record MatchRow(Long id, String matchName, LocalDate matchday, String jcCode) {
+    private Integer nullableInt(ResultSet rs, String column) throws SQLException {
+        int value = rs.getInt(column);
+        return rs.wasNull() ? null : value;
+    }
+
+    private PublicTeamVisual teamVisual(ResultSet rs, String prefix) throws SQLException {
+        return new PublicTeamVisual(
+                nullableLong(rs, prefix + "_team_id"),
+                mapper.sanitizeText(rs.getString(prefix + "_team_name")),
+                mapper.sanitizeText(rs.getString(prefix + "_fifa_code")),
+                mapper.sanitizeToken(rs.getString(prefix + "_country_iso2")),
+                mapper.sanitizeText(rs.getString(prefix + "_flag_asset_key")),
+                mapper.sanitizeText(rs.getString(prefix + "_country_region"))
+        );
+    }
+
+    private PublicScoreboard scoreboard(Long matchId, Integer homeScore, Integer awayScore, String status, String resultStatus) {
+        if (homeScore != null && awayScore != null) {
+            return scoreboardFromNumbers(homeScore, awayScore, "TEAM_STATS");
+        }
+        PublicScoreboard eventScoreboard = eventScoreboard(matchId);
+        if (eventScoreboard != null) {
+            return eventScoreboard;
+        }
+        PublicScoreboard evidenceScoreboard = evidenceScoreboard(matchId);
+        if (evidenceScoreboard != null) {
+            return evidenceScoreboard;
+        }
+        String normalizedStatus = (status == null ? "" : status).toUpperCase();
+        String normalizedResult = (resultStatus == null ? "" : resultStatus).toUpperCase();
+        if (normalizedStatus.contains("FINISHED") || normalizedResult.contains("FINAL") || normalizedResult.contains("FINISHED")) {
+            return new PublicScoreboard(null, null, "比分待核对", "UNKNOWN", "已完赛，等待比分核对", "PENDING");
+        }
+        return new PublicScoreboard(null, null, "待开球", "UNKNOWN", "赛前", "PENDING");
+    }
+
+    private PublicScoreboard eventScoreboard(Long matchId) {
+        if (matchId == null) {
+            return null;
+        }
+        return jdbcTemplate.query("""
+                SELECT
+                  SUM(CASE WHEN e.team_id=m.home_team_id THEN 1 ELSE 0 END) AS home_event_score,
+                  SUM(CASE WHEN e.team_id=m.away_team_id THEN 1 ELSE 0 END) AS away_event_score
+                FROM matches m
+                LEFT JOIN match_events e ON e.match_id=m.id
+                  AND (UPPER(e.event_type) = 'GOAL' OR UPPER(e.event_type) LIKE 'GOAL_%' OR UPPER(e.event_type) IN ('PENALTY_GOAL', 'PENALTY_SCORED'))
+                WHERE m.id=?
+                """, rs -> {
+            if (!rs.next()) {
+                return null;
+            }
+            int home = rs.getInt("home_event_score");
+            int away = rs.getInt("away_event_score");
+            if (home + away <= 0) {
+                return null;
+            }
+            return scoreboardFromNumbers(home, away, "MATCH_EVENTS");
+        }, matchId);
+    }
+
+    private PublicScoreboard evidenceScoreboard(Long matchId) {
+        if (matchId == null) {
+            return null;
+        }
+        List<String> summaries = jdbcTemplate.query(
+                "SELECT summary FROM source_evidence WHERE match_id=? AND summary IS NOT NULL ORDER BY evidence_time DESC, id DESC LIMIT 8",
+                (rs, rowNum) -> rs.getString("summary"),
+                matchId
+        );
+        for (String summary : summaries) {
+            Matcher matcher = SCORE_PATTERN.matcher(summary == null ? "" : summary);
+            if (matcher.find()) {
+                return scoreboardFromNumbers(Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)), "EVIDENCE_TEXT");
+            }
+        }
+        return null;
+    }
+
+    private PublicScoreboard scoreboardFromNumbers(int homeScore, int awayScore, String source) {
+        String winnerSide;
+        String resultText;
+        if (homeScore > awayScore) {
+            winnerSide = "HOME";
+            resultText = "主队胜";
+        } else if (awayScore > homeScore) {
+            winnerSide = "AWAY";
+            resultText = "客队胜";
+        } else {
+            winnerSide = "DRAW";
+            resultText = "平局";
+        }
+        return new PublicScoreboard(homeScore, awayScore, homeScore + " - " + awayScore, winnerSide, resultText, source);
+    }
+
+    private record MatchRow(
+            Long id,
+            String matchName,
+            LocalDate matchday,
+            String jcCode,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard
+    ) {
     }
 
     private record MarketRow(

@@ -37,10 +37,40 @@ public final class PublicApiDtos {
             String homeTeamName,
             Long awayTeamId,
             String awayTeamName,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             long eventCount,
             long lineupCount,
             long evidenceCount,
             long conflictCount
+    ) {}
+
+    public record PublicTeamVisual(
+            Long teamId,
+            String teamName,
+            String fifaCode,
+            String countryIso2,
+            String flagUrl,
+            String countryRegion
+    ) {}
+
+    public record PublicScoreboard(
+            Integer homeScore,
+            Integer awayScore,
+            String scoreDisplay,
+            String winnerSide,
+            String resultText,
+            String scoreSource
+    ) {}
+
+    public record PublicVisualMetric(
+            String key,
+            String label,
+            BigDecimal value,
+            String unit,
+            String tone,
+            String explanation
     ) {}
 
     public record PublicMatchDetail(
@@ -111,7 +141,11 @@ public final class PublicApiDtos {
             String sourceUrl,
             LocalDateTime evidenceTime,
             String summary,
-            BigDecimal reliabilityScore
+            BigDecimal reliabilityScore,
+            String qualityLevel,
+            String freshnessStatus,
+            String supportsConclusion,
+            String suggestedAction
     ) {}
 
     public record PublicMatchConflict(
@@ -128,6 +162,9 @@ public final class PublicApiDtos {
             String matchName,
             LocalDate matchday,
             String jcCode,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             String bookmaker,
             String marketCode,
             String marketName,
@@ -143,6 +180,9 @@ public final class PublicApiDtos {
             String matchName,
             LocalDate matchday,
             String jcCode,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             List<PublicOddsMarketDetail> markets
     ) {}
 
@@ -185,6 +225,9 @@ public final class PublicApiDtos {
             String matchName,
             LocalDate matchday,
             String jcCode,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             String factorCategory,
             String factorType,
             String title,
@@ -210,6 +253,9 @@ public final class PublicApiDtos {
             String matchName,
             LocalDate matchday,
             String jcCode,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             List<PublicSentimentFactorDetail> factors,
             List<PublicSentimentRisk> risks
     ) {}
@@ -267,18 +313,75 @@ public final class PublicApiDtos {
             LocalDateTime capturedAt
     ) {}
 
+    public record PublicProfileReadiness(
+            int score,
+            String level,
+            String summary,
+            List<String> strengths,
+            List<String> missingDimensions,
+            List<String> nextActions
+    ) {}
+
+    public record PublicTeamMetricSummary(
+            BigDecimal xg,
+            BigDecimal xga,
+            BigDecimal npxg,
+            BigDecimal ppda,
+            BigDecimal xpts,
+            Integer shots,
+            Integer shotsOnTarget,
+            BigDecimal possessionPct,
+            Integer progressivePasses,
+            BigDecimal setPieceXg,
+            BigDecimal formScore,
+            String sourceName,
+            String sourceRef,
+            LocalDateTime capturedAt
+    ) {}
+
+    public record PublicPlayerMetricSummary(
+            Integer minutesPlayed,
+            BigDecimal goals,
+            BigDecimal assists,
+            BigDecimal xg,
+            BigDecimal xa,
+            BigDecimal npxg,
+            Integer shots,
+            Integer shotsOnTarget,
+            Integer keyPasses,
+            Integer progressivePasses,
+            BigDecimal trainingLoad,
+            BigDecimal availabilityScore,
+            BigDecimal expectedStartingProbability,
+            String sourceName,
+            String sourceRef,
+            LocalDateTime capturedAt
+    ) {}
+
     public record PublicTeamProfileSummary(
             Long id,
             String teamKey,
             String displayName,
             String fifaCode,
             String countryRegion,
+            String countryIso2,
+            String flagAssetKey,
+            String confederation,
+            String groupName,
+            String metadataSourceRef,
             String styleTags,
             String attackProfile,
             String defenseProfile,
             String publicSentiment,
             long playerCount,
             long factCount,
+            long technicalMetricCount,
+            long advancedMetricCount,
+            Integer groupStandingRank,
+            Integer groupStandingPoints,
+            String groupStandingRecord,
+            Integer groupGoalDifference,
+            String groupStandingSummary,
             LocalDateTime latestProfileUpdate
     ) {}
 
@@ -344,7 +447,9 @@ public final class PublicApiDtos {
             List<PublicTeamExternalFactor> externalFactors,
             List<PublicTeamMatchHistory> matchHistory,
             long evidenceCount,
-            long conflictCount
+            long conflictCount,
+            PublicProfileReadiness readiness,
+            PublicTeamMetricSummary latestMetric
     ) {}
 
     public record PublicPlayerProfileSummary(
@@ -352,6 +457,7 @@ public final class PublicApiDtos {
             String playerKey,
             Long teamId,
             String teamName,
+            PublicTeamVisual team,
             String displayName,
             Integer shirtNumber,
             String position,
@@ -360,12 +466,16 @@ public final class PublicApiDtos {
             String cardStatus,
             String lockerRoomStatus,
             long factCount,
+            long performanceMetricCount,
+            long advancedMetricCount,
             LocalDateTime latestProfileUpdate
     ) {}
 
     public record PublicPlayerProfileDetail(
             PublicPlayerProfileSummary player,
-            List<PublicProfileFact> facts
+            List<PublicProfileFact> facts,
+            PublicProfileReadiness readiness,
+            PublicPlayerMetricSummary latestMetric
     ) {}
 
     public record PublicOverviewResponse(
@@ -386,6 +496,10 @@ public final class PublicApiDtos {
             String stage,
             LocalDateTime kickoffTime,
             String status,
+            String resultStatus,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             int integrityScore,
             long riskCount
     ) {}
@@ -455,6 +569,9 @@ public final class PublicApiDtos {
             String homeTeamName,
             Long awayTeamId,
             String awayTeamName,
+            PublicTeamVisual homeTeam,
+            PublicTeamVisual awayTeam,
+            PublicScoreboard scoreboard,
             int integrityScore,
             long missingCount,
             long staleCount,
@@ -469,6 +586,8 @@ public final class PublicApiDtos {
 
     public record PublicPrematchDetail(
             PublicPrematchMatchSummary summary,
+            PublicPrematchVisualSummary visualSummary,
+            List<PublicPrematchTeamComparison> teamComparison,
             List<PublicPrematchTeam> teams,
             List<PublicPrematchLineup> lineups,
             List<PublicPrematchPlayer> players,
@@ -478,6 +597,19 @@ public final class PublicApiDtos {
             List<PublicPrematchConflict> conflicts,
             List<PublicPrematchAnalysisReport> analysisReports,
             List<PublicPrematchIntegrityCheck> integrityChecks
+    ) {}
+
+    public record PublicPrematchVisualSummary(
+            String statusText,
+            String readinessText,
+            String riskText,
+            String nextCheckText,
+            List<PublicVisualMetric> metrics
+    ) {}
+
+    public record PublicPrematchTeamComparison(
+            PublicTeamVisual team,
+            List<PublicVisualMetric> metrics
     ) {}
 
     public record PublicPrematchTeam(

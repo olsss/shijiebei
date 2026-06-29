@@ -48,6 +48,9 @@ class CoreDataImportServiceTest {
     @BeforeEach
     @AfterEach
     void clean() {
+        jdbcTemplate.update("DELETE FROM match_market_signals");
+        jdbcTemplate.update("DELETE FROM player_metric_snapshots");
+        jdbcTemplate.update("DELETE FROM team_metric_snapshots");
         jdbcTemplate.update("DELETE FROM sentiment_risk_assessments");
         jdbcTemplate.update("DELETE FROM match_context_factors");
         jdbcTemplate.update("DELETE FROM import_item_mappings");
@@ -114,7 +117,7 @@ class CoreDataImportServiceTest {
     void approvedTeamPlayerAndMatchImportsMasterDataAndIsIdempotent() {
         ImportItem team = saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
                 """
-                {"type":"TEAM","payload":{"team_key":"france","display_name":"France","fifa_code":"FRA"}}
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"France","fifa_code":"FRA","country_iso2":"FR","flag_asset_key":"fr","confederation":"UEFA","group_name":"D组","metadata_source_ref":"FIFA team directory"}}
                 """);
         ImportItem player = saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
                 """
@@ -134,6 +137,10 @@ class CoreDataImportServiceTest {
         assertThat(count("players")).isEqualTo(1);
         assertThat(count("matches")).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM teams WHERE team_key='france' AND fifa_code='FRA'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT country_iso2 FROM teams WHERE team_key='france'", String.class)).isEqualTo("FR");
+        assertThat(jdbcTemplate.queryForObject("SELECT flag_asset_key FROM teams WHERE team_key='france'", String.class)).isEqualTo("fr");
+        assertThat(jdbcTemplate.queryForObject("SELECT confederation FROM teams WHERE team_key='france'", String.class)).isEqualTo("UEFA");
+        assertThat(jdbcTemplate.queryForObject("SELECT group_name FROM teams WHERE team_key='france'", String.class)).isEqualTo("D组");
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM players WHERE player_key='france-10' AND team_id IS NOT NULL", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM matches WHERE match_key='20260626-france-brazil' AND home_team_id IS NOT NULL", Integer.class)).isEqualTo(1);
     }
@@ -261,6 +268,59 @@ class CoreDataImportServiceTest {
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM odds_selection_snapshots WHERE selection_code='HOME' AND selection_name='Home' AND odds_value=1.9000", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_evidence WHERE source_name='Payload Team News' AND summary='payload source summary'", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM data_conflicts WHERE conflict_type='LINEUP' AND entity_key='france'", Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void sourceJsonImportsExtendedFootballIntelligenceSignalsAndMetrics() {
+        service.importItem(saveItem(ImportItemType.TEAM, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"TEAM","payload":{"team_key":"france","display_name":"法国","fifa_code":"FRA","country_iso2":"FR","flag_asset_key":"fr"}}
+                """).getId(), "admin");
+        service.importItem(saveItem(ImportItemType.PLAYER, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"PLAYER","payload":{"player_key":"france-10","team_key":"france","display_name":"姆巴佩","shirt_number":10}}
+                """).getId(), "admin");
+        service.importItem(saveItem(ImportItemType.MATCH, ImportItemStatus.APPROVED, true,
+                """
+                {"type":"MATCH","payload":{"match_key":"20260626-france-brazil","match_name":"法国 vs 巴西","matchday":"2026-06-26","home_team_key":"france"}}
+                """).getId(), "admin");
+
+        ImportItem source = saveItem(ImportItemType.SOURCE, ImportItemStatus.APPROVED, true,
+                """
+                {
+                  "type":"SOURCE",
+                  "payload":{
+                    "match_key":"20260626-france-brazil",
+                    "match":"法国 vs 巴西",
+                    "matchday":"2026-06-26",
+                    "weather":{"type":"TEMPERATURE","title":"天气","summary":"气温适中","source_name":"天气源"},
+                    "referee":{"type":"CARD_TENDENCY","title":"裁判","summary":"黄牌偏多","source_name":"裁判源"},
+                    "travel_rest":{"type":"REST_DAYS","title":"休息","summary":"法国休息 5 天","source_name":"赛程源"},
+                    "rotation":{"type":"GROUP_QUALIFICATION","title":"轮换","summary":"小组出线压力下预计少轮换","source_name":"积分形势"},
+                    "press_conference":{"type":"OFFICIAL_TEAM_NEWS","title":"发布会","summary":"主帅确认核心参加合练","source_name":"发布会源"},
+                    "public_sentiment":{"type":"MEDIA_HEAT","title":"公众舆情","summary":"社媒讨论集中在法国边路","source_name":"媒体源"},
+                    "tactical_matchup":{"type":"TACTIC","title":"战术对位","summary":"法国左路速度对巴西右路保护形成考验","source_name":"战术源"},
+                    "injuries":[{"type":"PLAYER_INJURY","title":"伤停","summary":"核心健康","entity_key":"france-10","source_name":"发布会"}],
+                    "market_signals":[{"market":"MATCH_WIN","bookmaker":"竞彩","opening_odds":"2.10","current_odds":"2.00","implied_probability":"0.5000","public_bet_pct":"58.5","movement_direction":"HOME_SHORTENING","source_name":"市场源"}],
+                    "team_metrics":[{"team_key":"france","period_key":"last_5","metric_type":"RECENT_FORM","xg":"8.4","xga":"4.1","ppda":"9.8","form_score":"82","source_name":"技术源"}],
+                    "player_metrics":[{"player_key":"france-10","team_key":"france","period_key":"last_3","metric_type":"RECENT_FORM","minutes_played":"252","goals":"2","xg":"1.9","availability_score":"95","expected_starting_probability":"0.88","source_name":"球员源"}]
+                  }
+                }
+                """);
+
+        CoreDataImportResponse response = service.importItem(source.getId(), "admin");
+
+        assertThat(response.mappings()).anySatisfy(mapping -> assertThat(mapping.targetType()).isEqualTo("TEAM_METRIC_SNAPSHOT"));
+        assertThat(response.mappings()).anySatisfy(mapping -> assertThat(mapping.targetType()).isEqualTo("PLAYER_METRIC_SNAPSHOT"));
+        assertThat(response.mappings()).anySatisfy(mapping -> assertThat(mapping.targetType()).isEqualTo("MATCH_MARKET_SIGNAL"));
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category IN ('WEATHER','REFEREE','TRAVEL','ROTATION','PRESS_CONFERENCE','PUBLIC_OPINION','TACTICAL_MATCHUP','INJURY','MARKET')", Integer.class)).isGreaterThanOrEqualTo(9);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category IN ('TRAVEL_REST','MARKET_SIGNAL','PUBLIC_SENTIMENT')", Integer.class)).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT xg FROM team_metric_snapshots WHERE team_id=(SELECT id FROM teams WHERE team_key='france')", java.math.BigDecimal.class))
+                .isEqualByComparingTo("8.4000");
+        assertThat(jdbcTemplate.queryForObject("SELECT expected_starting_probability FROM player_metric_snapshots WHERE player_id=(SELECT id FROM players WHERE player_key='france-10')", java.math.BigDecimal.class))
+                .isEqualByComparingTo("0.880000");
+        assertThat(jdbcTemplate.queryForObject("SELECT public_bet_pct FROM match_market_signals", java.math.BigDecimal.class))
+                .isEqualByComparingTo("58.5000");
     }
 
     @Test
@@ -575,7 +635,7 @@ class CoreDataImportServiceTest {
         assertThat(count("match_context_factors")).isEqualTo(2);
         assertThat(count("sentiment_risk_assessments")).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='WEATHER' AND factor_type='RAIN' AND title='预计小雨'", Integer.class)).isEqualTo(1);
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_SENTIMENT' AND impact_direction='NEGATIVE' AND source_name='Media Digest'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_OPINION' AND impact_direction='NEGATIVE' AND source_name='Media Digest'", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE risk_type='PUBLIC_OVERHEAT' AND risk_level='HIGH' AND risk_score=78.0000", Integer.class)).isEqualTo(1);
     }
 
@@ -601,7 +661,7 @@ class CoreDataImportServiceTest {
         assertThat(count("match_context_factors")).isEqualTo(4);
         assertThat(count("sentiment_risk_assessments")).isEqualTo(2);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='VENUE' AND factor_type='PITCH'", Integer.class)).isEqualTo(1);
-        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_SENTIMENT' AND factor_type='LOCKER_ROOM'", Integer.class)).isEqualTo(1);
+        assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM match_context_factors WHERE factor_category='PUBLIC_OPINION' AND factor_type='LOCKER_ROOM'", Integer.class)).isEqualTo(1);
         assertThat(jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sentiment_risk_assessments WHERE risk_type='NEWS_CONFLICT' AND risk_level='LOW'", Integer.class)).isEqualTo(1);
     }
 
@@ -694,4 +754,3 @@ class CoreDataImportServiceTest {
         return jdbcTemplate.queryForObject("SELECT COUNT(*) FROM " + table, Integer.class);
     }
 }
-

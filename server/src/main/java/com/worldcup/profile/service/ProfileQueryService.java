@@ -33,7 +33,7 @@ public class ProfileQueryService {
     @Transactional(readOnly = true)
     public List<TeamProfileSummary> teams() {
         return jdbcTemplate.query(
-                "SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.style_tags, t.attack_profile, t.defense_profile, t.public_sentiment, " +
+                "SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.country_iso2, t.flag_asset_key, t.confederation, t.group_name, t.metadata_source_ref, t.style_tags, t.attack_profile, t.defense_profile, t.public_sentiment, " +
                         "(SELECT COUNT(*) FROM players p WHERE p.team_id=t.id) AS player_count, " +
                         "(SELECT COUNT(*) FROM team_profile_facts f WHERE f.team_id=t.id) AS fact_count, " +
                         "(SELECT MAX(f.updated_at) FROM team_profile_facts f WHERE f.team_id=t.id) AS latest_profile_update " +
@@ -97,7 +97,7 @@ public class ProfileQueryService {
 
     private TeamProfileSummary findTeam(long teamId) {
         return jdbcTemplate.query(
-                        "SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.style_tags, t.attack_profile, t.defense_profile, t.public_sentiment, " +
+                        "SELECT t.id, t.team_key, t.display_name, t.fifa_code, t.country_region, t.country_iso2, t.flag_asset_key, t.confederation, t.group_name, t.metadata_source_ref, t.style_tags, t.attack_profile, t.defense_profile, t.public_sentiment, " +
                                 "(SELECT COUNT(*) FROM players p WHERE p.team_id=t.id) AS player_count, " +
                                 "(SELECT COUNT(*) FROM team_profile_facts f WHERE f.team_id=t.id) AS fact_count, " +
                                 "(SELECT MAX(f.updated_at) FROM team_profile_facts f WHERE f.team_id=t.id) AS latest_profile_update " +
@@ -228,6 +228,11 @@ public class ProfileQueryService {
                 rs.getString("display_name"),
                 rs.getString("fifa_code"),
                 rs.getString("country_region"),
+                rs.getString("country_iso2"),
+                rs.getString("flag_asset_key"),
+                rs.getString("confederation"),
+                rs.getString("group_name"),
+                rs.getString("metadata_source_ref"),
                 rs.getString("style_tags"),
                 rs.getString("attack_profile"),
                 rs.getString("defense_profile"),

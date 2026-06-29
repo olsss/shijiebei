@@ -1,0 +1,23 @@
+{
+  "type": "TEAM",
+  "idempotency_key": "team-france-metadata-template",
+  "source": {
+    "name": "公开球队元数据模板",
+    "ref": "template-only"
+  },
+  "payload": {
+    "team_key": "france",
+    "display_name": "法国",
+    "fifa_code": "FRA",
+    "country_region": "法国",
+    "country_iso2": "FR",
+    "flag_asset_key": "fr",
+    "confederation": "UEFA",
+    "group_name": "D组",
+    "metadata_source_ref": "FIFA team directory",
+    "style_tags": ["快速反击", "边路推进"],
+    "attack_profile": "边路速度和中路冲刺能力突出。",
+    "defense_profile": "回追速度好，定位球防守仍需结合近期证据复核。",
+    "public_sentiment": "核心球员状态积极，但赛前仍需复核伤停和官方首发。"
+  }
+}

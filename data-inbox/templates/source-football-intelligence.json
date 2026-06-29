@@ -1,0 +1,178 @@
+{
+  "type": "SOURCE",
+  "idempotency_key": "source-20260624-france-brazil-intelligence-template",
+  "source": {
+    "name": "公开赛前情报模板",
+    "ref": "template-only",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "match": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "jc_code": "001",
+    "snapshots": [
+      {
+        "type": "OFFICIAL_TEAM_NEWS",
+        "name": "赛前发布会摘要",
+        "summary": "双方核心球员均参加合练，法国 10 号仍需等待官方首发确认。",
+        "reliability": 8.5,
+        "source_ref": "press-conference-template"
+      }
+    ],
+    "weather": {
+      "type": "TEMPERATURE_PITCH",
+      "title": "天气与草皮",
+      "summary": "气温 24℃，小风，草皮速度偏快；利于地面推进和反击。",
+      "impact_direction": "POSITIVE",
+      "evidence_level": "MEDIUM",
+      "source_name": "公开天气与场地报告",
+      "observed_at": "2026-06-24T10:00:00",
+      "expires_at": "2026-06-26T20:00:00"
+    },
+    "referee": {
+      "type": "CARD_TENDENCY",
+      "title": "裁判判罚倾向",
+      "summary": "近 10 场场均黄牌 4.2，点球判罚偏谨慎；身体对抗强的球队需注意牌面风险。",
+      "impact_direction": "RISK",
+      "evidence_level": "LOW",
+      "source_name": "裁判历史统计"
+    },
+    "travel_rest": {
+      "type": "REST_DAYS",
+      "title": "赛程与休息",
+      "summary": "法国休息 5 天，巴西休息 4 天；暂未发现明显旅行劣势。",
+      "impact_direction": "NEUTRAL",
+      "evidence_level": "MEDIUM",
+      "source_name": "赛程表"
+    },
+    "motivation": {
+      "type": "GROUP_QUALIFICATION",
+      "title": "战意与轮换",
+      "summary": "双方均需抢分确认出线位置，预计不会大幅轮换。",
+      "impact_direction": "POSITIVE",
+      "evidence_level": "MEDIUM",
+      "source_name": "小组积分形势"
+    },
+    "injuries": [
+      {
+        "type": "PLAYER_INJURY",
+        "title": "法国 10 号伤停观察",
+        "summary": "核心前锋训练负荷待确认，影响冲刺威胁和反击效率。",
+        "entity_type": "PLAYER",
+        "entity_key": "france-10",
+        "impact_direction": "NEGATIVE",
+        "evidence_level": "MEDIUM",
+        "source_name": "球队发布会",
+        "risks": [
+          {
+            "type": "LINEUP",
+            "level": "MEDIUM",
+            "score": 6.5,
+            "title": "首发不确定",
+            "rationale": "需等待官方首发名单确认。",
+            "suggested_action": "开赛前复核官方名单"
+          }
+        ]
+      }
+    ],
+    "market_signals": [
+      {
+        "market": "MATCH_WIN",
+        "bookmaker": "竞彩",
+        "opening_line": "主胜 2.15",
+        "current_line": "主胜 2.02",
+        "opening_odds": 2.15,
+        "current_odds": 2.02,
+        "implied_probability": 0.495,
+        "public_bet_pct": 58.5,
+        "money_pct": 53.2,
+        "movement_direction": "HOME_SHORTENING",
+        "signal_level": "WATCH",
+        "source_name": "市场快照",
+        "observed_at": "2026-06-24T12:00:00"
+      }
+    ],
+    "team_metrics": [
+      {
+        "team_key": "france",
+        "period_key": "last_5",
+        "metric_type": "RECENT_FORM",
+        "xg": 8.4,
+        "xga": 4.1,
+        "npxg": 7.6,
+        "ppda": 9.8,
+        "xpts": 10.2,
+        "shots": 64,
+        "shots_on_target": 24,
+        "possession_pct": 54.5,
+        "progressive_passes": 188,
+        "set_piece_xg": 1.2,
+        "form_score": 82.0,
+        "source_name": "公开技术统计",
+        "captured_at": "2026-06-24T12:00:00"
+      }
+    ],
+    "player_metrics": [
+      {
+        "player_key": "france-10",
+        "team_key": "france",
+        "period_key": "last_3",
+        "metric_type": "RECENT_FORM",
+        "minutes_played": 252,
+        "goals": 2,
+        "assists": 1,
+        "xg": 1.9,
+        "xa": 0.7,
+        "shots": 12,
+        "shots_on_target": 6,
+        "key_passes": 5,
+        "availability_score": 95,
+        "expected_starting_probability": 0.88,
+        "source_name": "公开球员统计",
+        "captured_at": "2026-06-24T12:00:00"
+      }
+    ],
+    "conflicts": [
+      {
+        "type": "LINEUP_UNCONFIRMED",
+        "entity": "france-10",
+        "field": "starter",
+        "current": "unknown",
+        "incoming": "doubtful"
+      }
+    ],
+    "press_conference": {
+      "type": "OFFICIAL_TEAM_NEWS",
+      "title": "主帅发布会与阵容线索",
+      "summary": "主帅确认法国 10 号参加合练，但首发仍以官方名单为准。",
+      "impact_direction": "MIXED",
+      "evidence_level": "MEDIUM",
+      "source_name": "赛前发布会"
+    },
+    "rotation": {
+      "type": "GROUP_QUALIFICATION",
+      "title": "战意与轮换压力",
+      "summary": "双方均需抢分确认出线位置，预计不会大幅轮换；若提前出线则需重新核查。",
+      "impact_direction": "MIXED",
+      "evidence_level": "MEDIUM",
+      "source_name": "小组积分形势"
+    },
+    "fan_sentiment": {
+      "type": "MEDIA_HEAT",
+      "title": "媒体与球迷热度",
+      "summary": "讨论集中在法国边路速度与巴西防线对位，存在叙事过热风险。",
+      "impact_direction": "MIXED",
+      "evidence_level": "LOW",
+      "source_name": "公开媒体与社媒摘要"
+    },
+    "tactical_matchup": {
+      "type": "TACTIC",
+      "title": "历史交锋与战术对位",
+      "summary": "法国左路速度对巴西右路保护形成重点对位；还需补定位球和压迫强度数据。",
+      "impact_direction": "MIXED",
+      "evidence_level": "MEDIUM",
+      "source_name": "公开战术复盘"
+    }
+  }
+}

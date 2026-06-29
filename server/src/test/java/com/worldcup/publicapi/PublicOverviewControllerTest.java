@@ -131,6 +131,41 @@ class PublicOverviewControllerTest {
     }
 
     @Test
+    void overviewFallsBackToRecentScoreRowsWhenNoTodayOrFutureMatchesExist() throws Exception {
+        LocalDate today = FIXED_NOW.toLocalDate();
+        long homeTeamId = insertTeam("recent-home", "Recent Home");
+        long awayTeamId = insertTeam("recent-away", "Recent Away");
+        insertOverviewMatch("recent-empty", "Recent Empty", today.minusDays(1),
+                LocalDateTime.of(today.minusDays(1), LocalTime.of(21, 0)));
+        long recentScoredId = insertOverviewMatchWithTeams(
+                "recent-scored",
+                "Recent Scored",
+                today.minusDays(2),
+                LocalDateTime.of(today.minusDays(2), LocalTime.of(20, 0)),
+                homeTeamId,
+                awayTeamId
+        );
+        long olderScoredId = insertOverviewMatchWithTeams(
+                "older-scored",
+                "Older Scored",
+                today.minusDays(3),
+                LocalDateTime.of(today.minusDays(3), LocalTime.of(18, 0)),
+                homeTeamId,
+                awayTeamId
+        );
+        insertEvent(recentScoredId, homeTeamId, "GOAL");
+        insertEvent(olderScoredId, awayTeamId, "GOAL");
+
+        expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/overview"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data.upcomingMatches", hasSize(3)))
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].matchName").value("Recent Scored"))
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].scoreboard.scoreDisplay").value("1 - 0"))
+                        .andExpect(jsonPath("$.data.upcomingMatches[1].matchName").value("Older Scored"))
+                        .andExpect(jsonPath("$.data.upcomingMatches[2].matchName").value("Recent Empty")));
+    }
+
+    @Test
     void overviewDoesNotShowAlreadyFinishedTodayMatches() throws Exception {
         LocalDate today = FIXED_NOW.toLocalDate();
         insertOverviewMatch("today-finished", "Today Finished", today, FIXED_NOW.minusHours(2));
@@ -141,6 +176,31 @@ class PublicOverviewControllerTest {
                         .andExpect(jsonPath("$.data.upcomingMatches", hasSize(1)))
                         .andExpect(jsonPath("$.data.upcomingMatches[0].matchName").value("Next Available")))
                 .andExpect(content().string(not(containsString("Today Finished"))));
+    }
+
+    @Test
+    void overviewUsesGoalEventsAsScoreFallbackWhenTeamStatsAreMissing() throws Exception {
+        LocalDate today = FIXED_NOW.toLocalDate();
+        long homeTeamId = insertTeam("overview-home", "Overview Home");
+        long awayTeamId = insertTeam("overview-away", "Overview Away");
+        long matchId = insertOverviewMatchWithTeams(
+                "overview-event-score",
+                "Overview Home vs Overview Away",
+                today,
+                FIXED_NOW.plusHours(2),
+                homeTeamId,
+                awayTeamId
+        );
+        insertEvent(matchId, homeTeamId, "GOAL");
+        insertEvent(matchId, awayTeamId, "PENALTY_SCORED");
+        insertEvent(matchId, awayTeamId, "GOAL_FREE_KICK");
+        insertEvent(matchId, homeTeamId, "YELLOW_CARD");
+
+        expectNoForbiddenFieldsOrTokens(mockMvc.perform(get("/api/public/overview"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].scoreboard.scoreDisplay").value("1 - 2"))
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].scoreboard.winnerSide").value("AWAY"))
+                        .andExpect(jsonPath("$.data.upcomingMatches[0].scoreboard.scoreSource").value("MATCH_EVENTS")));
     }
 
     private ResultActions expectNoForbiddenFieldsOrTokens(ResultActions result) throws Exception {
@@ -177,5 +237,26 @@ class PublicOverviewControllerTest {
                         """,
                 key, name, java.sql.Date.valueOf(matchday), Timestamp.valueOf(kickoffTime),
                 "SCHEDULED", "PENDING");
+    }
+
+    private long insertOverviewMatchWithTeams(String key, String name, LocalDate matchday, LocalDateTime kickoffTime, long homeTeamId, long awayTeamId) {
+        jdbcTemplate.update("""
+                        INSERT INTO matches(match_key, match_name, matchday, kickoff_time, home_team_id, away_team_id, status, result_status)
+                        VALUES (?,?,?,?,?,?,?,?)
+                        """,
+                key, name, java.sql.Date.valueOf(matchday), Timestamp.valueOf(kickoffTime), homeTeamId, awayTeamId,
+                "LIVE", "IN_PLAY");
+        return jdbcTemplate.queryForObject("SELECT id FROM matches WHERE match_key=?", Long.class, key);
+    }
+
+    private long insertTeam(String key, String name) {
+        jdbcTemplate.update("INSERT INTO teams(team_key, display_name, fifa_code, raw_payload) VALUES (?,?,?,?)",
+                key, name, key.substring(0, 3).toUpperCase(), "{\"rawPayload\":\"SECRET\"}");
+        return jdbcTemplate.queryForObject("SELECT id FROM teams WHERE team_key=?", Long.class, key);
+    }
+
+    private void insertEvent(long matchId, long teamId, String eventType) {
+        jdbcTemplate.update("INSERT INTO match_events(match_id, event_minute, event_type, team_id, payload) VALUES (?,?,?,?,?)",
+                matchId, 12, eventType, teamId, "{\"payload\":\"SECRET\"}");
     }
 }

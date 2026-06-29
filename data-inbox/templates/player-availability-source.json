@@ -1,0 +1,81 @@
+{
+  "type": "SOURCE",
+  "idempotency_key": "source-20260624-france-brazil-player-availability-template",
+  "source": {
+    "name": "球员可用性补采模板",
+    "ref": "template-only",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "match": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "jc_code": "001",
+    "snapshots": [
+      {
+        "type": "PLAYER_AVAILABILITY_SOURCE",
+        "name": "球员训练与可用性来源",
+        "summary": "补采核心球员训练、伤停、牌面、预计首发概率和近期 xG/xA，用于球员影响雷达。",
+        "reliability": 8.2,
+        "source_ref": "player-availability-template"
+      }
+    ],
+    "injuries": [
+      {
+        "type": "PLAYER_AVAILABILITY",
+        "title": "法国 10 号可用性观察",
+        "summary": "球员完成合练，预计可以进入首发讨论；仍需赛前官方名单确认。",
+        "entity_type": "PLAYER",
+        "entity_key": "france-10",
+        "impact_direction": "POSITIVE",
+        "evidence_level": "MEDIUM",
+        "source_name": "球队训练公开片段",
+        "observed_at": "2026-06-24T10:30:00",
+        "expires_at": "2026-06-26T20:00:00",
+        "risks": [
+          {
+            "type": "STARTER_CONFIRMATION",
+            "level": "MEDIUM",
+            "score": 5.0,
+            "title": "首发仍需确认",
+            "rationale": "训练参与不等于一定首发。",
+            "suggested_action": "赛前 60 分钟核对官方首发名单"
+          }
+        ]
+      }
+    ],
+    "player_metrics": [
+      {
+        "player_key": "france-10",
+        "team_key": "france",
+        "period_key": "last_3",
+        "metric_type": "RECENT_FORM",
+        "minutes_played": 252,
+        "goals": 2,
+        "assists": 1,
+        "xg": 1.9,
+        "xa": 0.7,
+        "npxg": 1.6,
+        "shots": 12,
+        "shots_on_target": 6,
+        "key_passes": 5,
+        "progressive_passes": 18,
+        "training_load": 72.0,
+        "availability_score": 95,
+        "expected_starting_probability": 0.88,
+        "source_name": "公开球员统计",
+        "source_ref": "player-stat-france-10-last3",
+        "captured_at": "2026-06-24T12:00:00"
+      }
+    ],
+    "conflicts": [
+      {
+        "type": "AVAILABILITY_UNCONFIRMED",
+        "entity": "france-10",
+        "field": "expected_starting_probability",
+        "current": "unknown",
+        "incoming": "0.88"
+      }
+    ]
+  }
+}

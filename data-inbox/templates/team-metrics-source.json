@@ -1,0 +1,80 @@
+{
+  "type": "SOURCE",
+  "idempotency_key": "source-20260624-france-brazil-team-metrics-template",
+  "source": {
+    "name": "球队画像补采模板",
+    "ref": "template-only",
+    "captured_at": "2026-06-24T12:00:00"
+  },
+  "payload": {
+    "match_key": "20260626-france-brazil",
+    "match": "法国 vs 巴西",
+    "matchday": "2026-06-26",
+    "jc_code": "001",
+    "snapshots": [
+      {
+        "type": "TEAM_PROFILE_SOURCE",
+        "name": "球队近况与技战术统计来源",
+        "summary": "补采球队近 5 场进攻、防守、压迫、控球、定位球和转换推进数据，用于公开页资料准备度与球队画像。",
+        "reliability": 8.0,
+        "source_ref": "team-metrics-template"
+      }
+    ],
+    "team_news": [
+      {
+        "type": "TEAM_NEWS",
+        "title": "法国队赛前球队新闻",
+        "summary": "主帅发布会提到边路推进和反抢强度将维持高位；预计首发仍需赛前官方名单确认。",
+        "entity_type": "TEAM",
+        "entity_key": "france",
+        "impact_direction": "NEUTRAL",
+        "evidence_level": "MEDIUM",
+        "source_name": "球队发布会",
+        "observed_at": "2026-06-24T10:00:00",
+        "expires_at": "2026-06-26T20:00:00",
+        "risks": [
+          {
+            "type": "LINEUP_ROTATION",
+            "level": "MEDIUM",
+            "score": 5.5,
+            "title": "轮换仍待确认",
+            "rationale": "赛前发布会没有直接确认完整首发。",
+            "suggested_action": "开赛前 60 分钟核对官方首发名单"
+          }
+        ]
+      }
+    ],
+    "team_metrics": [
+      {
+        "team_key": "france",
+        "period_key": "last_5",
+        "metric_type": "RECENT_FORM",
+        "xg": 8.4,
+        "xga": 4.1,
+        "npxg": 7.6,
+        "ppda": 9.8,
+        "xpts": 10.2,
+        "shots": 64,
+        "shots_on_target": 24,
+        "possession_pct": 54.5,
+        "progressive_passes": 188,
+        "set_piece_xg": 1.2,
+        "form_score": 82.0,
+        "source_name": "公开技术统计",
+        "source_ref": "team-stat-france-last5",
+        "captured_at": "2026-06-24T12:00:00"
+      }
+    ],
+    "external_factors": [
+      {
+        "type": "TACTICAL_MATCHUP",
+        "title": "边路速度与防线回追对位",
+        "summary": "法国边路推进速度较快，巴西需要核对边后卫回追和中场保护数据。",
+        "impact_direction": "WATCH",
+        "evidence_level": "MEDIUM",
+        "source_name": "战术对位观察",
+        "observed_at": "2026-06-24T12:00:00"
+      }
+    ]
+  }
+}

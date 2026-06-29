@@ -112,11 +112,21 @@ public class BusinessJsonMapper {
         Long teamId;
         if (existing.isEmpty()) {
             teamId = insertAndReturnId(
-                    "INSERT INTO teams(team_key, display_name, fifa_code, country_region, style_tags, attack_profile, defense_profile, public_sentiment, raw_payload) VALUES (?,?,?,?,?,?,?,?,?)",
+                    """
+                    INSERT INTO teams(team_key, display_name, fifa_code, country_region, country_iso2, flag_asset_key,
+                                      confederation, group_name, metadata_source_ref, style_tags, attack_profile,
+                                      defense_profile, public_sentiment, raw_payload)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    """,
                     teamKey,
                     displayName,
                     truncate(text(payload, "fifa_code", "fifaCode"), 20),
                     truncate(text(payload, "country_region", "region"), 120),
+                    truncate(upperText(payload, "country_iso2", "iso2"), 2),
+                    truncate(text(payload, "flag_asset_key", "flag_key", "flag"), 120),
+                    truncate(upperText(payload, "confederation", "continent"), 80),
+                    truncate(text(payload, "group_name", "group"), 80),
+                    truncate(text(payload, "metadata_source_ref", "source_ref"), 500),
                     textOrJson(payload, "style_tags", "tags"),
                     text(payload, "attack_profile", "attackProfile"),
                     text(payload, "defense_profile", "defenseProfile"),
@@ -126,10 +136,32 @@ public class BusinessJsonMapper {
         } else {
             teamId = existing.get(0);
             jdbcTemplate.update(
-                    "UPDATE teams SET display_name=?, fifa_code=COALESCE(?, fifa_code), country_region=COALESCE(?, country_region), style_tags=COALESCE(?, style_tags), attack_profile=COALESCE(?, attack_profile), defense_profile=COALESCE(?, defense_profile), public_sentiment=COALESCE(?, public_sentiment), raw_payload=?, updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                    """
+                    UPDATE teams
+                    SET display_name=?,
+                        fifa_code=COALESCE(?, fifa_code),
+                        country_region=COALESCE(?, country_region),
+                        country_iso2=COALESCE(?, country_iso2),
+                        flag_asset_key=COALESCE(?, flag_asset_key),
+                        confederation=COALESCE(?, confederation),
+                        group_name=COALESCE(?, group_name),
+                        metadata_source_ref=COALESCE(?, metadata_source_ref),
+                        style_tags=COALESCE(?, style_tags),
+                        attack_profile=COALESCE(?, attack_profile),
+                        defense_profile=COALESCE(?, defense_profile),
+                        public_sentiment=COALESCE(?, public_sentiment),
+                        raw_payload=?,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=?
+                    """,
                     displayName,
                     truncate(text(payload, "fifa_code", "fifaCode"), 20),
                     truncate(text(payload, "country_region", "region"), 120),
+                    truncate(upperText(payload, "country_iso2", "iso2"), 2),
+                    truncate(text(payload, "flag_asset_key", "flag_key", "flag"), 120),
+                    truncate(upperText(payload, "confederation", "continent"), 80),
+                    truncate(text(payload, "group_name", "group"), 80),
+                    truncate(text(payload, "metadata_source_ref", "source_ref"), 500),
                     textOrJson(payload, "style_tags", "tags"),
                     text(payload, "attack_profile", "attackProfile"),
                     text(payload, "defense_profile", "defenseProfile"),
@@ -711,6 +743,8 @@ public class BusinessJsonMapper {
             Long riskId = insertRiskAssessment(item, matchId, risk);
             mappings.add(insertMapping(item.getId(), "SENTIMENT_RISK_ASSESSMENT", riskId, "IMPORTED", "Risk assessment imported"));
         }
+        importMetricSnapshots(item, matchId, root, mappings);
+        importMarketSignals(item, matchId, root, mappings);
         importAliases(root);
         return mappings;
     }
@@ -719,14 +753,182 @@ public class BusinessJsonMapper {
         List<FactorPayload> factors = new ArrayList<>();
         addFactorArray(factors, json, "external_factors", "OTHER");
         addFactorArray(factors, json, "factors", "OTHER");
-        addFactorArray(factors, json, "sentiment_records", "PUBLIC_SENTIMENT");
-        addFactorArray(factors, json, "sentiments", "PUBLIC_SENTIMENT");
+        addFactorArray(factors, json, "sentiment_records", "PUBLIC_OPINION");
+        addFactorArray(factors, json, "sentiments", "PUBLIC_OPINION");
+        addFactorArray(factors, json, "injuries", "INJURY");
+        addFactorArray(factors, json, "training", "TRAINING");
+        addFactorArray(factors, json, "team_news", "TEAM_NEWS");
+        addFactorArray(factors, json, "market_signals", "MARKET");
+        addFactorArray(factors, json, "public_betting", "PUBLIC_BETTING");
         addSingleFactor(factors, json, "weather", "WEATHER");
         addSingleFactor(factors, json, "venue", "VENUE");
         addSingleFactor(factors, json, "referee", "REFEREE");
+        addSingleFactor(factors, json, "schedule", "SCHEDULE");
+        addSingleFactor(factors, json, "travel_rest", "TRAVEL");
+        addSingleFactor(factors, json, "travel", "TRAVEL");
+        addSingleFactor(factors, json, "rest", "REST");
         addSingleFactor(factors, json, "motivation", "MOTIVATION");
-        addSingleFactor(factors, json, "public_sentiment", "PUBLIC_SENTIMENT");
+        addSingleFactor(factors, json, "rotation", "ROTATION");
+        addSingleFactor(factors, json, "locker_room", "LOCKER_ROOM");
+        addSingleFactor(factors, json, "press_conference", "PRESS_CONFERENCE");
+        addSingleFactor(factors, json, "news", "TEAM_NEWS");
+        addSingleFactor(factors, json, "media", "PUBLIC_OPINION");
+        addSingleFactor(factors, json, "fan_sentiment", "FAN_SENTIMENT");
+        addSingleFactor(factors, json, "market_signal", "MARKET");
+        addSingleFactor(factors, json, "public_sentiment", "PUBLIC_OPINION");
+        addSingleFactor(factors, json, "history", "HISTORY");
+        addSingleFactor(factors, json, "head_to_head", "HISTORY");
+        addSingleFactor(factors, json, "tactical_matchup", "TACTICAL_MATCHUP");
+        addSingleFactor(factors, json, "tactic", "TACTICAL_MATCHUP");
         return factors;
+    }
+
+    private void importMetricSnapshots(ImportItem item, Long matchId, JsonNode root, List<CoreDataMappingResponse> mappings) {
+        for (JsonNode node : collectMetricNodes(root, "team_metrics", "team_metric_snapshots", "advanced_metrics")) {
+            if (text(node, "player_key", "player") != null) {
+                continue;
+            }
+            String teamKey = text(node, "team_key", "team", "entity_key");
+            if (teamKey == null || teamKey.isBlank()) {
+                continue;
+            }
+            Long teamId = findTeamId(teamKey);
+            if (teamId == null) {
+                throw new IllegalArgumentException("team_key does not exist for team metric: " + teamKey);
+            }
+            Long metricId = insertTeamMetricSnapshot(item, matchId, teamId, node);
+            mappings.add(insertMapping(item.getId(), "TEAM_METRIC_SNAPSHOT", metricId, "IMPORTED", "球队高级指标快照已导入正式库"));
+        }
+        for (JsonNode node : collectMetricNodes(root, "player_metrics", "player_metric_snapshots")) {
+            importPlayerMetricSnapshot(item, matchId, node, mappings);
+        }
+        for (JsonNode node : asNodes(root.get("advanced_metrics"))) {
+            if (text(node, "player_key", "player") != null) {
+                importPlayerMetricSnapshot(item, matchId, node, mappings);
+            }
+        }
+    }
+
+    private List<JsonNode> collectMetricNodes(JsonNode root, String... fields) {
+        List<JsonNode> nodes = new ArrayList<>();
+        for (String field : fields) {
+            for (JsonNode node : asNodes(root.get(field))) {
+                nodes.add(node);
+            }
+        }
+        return nodes;
+    }
+
+    private Long insertTeamMetricSnapshot(ImportItem item, Long matchId, Long teamId, JsonNode node) {
+        return insertAndReturnId(
+                """
+                INSERT INTO team_metric_snapshots(import_item_id, team_id, match_id, period_key, metric_type,
+                                                  xg, xga, npxg, ppda, xpts, shots, shots_on_target,
+                                                  possession_pct, progressive_passes, set_piece_xg, form_score,
+                                                  source_name, source_ref, captured_at, raw_payload)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                item.getId(),
+                teamId,
+                matchId,
+                truncate(text(node, "period_key", "period"), 120),
+                truncate(normalizedCode(text(node, "metric_type", "type", "scope"), "RAW"), 120),
+                decimal(node, "xg", "xG"),
+                decimal(node, "xga", "xGA"),
+                decimal(node, "npxg", "npxG"),
+                decimal(node, "ppda", "PPDA"),
+                decimal(node, "xpts", "xPTS"),
+                integer(node, "shots", "total_shots"),
+                integer(node, "shots_on_target", "sot"),
+                decimal(node, "possession_pct", "possession"),
+                integer(node, "progressive_passes"),
+                decimal(node, "set_piece_xg"),
+                decimal(node, "form_score"),
+                truncate(fallback(text(node, "source_name", "source"), "UNKNOWN"), 240),
+                text(node, "source_ref", "ref", "id"),
+                parseDateTime(text(node, "captured_at", "observed_at", "time", "timestamp")),
+                toJson(node)
+        );
+    }
+
+    private void importPlayerMetricSnapshot(ImportItem item, Long matchId, JsonNode node, List<CoreDataMappingResponse> mappings) {
+        String playerKey = text(node, "player_key", "player", "entity_key");
+        if (playerKey == null || playerKey.isBlank()) {
+            return;
+        }
+        Long playerId = findPlayerId(playerKey);
+        if (playerId == null) {
+            throw new IllegalArgumentException("player_key does not exist for player metric: " + playerKey);
+        }
+        Long teamId = findTeamId(text(node, "team_key", "team"));
+        Long metricId = insertAndReturnId(
+                """
+                INSERT INTO player_metric_snapshots(import_item_id, player_id, team_id, match_id, period_key, metric_type,
+                                                    minutes_played, goals, assists, xg, xa, npxg, shots, shots_on_target,
+                                                    key_passes, progressive_passes, training_load, availability_score,
+                                                    expected_starting_probability, source_name, source_ref, captured_at, raw_payload)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                """,
+                item.getId(),
+                playerId,
+                teamId,
+                matchId,
+                truncate(text(node, "period_key", "period"), 120),
+                truncate(normalizedCode(text(node, "metric_type", "type", "scope"), "RAW"), 120),
+                integer(node, "minutes_played", "minutes"),
+                decimal(node, "goals"),
+                decimal(node, "assists"),
+                decimal(node, "xg", "xG"),
+                decimal(node, "xa", "xA"),
+                decimal(node, "npxg", "npxG"),
+                integer(node, "shots", "total_shots"),
+                integer(node, "shots_on_target", "sot"),
+                integer(node, "key_passes"),
+                integer(node, "progressive_passes"),
+                decimal(node, "training_load"),
+                decimal(node, "availability_score"),
+                decimal(node, "expected_starting_probability", "start_probability"),
+                truncate(fallback(text(node, "source_name", "source"), "UNKNOWN"), 240),
+                text(node, "source_ref", "ref", "id"),
+                parseDateTime(text(node, "captured_at", "observed_at", "time", "timestamp")),
+                toJson(node)
+        );
+        mappings.add(insertMapping(item.getId(), "PLAYER_METRIC_SNAPSHOT", metricId, "IMPORTED", "球员高级指标快照已导入正式库"));
+    }
+
+    private void importMarketSignals(ImportItem item, Long matchId, JsonNode root, List<CoreDataMappingResponse> mappings) {
+        for (JsonNode node : collectMetricNodes(root, "market_signals", "market_signal", "public_betting")) {
+            if (matchId == null) {
+                continue;
+            }
+            Long signalId = insertAndReturnId(
+                    """
+                    INSERT INTO match_market_signals(import_item_id, match_id, market_code, bookmaker, opening_line,
+                                                     current_line, opening_odds, current_odds, implied_probability,
+                                                     public_bet_pct, money_pct, movement_direction, signal_level,
+                                                     source_name, source_ref, observed_at, raw_payload)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                    """,
+                    item.getId(),
+                    matchId,
+                    truncate(marketCode(node), 120),
+                    truncate(text(node, "bookmaker", "company"), 240),
+                    truncate(text(node, "opening_line", "open_line"), 120),
+                    truncate(text(node, "current_line", "line"), 120),
+                    decimal(node, "opening_odds", "open_odds"),
+                    decimal(node, "current_odds", "odds"),
+                    decimal(node, "implied_probability", "probability"),
+                    decimal(node, "public_bet_pct", "public_bets", "bet_pct"),
+                    decimal(node, "money_pct", "money", "fund_pct"),
+                    truncate(normalizedCode(text(node, "movement_direction", "direction"), "UNKNOWN"), 80),
+                    truncate(normalizedCode(text(node, "signal_level", "level"), "INFO"), 80),
+                    truncate(fallback(text(node, "source_name", "source"), "UNKNOWN"), 240),
+                    text(node, "source_ref", "ref", "id"),
+                    parseDateTime(text(node, "observed_at", "captured_at", "time", "timestamp")),
+                    toJson(node)
+            );
+            mappings.add(insertMapping(item.getId(), "MATCH_MARKET_SIGNAL", signalId, "IMPORTED", "市场信号已导入正式库"));
+        }
     }
 
     private void addFactorArray(List<FactorPayload> factors, JsonNode json, String field, String defaultCategory) {
@@ -757,7 +959,7 @@ public class BusinessJsonMapper {
 
     private Long insertContextFactor(ImportItem item, Long matchId, FactorPayload factor) {
         JsonNode node = factor.node();
-        String category = normalizedCode(fallback(text(node, "category", "factor_category"), factor.defaultCategory()), "OTHER");
+        String category = canonicalFactorCategory(fallback(text(node, "category", "factor_category"), factor.defaultCategory()));
         String type = normalizedCode(fallback(text(node, "type", "factor_type", "key"), "RAW"), "RAW");
         String title = truncate(fallback(text(node, "title", "name", "headline"), category + ":" + type), 300);
         return insertAndReturnId(
@@ -804,6 +1006,16 @@ public class BusinessJsonMapper {
     private String normalizedCode(String value, String fallback) {
         String safe = fallback(value, fallback);
         return safe == null ? null : safe.trim().toUpperCase(Locale.ROOT).replace(' ', '_');
+    }
+
+    private String canonicalFactorCategory(String value) {
+        String code = normalizedCode(value, "OTHER");
+        return switch (code) {
+            case "TRAVEL_REST", "SCHEDULE_TRAVEL" -> "TRAVEL";
+            case "MARKET_SIGNAL" -> "MARKET";
+            case "PUBLIC_SENTIMENT" -> "PUBLIC_OPINION";
+            default -> code;
+        };
     }
 
     private List<CoreDataMappingResponse> mapBets(ImportItem item, JsonNode json) {
@@ -1094,6 +1306,11 @@ public class BusinessJsonMapper {
             }
         }
         return null;
+    }
+
+    private String upperText(JsonNode node, String... fields) {
+        String value = text(node, fields);
+        return value == null ? null : value.trim().toUpperCase(Locale.ROOT);
     }
 
     private JsonNode payload(JsonNode json) {

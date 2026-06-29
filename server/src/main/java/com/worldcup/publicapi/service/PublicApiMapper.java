@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Component
@@ -48,6 +49,16 @@ public class PublicApiMapper {
             "(?i)(?<![A-Za-z0-9_])(?:roi|clv|closingOdds|closing[_\\-\\s]?odds)(?![A-Za-z0-9_])"
                     + "\\s*(?:[:=：]|为|是)?\\s*(?:[+\\-]?\\d+(?:\\.\\d+)?%?|[^\\s,;，。；、/]+)?"
     );
+    private static final Set<String> PLACEHOLDER_TEAM_NAMES = Set.of(
+            "unknown home team",
+            "unknown away team",
+            "unknown team",
+            "主队待定",
+            "客队待定",
+            "球队待定",
+            "待定",
+            "待同步"
+    );
 
     public String sanitizeText(String value) {
         if (value == null || value.isBlank()) {
@@ -72,6 +83,48 @@ public class PublicApiMapper {
             return "[REDACTED]";
         }
         return sanitizeText(value);
+    }
+
+    public String publicTeamName(String joinedTeamName, String rawPayload, String payloadFieldName, String fallback) {
+        String value = isPlaceholderTeamName(joinedTeamName)
+                ? extractJsonString(rawPayload, payloadFieldName)
+                : joinedTeamName;
+        if (isPlaceholderTeamName(value)) {
+            value = fallback;
+        }
+        return sanitizeText(value);
+    }
+
+    private boolean isPlaceholderTeamName(String value) {
+        if (value == null || value.isBlank()) {
+            return true;
+        }
+        String normalized = value.trim();
+        return PLACEHOLDER_TEAM_NAMES.contains(normalized)
+                || PLACEHOLDER_TEAM_NAMES.contains(normalized.toLowerCase(Locale.ROOT));
+    }
+
+    private String extractJsonString(String rawPayload, String fieldName) {
+        if (rawPayload == null || rawPayload.isBlank() || fieldName == null || fieldName.isBlank()) {
+            return null;
+        }
+        Pattern fieldPattern = Pattern.compile("\"" + Pattern.quote(fieldName) + "\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"");
+        Matcher matcher = fieldPattern.matcher(rawPayload);
+        if (!matcher.find()) {
+            return null;
+        }
+        return unescapeJsonString(matcher.group(1));
+    }
+
+    private String unescapeJsonString(String value) {
+        return value
+                .replace("\\\\", "\u0000")
+                .replace("\\\"", "\"")
+                .replace("\\/", "/")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t")
+                .replace("\u0000", "\\");
     }
 
     private boolean hasForbiddenTokenSegment(String value) {
@@ -100,6 +153,9 @@ public class PublicApiMapper {
                 sanitizeText(value.homeTeamName()),
                 value.awayTeamId(),
                 sanitizeText(value.awayTeamName()),
+                new PublicTeamVisual(value.homeTeamId(), sanitizeText(value.homeTeamName()), null, null, null, null),
+                new PublicTeamVisual(value.awayTeamId(), sanitizeText(value.awayTeamName()), null, null, null, null),
+                new PublicScoreboard(null, null, "待同步", "UNKNOWN", "赛程待同步", null),
                 value.eventCount(),
                 value.lineupCount(),
                 value.evidenceCount(),
@@ -186,7 +242,11 @@ public class PublicApiMapper {
                 sanitizeText(value.sourceUrl()),
                 value.evidenceTime(),
                 sanitizeText(value.summary()),
-                value.reliabilityScore()
+                value.reliabilityScore(),
+                "UNKNOWN",
+                value.evidenceTime() == null ? "UNKNOWN" : "FRESH",
+                "来源证据",
+                "公开只读：如用于判断，请核对原来源"
         );
     }
 
@@ -207,6 +267,9 @@ public class PublicApiMapper {
                 sanitizeText(value.matchName()),
                 value.matchday(),
                 sanitizeText(value.jcCode()),
+                new PublicTeamVisual(null, null, null, null, null, null),
+                new PublicTeamVisual(null, null, null, null, null, null),
+                new PublicScoreboard(null, null, "待同步", "UNKNOWN", "赔率页待同步比赛比分", null),
                 sanitizeText(value.bookmaker()),
                 sanitizeText(value.marketCode()),
                 sanitizeText(value.marketName()),
@@ -224,6 +287,9 @@ public class PublicApiMapper {
                 sanitizeText(value.matchName()),
                 value.matchday(),
                 sanitizeText(value.jcCode()),
+                new PublicTeamVisual(null, null, null, null, null, null),
+                new PublicTeamVisual(null, null, null, null, null, null),
+                new PublicScoreboard(null, null, "待同步", "UNKNOWN", "赔率页待同步比赛比分", null),
                 mapList(value.markets(), this::toPublicOddsMarketDetail)
         );
     }
@@ -274,6 +340,9 @@ public class PublicApiMapper {
                 sanitizeText(value.matchName()),
                 value.matchday(),
                 sanitizeText(value.jcCode()),
+                null,
+                null,
+                null,
                 sanitizeText(value.factorCategory()),
                 sanitizeText(value.factorType()),
                 sanitizeText(value.title()),
@@ -301,6 +370,9 @@ public class PublicApiMapper {
                 sanitizeText(value.matchName()),
                 value.matchday(),
                 sanitizeText(value.jcCode()),
+                null,
+                null,
+                null,
                 mapList(value.factors(), this::toPublicSentimentFactorDetail),
                 mapList(value.risks(), this::toPublicSentimentRisk)
         );
@@ -372,12 +444,24 @@ public class PublicApiMapper {
                 sanitizeText(value.displayName()),
                 sanitizeText(value.fifaCode()),
                 sanitizeText(value.countryRegion()),
+                sanitizeToken(value.countryIso2()),
+                sanitizeText(value.flagAssetKey()),
+                sanitizeToken(value.confederation()),
+                sanitizeText(value.groupName()),
+                sanitizeText(value.metadataSourceRef()),
                 sanitizeText(value.styleTags()),
                 sanitizeText(value.attackProfile()),
                 sanitizeText(value.defenseProfile()),
                 sanitizeText(value.publicSentiment()),
                 value.playerCount(),
                 value.factCount(),
+                0,
+                0,
+                null,
+                null,
+                null,
+                null,
+                null,
                 value.latestProfileUpdate()
         );
     }
@@ -455,7 +539,9 @@ public class PublicApiMapper {
                 mapList(value.externalFactors(), this::toPublicTeamExternalFactor),
                 mapList(value.matchHistory(), this::toPublicTeamMatchHistory),
                 value.evidenceCount(),
-                value.conflictCount()
+                value.conflictCount(),
+                new PublicProfileReadiness(0, "UNKNOWN", "公开画像健壮性待由公开只读模型计算。", List.of(), List.of("画像健壮性待同步"), List.of("请查看公开画像详情或等待数据重算")),
+                null
         );
     }
 
@@ -465,6 +551,7 @@ public class PublicApiMapper {
                 sanitizeText(value.playerKey()),
                 value.teamId(),
                 sanitizeText(value.teamName()),
+                new PublicTeamVisual(value.teamId(), sanitizeText(value.teamName()), null, null, null, null),
                 sanitizeText(value.displayName()),
                 value.shirtNumber(),
                 sanitizeText(value.position()),
@@ -473,6 +560,8 @@ public class PublicApiMapper {
                 sanitizeText(value.cardStatus()),
                 sanitizeText(value.lockerRoomStatus()),
                 value.factCount(),
+                0,
+                0,
                 value.latestProfileUpdate()
         );
     }
@@ -480,7 +569,9 @@ public class PublicApiMapper {
     public PublicPlayerProfileDetail toPublicPlayerProfileDetail(PlayerProfileDetail value) {
         return new PublicPlayerProfileDetail(
                 toPublicPlayerProfileSummary(value.player()),
-                mapList(value.facts(), this::toPublicProfileFact)
+                mapList(value.facts(), this::toPublicProfileFact),
+                new PublicProfileReadiness(0, "UNKNOWN", "公开球员画像健壮性待由公开只读模型计算。", List.of(), List.of("球员画像健壮性待同步"), List.of("请查看公开球员详情或等待数据重算")),
+                null
         );
     }
 
@@ -544,6 +635,9 @@ public class PublicApiMapper {
                 sanitizeText(value.homeTeamName()),
                 value.awayTeamId(),
                 sanitizeText(value.awayTeamName()),
+                new PublicTeamVisual(value.homeTeamId(), sanitizeText(value.homeTeamName()), null, null, null, null),
+                new PublicTeamVisual(value.awayTeamId(), sanitizeText(value.awayTeamName()), null, null, null, null),
+                new PublicScoreboard(null, null, "待同步", "UNKNOWN", "赛程待同步", null),
                 value.integrityScore(),
                 value.missingCount(),
                 value.staleCount(),
@@ -558,8 +652,17 @@ public class PublicApiMapper {
     }
 
     public PublicPrematchDetail toPublicPrematchDetail(PrematchWorkbenchDetailResponse value) {
+        PublicPrematchMatchSummary summary = toPublicPrematchMatchSummary(value.summary());
         return new PublicPrematchDetail(
-                toPublicPrematchMatchSummary(value.summary()),
+                summary,
+                new PublicPrematchVisualSummary(
+                        "赛程待同步",
+                        "公开详情映射模式暂未聚合完整 visual summary",
+                        "请以资料准备度检查和风险列表为准",
+                        "进入公开作战室服务可获得更完整的图表字段",
+                        List.of()
+                ),
+                List.of(),
                 mapList(value.teams(), this::toPublicPrematchTeam),
                 mapList(value.lineups(), this::toPublicPrematchLineup),
                 mapList(value.players(), this::toPublicPrematchPlayer),

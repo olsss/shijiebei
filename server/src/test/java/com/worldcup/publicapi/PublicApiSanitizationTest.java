@@ -130,4 +130,16 @@ class PublicApiSanitizationTest {
         assertThat(mapper.sanitizeToken("raw_payload.field")).isEqualTo("[REDACTED]");
         assertThat(mapper.sanitizeToken("LINEUP.fieldName")).isEqualTo("LINEUP.fieldName");
     }
+
+    @Test
+    void publicTeamNameFallsBackToPayloadPlaceholderWhenJoinedTeamIsUnknown() {
+        String rawPayload = "{\"payload\":{\"home_team_name\":\"I组第1\",\"away_team_name\":\"A/B/C/D/F组第3名之一\"}}";
+
+        assertThat(mapper.publicTeamName("Unknown home team", rawPayload, "home_team_name", "主队待定"))
+                .isEqualTo("I组第1");
+        assertThat(mapper.publicTeamName(null, rawPayload, "away_team_name", "客队待定"))
+                .isEqualTo("A/B/C/D/F组第3名之一");
+        assertThat(mapper.publicTeamName("法国", rawPayload, "home_team_name", "主队待定"))
+                .isEqualTo("法国");
+    }
 }
