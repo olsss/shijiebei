@@ -53,3 +53,10 @@ client/vite.config.d.ts
 
 # Local subagent workspace
 .agents/
+# Local Codex runtime screenshots
+.codex/runtime-screenshots/
+
+# Local data inbox archives after DB import/rejection
+data-inbox/imported/*.json
+data-inbox/rejected/*.json
+
