@@ -43,7 +43,7 @@
         </div>
         <div class="topbar__actions">
           <span class="identity-pill">{{ authStore.admin?.displayName ?? '访客' }}</span>
-          <RouterLink v-if="!authStore.isAuthenticated" class="shell-button" to="/login">管理员登录</RouterLink>
+          <RouterLink v-if="!authStore.isAuthenticated" class="shell-button shell-button--login" to="/login">管理员登录</RouterLink>
           <button v-else class="shell-button shell-button--ghost" type="button" @click="handleLogout">退出</button>
         </div>
       </header>
@@ -72,8 +72,9 @@ const router = useRouter();
 const primaryNav = [
   { label: '赛事总览', description: '公开态势与入口', to: '/', mark: '01' },
   { label: '赛前作战', description: '单场综合研判', to: '/workbench', mark: '02' },
-  { label: '证据中心', description: '赛程 · 赔率 · 舆情 · 画像', to: '/evidence/matches', mark: '03' },
+  { label: '证据中心', description: '总览 · 赛程 · 赔率 · 舆情', to: '/evidence', mark: '03' },
   { label: '决策复盘', description: '分析报告与复盘经验', to: '/decisions', mark: '04' },
+  { label: '全部入口', description: '公开与管理入口', to: '/more', mark: '05' },
 ];
 
 const mobileNav: Array<{
@@ -84,7 +85,7 @@ const mobileNav: Array<{
 }> = [
   { section: 'overview', label: '总览', to: '/', mark: '01' },
   { section: 'workbench', label: '赛前', to: '/workbench', mark: '02' },
-  { section: 'evidence', label: '证据', to: '/evidence/matches', mark: '03' },
+  { section: 'evidence', label: '证据', to: '/evidence', mark: '03' },
   { section: 'decisions', label: '决策', to: '/decisions', mark: '04' },
   { section: 'more', label: '更多', to: '/more', mark: '05' },
 ];
@@ -94,7 +95,7 @@ function isNavActive(to: string): boolean {
   if (to === '/') {
     return currentPath === '/';
   }
-  if (to === '/evidence/matches') {
+  if (to === '/evidence') {
     return currentPath.startsWith('/evidence');
   }
   return currentPath === to;
@@ -326,12 +327,22 @@ async function handleLogout() {
 }
 
 .shell-button {
-  background: var(--wc-accent);
-  border: 0;
-  color: var(--wc-on-accent);
+  background: rgba(147, 197, 253, 0.1);
+  border: 1px solid rgba(147, 197, 253, 0.24);
+  color: var(--wc-text);
   cursor: pointer;
   padding: 0 16px;
   text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.shell-button:hover {
+  background: rgba(147, 197, 253, 0.16);
+  border-color: rgba(147, 197, 253, 0.42);
+}
+
+.shell-button--login {
+  color: var(--wc-primary);
 }
 
 .shell-button--ghost {

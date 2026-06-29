@@ -1,5 +1,6 @@
 import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { Scoreboard, TeamVisual } from '@/utils/football-visuals';
 
 export interface MatchSummary {
   id: number;
@@ -17,6 +18,9 @@ export interface MatchSummary {
   homeTeamName?: string;
   awayTeamId?: number;
   awayTeamName?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   eventCount: number;
   lineupCount: number;
   evidenceCount: number;
@@ -84,6 +88,10 @@ export interface MatchEvidence {
   evidenceTime?: string;
   summary?: string;
   reliabilityScore?: number;
+  qualityLevel?: string;
+  freshnessStatus?: string;
+  supportsConclusion?: string;
+  suggestedAction?: string;
 }
 
 export interface MatchConflict {

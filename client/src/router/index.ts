@@ -4,6 +4,7 @@ import ImportReviewView from '@/views/ImportReviewView.vue';
 import AnalysisReviewCenterView from '@/views/AnalysisReviewCenterView.vue';
 import AdminCollectionReviewView from '@/views/AdminCollectionReviewView.vue';
 import LoginView from '@/views/LoginView.vue';
+import EvidenceCenterView from '@/views/EvidenceCenterView.vue';
 import MatchCenterView from '@/views/MatchCenterView.vue';
 import OddsCenterView from '@/views/OddsCenterView.vue';
 import PrematchWorkbenchView from '@/views/PrematchWorkbenchView.vue';
@@ -20,7 +21,7 @@ export const router = createRouter({
     { path: '/login', name: 'login', component: LoginView, meta: { standalone: true } },
     { path: '/', name: 'overview', component: DashboardView },
     { path: '/workbench', name: 'prematch-workbench', component: PrematchWorkbenchView },
-    { path: '/evidence', redirect: '/evidence/matches' },
+    { path: '/evidence', name: 'evidence-overview', component: EvidenceCenterView },
     { path: '/evidence/matches', name: 'evidence-matches', component: MatchCenterView },
     { path: '/evidence/odds', name: 'evidence-odds', component: OddsCenterView },
     { path: '/evidence/sentiment', name: 'evidence-sentiment', component: SentimentCenterView },

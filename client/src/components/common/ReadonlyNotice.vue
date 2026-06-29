@@ -3,7 +3,8 @@
     <div class="readonly-notice__signal" aria-hidden="true"></div>
     <div>
       <strong>{{ title }}</strong>
-      <p>{{ message }}</p>
+      <p class="readonly-notice__message">{{ message }}</p>
+      <p class="readonly-notice__compact">{{ compactMessage }}</p>
     </div>
   </section>
 </template>
@@ -21,6 +22,8 @@ const message = computed(() =>
     ? '已解锁审核、批准入库和管理操作；敏感数据仍仅在管理员页面展示。'
     : '未登录也可查看脱敏数据；审核、保存、入库和删除等写操作仅管理员可用。',
 );
+
+const compactMessage = computed(() => (props.canWrite ? '管理写操作已解锁。' : '公开数据可读；写操作需管理员。'));
 </script>
 
 <style scoped>
@@ -71,5 +74,50 @@ const message = computed(() =>
   line-height: 1.55;
   margin: 3px 0 0;
   overflow-wrap: anywhere;
+}
+
+.readonly-notice__compact {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .readonly-notice {
+    align-items: center;
+    border-radius: 999px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .readonly-notice__signal {
+    height: 7px;
+    margin-top: 0;
+    width: 7px;
+  }
+
+  .readonly-notice > div:last-child {
+    align-items: baseline;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .readonly-notice strong {
+    flex: 0 0 auto;
+    font-size: 13px;
+  }
+
+  .readonly-notice__message {
+    display: none;
+  }
+
+  .readonly-notice__compact {
+    display: block;
+    flex: 1 1 auto;
+    font-size: 12px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 </style>

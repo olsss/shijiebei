@@ -1,5 +1,6 @@
 import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { Scoreboard, TeamVisual } from '@/utils/football-visuals';
 
 export interface SentimentFactorSummary {
   id: number;
@@ -7,6 +8,9 @@ export interface SentimentFactorSummary {
   matchName?: string;
   matchday?: string;
   jcCode?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   factorCategory: string;
   factorType: string;
   title: string;
@@ -51,6 +55,9 @@ export interface SentimentMatchDetail {
   matchName: string;
   matchday?: string;
   jcCode?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   factors: SentimentFactorDetail[];
   risks: SentimentRisk[];
 }

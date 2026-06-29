@@ -1,5 +1,6 @@
 import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { TeamVisual } from '@/utils/football-visuals';
 
 export type CollectionItemStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
 export type ProfileEntityType = 'TEAM' | 'PLAYER';
@@ -52,18 +53,75 @@ export interface ProfileFact {
   approvedBy?: string;
 }
 
+export interface ProfileReadiness {
+  score: number;
+  level: string;
+  summary: string;
+  strengths: string[];
+  missingDimensions: string[];
+  nextActions: string[];
+}
+
+export interface TeamMetricSummary {
+  xg?: number;
+  xga?: number;
+  npxg?: number;
+  ppda?: number;
+  xpts?: number;
+  shots?: number;
+  shotsOnTarget?: number;
+  possessionPct?: number;
+  progressivePasses?: number;
+  setPieceXg?: number;
+  formScore?: number;
+  sourceName?: string;
+  sourceRef?: string;
+  capturedAt?: string;
+}
+
+export interface PlayerMetricSummary {
+  minutesPlayed?: number;
+  goals?: number;
+  assists?: number;
+  xg?: number;
+  xa?: number;
+  npxg?: number;
+  shots?: number;
+  shotsOnTarget?: number;
+  keyPasses?: number;
+  progressivePasses?: number;
+  trainingLoad?: number;
+  availabilityScore?: number;
+  expectedStartingProbability?: number;
+  sourceName?: string;
+  sourceRef?: string;
+  capturedAt?: string;
+}
+
 export interface TeamProfileSummary {
   id: number;
   teamKey: string;
   displayName: string;
   fifaCode?: string;
   countryRegion?: string;
+  countryIso2?: string;
+  flagAssetKey?: string;
+  confederation?: string;
+  groupName?: string;
+  metadataSourceRef?: string;
   styleTags?: string;
   attackProfile?: string;
   defenseProfile?: string;
   publicSentiment?: string;
   playerCount: number;
   factCount: number;
+  technicalMetricCount?: number;
+  advancedMetricCount?: number;
+  groupStandingRank?: number;
+  groupStandingPoints?: number;
+  groupStandingRecord?: string;
+  groupGoalDifference?: number;
+  groupStandingSummary?: string;
   latestProfileUpdate?: string;
 }
 
@@ -130,6 +188,8 @@ export interface TeamProfileDetail {
   matchHistory: TeamMatchHistory[];
   evidenceCount: number;
   conflictCount: number;
+  readiness?: ProfileReadiness;
+  latestMetric?: TeamMetricSummary;
 }
 
 export interface PlayerProfileSummary {
@@ -137,6 +197,7 @@ export interface PlayerProfileSummary {
   playerKey: string;
   teamId?: number;
   teamName?: string;
+  team?: TeamVisual;
   displayName: string;
   shirtNumber?: number;
   position?: string;
@@ -145,12 +206,16 @@ export interface PlayerProfileSummary {
   cardStatus?: string;
   lockerRoomStatus?: string;
   factCount: number;
+  performanceMetricCount?: number;
+  advancedMetricCount?: number;
   latestProfileUpdate?: string;
 }
 
 export interface PlayerProfileDetail {
   player: PlayerProfileSummary;
   facts: ProfileFact[];
+  readiness?: ProfileReadiness;
+  latestMetric?: PlayerMetricSummary;
 }
 
 export interface PublicProfileFact {

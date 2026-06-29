@@ -1,5 +1,6 @@
 import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { Scoreboard, TeamVisual } from '@/utils/football-visuals';
 
 export interface OddsMarketSummary {
   id: number;
@@ -7,6 +8,9 @@ export interface OddsMarketSummary {
   matchName?: string;
   matchday?: string;
   jcCode?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   bookmaker: string;
   marketCode: string;
   marketName?: string;
@@ -39,6 +43,9 @@ export interface OddsMatchDetail {
   matchName: string;
   matchday?: string;
   jcCode?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   markets: OddsMarketDetail[];
 }
 

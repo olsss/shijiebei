@@ -35,7 +35,7 @@ function isActive(to: string): boolean {
   if (to === '/') {
     return currentPath === '/';
   }
-  if (to === '/evidence/matches') {
+  if (to === '/evidence') {
     return currentPath.startsWith('/evidence');
   }
   return currentPath === to;

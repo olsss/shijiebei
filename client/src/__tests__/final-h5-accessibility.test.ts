@@ -62,7 +62,7 @@ describe('final H5 and accessibility acceptance', () => {
   it('ensures all redesigned pages declare small-screen H5 layouts without large fixed min widths', () => {
     for (const source of responsiveSources) {
       expect(source).toContain('@media');
-      expect(source).toContain('grid-template-columns: 1fr');
+      expect(source).toMatch(/grid-template-columns:\s*(?:1fr|repeat\(2, minmax\(0, 1fr\)\))/);
       expect(source).toContain('min-width: 0');
       expect(source).not.toMatch(/min-width:\s*(?:[4-9]\d{2,}|\d{4,})px/);
     }

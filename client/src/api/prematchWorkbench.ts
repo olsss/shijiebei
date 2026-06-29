@@ -1,5 +1,6 @@
 import { createAuthHeaders, http, publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { Scoreboard, TeamVisual } from '@/utils/football-visuals';
 
 export interface WorkbenchMatchSummary {
   matchId: number;
@@ -17,6 +18,9 @@ export interface WorkbenchMatchSummary {
   homeTeamName?: string;
   awayTeamId?: number;
   awayTeamName?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   integrityScore: number;
   missingCount: number;
   staleCount: number;
@@ -251,6 +255,9 @@ export interface PublicWorkbenchMatchSummary {
   homeTeamName?: string;
   awayTeamId?: number;
   awayTeamName?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   integrityScore: number;
   missingCount: number;
   staleCount: number;
@@ -261,6 +268,28 @@ export interface PublicWorkbenchMatchSummary {
   oddsMarketCount: number;
   sentimentFactorCount: number;
   analysisReportCount: number;
+}
+
+export interface PublicVisualMetric {
+  key: string;
+  label: string;
+  value?: number;
+  unit?: string;
+  tone?: string;
+  explanation?: string;
+}
+
+export interface PublicPrematchVisualSummary {
+  statusText?: string;
+  readinessText?: string;
+  riskText?: string;
+  nextCheckText?: string;
+  metrics: PublicVisualMetric[];
+}
+
+export interface PublicPrematchTeamComparison {
+  team: TeamVisual;
+  metrics: PublicVisualMetric[];
 }
 
 export interface PublicPrematchFact {
@@ -416,6 +445,8 @@ export interface PublicIntegrityCheck {
 
 export interface PublicPrematchWorkbenchDetail {
   summary: PublicWorkbenchMatchSummary;
+  visualSummary?: PublicPrematchVisualSummary;
+  teamComparison?: PublicPrematchTeamComparison[];
   teams: PublicWorkbenchTeam[];
   lineups: PublicWorkbenchLineup[];
   players: PublicWorkbenchPlayer[];

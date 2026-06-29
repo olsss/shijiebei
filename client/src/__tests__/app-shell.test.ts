@@ -2,6 +2,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AppShell from '@/layout/AppShell.vue';
+import appShellSource from '@/layout/AppShell.vue?raw';
+import readonlyNoticeSource from '@/components/common/ReadonlyNotice.vue?raw';
 import { useAuthStore } from '@/stores/auth';
 
 const replaceSpy = vi.fn();
@@ -39,11 +41,22 @@ describe('AppShell', () => {
     expect(wrapper.text()).toContain('赛前作战');
     expect(wrapper.text()).toContain('证据中心');
     expect(wrapper.text()).toContain('决策复盘');
+    expect(wrapper.text()).toContain('全部入口');
+    expect(wrapper.find('nav[aria-label="主导航"] a[href="/evidence"]').exists()).toBe(true);
+    expect(wrapper.find('nav[aria-label="主导航"] a[href="/more"]').exists()).toBe(true);
+    expect(wrapper.find('section[aria-label="全站结构"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toMatch(/新手|读法|地图/);
     expect(wrapper.text()).toContain('公开只读');
     expect(wrapper.text()).not.toContain('JSON 审核中心');
     expect(wrapper.text()).not.toContain('系统设置');
     expect(wrapper.find('[data-test="mobile-tabbar"]').exists()).toBe(true);
     expect(wrapper.find('[data-test="mobile-tabbar"] a[href="/more"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="mobile-tabbar"]').text()).toContain('更多');
+    expect(wrapper.find('a[href="/login"]').classes()).toContain('shell-button--login');
+    expect(appShellSource).toContain('.shell-button--login');
+    expect(appShellSource).not.toContain('.shell-button {\n  background: var(--wc-accent);');
+    expect(readonlyNoticeSource).toContain('readonly-notice__compact');
+    expect(readonlyNoticeSource).toMatch(/@media \(max-width: 767px\)[\s\S]*border-radius:\s*999px/);
   });
 
   it('shows admin entries and writable status after Basic admin login', () => {

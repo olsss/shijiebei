@@ -1,5 +1,6 @@
 import { publicHttp } from './http';
 import type { ApiResponse } from './system';
+import type { Scoreboard, TeamVisual } from '@/utils/football-visuals';
 
 export interface PublicOverviewMatch {
   matchId: number;
@@ -10,6 +11,10 @@ export interface PublicOverviewMatch {
   stage?: string;
   kickoffTime?: string;
   status?: string;
+  resultStatus?: string;
+  homeTeam?: TeamVisual;
+  awayTeam?: TeamVisual;
+  scoreboard?: Scoreboard;
   integrityScore: number;
   riskCount: number;
 }

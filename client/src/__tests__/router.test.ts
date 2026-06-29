@@ -9,6 +9,7 @@ describe('router', () => {
     expect(paths).toContain('/login');
     expect(paths).toContain('/');
     expect(paths).toContain('/workbench');
+    expect(paths).toContain('/evidence');
     expect(paths).toContain('/evidence/matches');
     expect(paths).toContain('/evidence/odds');
     expect(paths).toContain('/evidence/sentiment');
@@ -36,6 +37,9 @@ describe('router', () => {
     expect(routes.find((route) => route.path === '/settings')?.redirect).toBe('/admin/settings');
     expect(routes.find((route) => route.path === '/matches')?.redirect).toBe('/evidence/matches');
     expect(routes.find((route) => route.path === '/prematch-workbench')?.redirect).toBe('/workbench');
+    const evidenceRoute = routes.find((route) => route.path === '/evidence');
+    expect(evidenceRoute?.name).toBe('evidence-overview');
+    expect(evidenceRoute?.redirect).toBeUndefined();
   });
 
   it('redirects anonymous admin navigation to login with a safe return path', async () => {
@@ -59,4 +63,3 @@ describe('router', () => {
     expect(router.currentRoute.value.path).toBe('/admin/import-review');
   });
 });
-
